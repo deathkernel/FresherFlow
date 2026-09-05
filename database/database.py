@@ -18,6 +18,19 @@ def close_db(_error=None):
         db.close()
 
 
+def migrate_student_profile(db):
+    existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles)").fetchall()}
+    additions = {
+        "college": "TEXT",
+        "graduation_year": "TEXT",
+        "preferred_job_type": "TEXT",
+        "preferred_location": "TEXT",
+    }
+    for column, definition in additions.items():
+        if column not in existing:
+            db.execute(f"ALTER TABLE student_profiles ADD COLUMN {column} {definition}")
+
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -25,6 +38,7 @@ def init_db(database_path):
     db.execute("PRAGMA foreign_keys = ON")
     schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
     db.executescript(schema)
+    migrate_student_profile(db)
 
     if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0] == 0:
         db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (
