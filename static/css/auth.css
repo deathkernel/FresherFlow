@@ -1,1 +1,23 @@
-.auth-box{animation:authRise .8s cubic-bezier(.2,.8,.2,1)}.auth-box .form-control,.auth-box .form-select{transition:transform .2s,box-shadow .2s,border-color .2s}.auth-box .form-control:focus,.auth-box .form-select:focus{transform:translateY(-1px)}@keyframes authRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.auth-box{animation:authRise .8s cubic-bezier(.2,.8,.2,1)}
+.auth-box .form-control,.auth-box .form-select{transition:transform .2s,box-shadow .2s,border-color .2s}
+.auth-box .form-control:focus,.auth-box .form-select:focus{transform:translateY(-1px)}
+.role-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;background:#f3f3f7;border:1px solid #e7e8ee;border-radius:14px;margin-top:26px}
+.role-choice{border:0;background:transparent;color:#7a8190;font-weight:700;font-size:.82rem;border-radius:10px;padding:11px 10px;transition:.25s ease}
+.role-choice:hover{color:#111827}
+.role-choice.active{background:#fff;color:#554ddd;box-shadow:0 5px 18px #20264a10}
+.form-step{display:none;animation:stepIn .42s cubic-bezier(.2,.8,.2,1)}
+.form-step.active{display:block}
+.step-heading{display:flex;align-items:center;gap:12px;margin:24px 0 18px;padding-bottom:14px;border-bottom:1px solid #eeeef2}
+.step-heading>span{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eeedff;color:#554ddd;font-weight:800;font-size:.72rem}
+.step-heading b,.step-heading small{display:block}.step-heading b{font-size:.9rem}.step-heading small{font-size:.7rem;color:#9298a4;margin-top:2px}
+.compact-grid{gap:14px}
+.upload-box{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:96px;border:1.5px dashed #d5d5df;border-radius:15px;background:#fafaff;cursor:pointer;text-align:center;transition:.25s ease}
+.upload-box:hover{border-color:#827bf0;background:#f7f6ff;transform:translateY(-2px)}
+.upload-box span{font-weight:800;color:#554ddd}.upload-box small{color:#9298a4;margin-top:4px;font-weight:500}.upload-box input{margin-top:8px;max-width:100%;font-size:.75rem}
+.account-security{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid #eeeef2}
+.password-note{font-size:.68rem;color:#9298a4;margin-top:9px}
+.register-shell .auth-panel{overflow:auto}.register-shell .auth-box{max-width:680px}
+.register-art .art-copy p{position:relative;z-index:2;color:#eee;font-size:1rem;line-height:1.6;max-width:360px;margin-top:22px}
+@keyframes authRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+@keyframes stepIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@media(max-width:700px){.role-switch,.account-security{grid-template-columns:1fr}.register-shell .auth-panel{padding:30px 6vw}.auth-box h1{font-size:2.35rem}.auth-art{min-height:300px}}
