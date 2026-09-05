@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*70,420)}ms`});const toasts=document.querySelectorAll('.toast-card');toasts.forEach((t,i)=>setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(-8px)';t.style.transition='.3s';setTimeout(()=>t.remove(),300)},3200+i*250))});

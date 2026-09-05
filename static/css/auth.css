@@ -1,0 +1,1 @@
+.auth-box{animation:authRise .8s cubic-bezier(.2,.8,.2,1)}.auth-box .form-control,.auth-box .form-select{transition:transform .2s,box-shadow .2s,border-color .2s}.auth-box .form-control:focus,.auth-box .form-select:focus{transform:translateY(-1px)}@keyframes authRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}

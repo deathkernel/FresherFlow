@@ -1,0 +1,1 @@
+document.querySelectorAll('.filter-bar input').forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter') input.form?.submit()}));

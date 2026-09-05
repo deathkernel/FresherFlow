@@ -1,0 +1,1 @@
+document.querySelectorAll('.candidate-actions select').forEach(s=>s.addEventListener('change',()=>s.closest('form')?.querySelector('button')?.focus()));
