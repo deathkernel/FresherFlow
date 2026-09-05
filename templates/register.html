@@ -1,1 +1,63 @@
-{% extends 'base.html' %}{% block title %}Create account — FresherFlow{% endblock %}{% block body %}<div class="auth-shell"><div class="auth-panel"><a class="brand mb-5 d-inline-block" href="{{ url_for('index') }}">Fresher<span>Flow</span></a><div class="auth-box reveal"><div class="eyebrow">GET STARTED</div><h1>Create your account.</h1><p>Use the role that matches how you use FresherFlow.</p><form method="post" class="mt-4"><label>Full name</label><input class="form-control form-control-lg" name="name" required><label class="mt-3">Email</label><input class="form-control form-control-lg" type="email" name="email" required><label class="mt-3">I am a</label><select class="form-select form-select-lg" name="role" id="role" required><option value="student">Student / Fresher</option><option value="employer">Employer / Recruiter</option></select><label class="mt-3">Password</label><input class="form-control form-control-lg" type="password" name="password" minlength="6" required><button class="btn btn-primary btn-lg w-100 mt-4">Create account</button></form><p class="auth-foot">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p></div></div><div class="auth-art register-art"><div class="art-grid"></div><div class="art-copy"><span>01 → 02 → 03</span><h2>Profile.<br>Apply.<br>Grow.</h2></div></div></div>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Create account — FresherFlow{% endblock %}
+{% block body %}
+<div class="auth-shell register-shell">
+  <div class="auth-panel">
+    <a class="brand mb-4 d-inline-block" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
+    <div class="auth-box reveal">
+      <div class="eyebrow">ACCOUNT SETUP</div>
+      <h1>Start with the right workspace.</h1>
+      <p>Student and recruiter accounts have different profiles, permissions and dashboards.</p>
+
+      <div class="role-switch" role="tablist" aria-label="Account type">
+        <button type="button" class="role-choice {% if selected_role == 'student' %}active{% endif %}" data-role="student">Student / Fresher</button>
+        <button type="button" class="role-choice {% if selected_role == 'employer' %}active{% endif %}" data-role="employer">Employer / Recruiter</button>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="mt-4" id="registerForm">
+        <input type="hidden" name="role" id="role" value="{{ selected_role }}">
+
+        <section class="form-step active" data-panel="student">
+          <div class="step-heading"><span>01</span><div><b>Student profile</b><small>Your academic and career information</small></div></div>
+          <div class="form-grid compact-grid">
+            <div><label>Full name</label><input class="form-control" name="name" value="{{ request.form.get('name','') }}" required></div>
+            <div><label>Email</label><input class="form-control" type="email" name="email" value="{{ request.form.get('email','') }}" required></div>
+            <div><label>Mobile number</label><input class="form-control" name="phone" placeholder="10-digit mobile number"></div>
+            <div><label>Education / Qualification</label><input class="form-control" name="education" placeholder="B.Voc / B.Tech / BCA"></div>
+            <div><label>College / University</label><input class="form-control" name="college" placeholder="College or university name"></div>
+            <div><label>Graduation year</label><input class="form-control" name="graduation_year" placeholder="2027"></div>
+            <div class="full"><label>Skills</label><textarea class="form-control" name="skills" rows="3" placeholder="Python, SQL, HTML, CSS, JavaScript"></textarea></div>
+            <div class="full"><label>Certifications</label><textarea class="form-control" name="certifications" rows="2" placeholder="Certification name, issuing organization"></textarea></div>
+            <div><label>Preferred opportunity</label><select class="form-select" name="preferred_job_type"><option>Both</option><option>Internship</option><option>Entry-level Job</option></select></div>
+            <div><label>Preferred location</label><input class="form-control" name="preferred_location" placeholder="Pune / Mumbai / Remote"></div>
+            <div class="full"><label class="upload-box"><span>Upload resume</span><small>PDF, DOC or DOCX · max 5 MB</small><input type="file" name="resume" accept=".pdf,.doc,.docx"></label></div>
+          </div>
+        </section>
+
+        <section class="form-step" data-panel="employer">
+          <div class="step-heading"><span>01</span><div><b>Recruiter organization</b><small>Information candidates will see</small></div></div>
+          <div class="form-grid compact-grid">
+            <div><label>Recruiter name</label><input class="form-control" name="name" disabled></div>
+            <div><label>Work email</label><input class="form-control" type="email" name="email" disabled></div>
+            <div class="full"><label>Organization name</label><input class="form-control" name="organization_name" placeholder="Company / organization"></div>
+            <div><label>Organization type</label><input class="form-control" name="organization_type" placeholder="Technology, Finance..."></div>
+            <div><label>Website</label><input class="form-control" name="website" placeholder="https://..."></div>
+            <div><label>Location</label><input class="form-control" name="location" placeholder="Pune, Maharashtra"></div>
+            <div class="full"><label>Organization description</label><textarea class="form-control" name="description" rows="4" placeholder="Tell candidates about your organization..."></textarea></div>
+          </div>
+        </section>
+
+        <div class="account-security">
+          <div><label>Password</label><input class="form-control" type="password" name="password" minlength="6" required></div>
+          <div><label>Confirm password</label><input class="form-control" type="password" name="confirm_password" minlength="6" required></div>
+        </div>
+        <div class="password-note">Use at least 6 characters. Your role determines which panel you can access.</div>
+        <button class="btn btn-primary btn-lg w-100 mt-4" type="submit">Create account</button>
+      </form>
+      <p class="auth-foot">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </div>
+  </div>
+  <div class="auth-art register-art"><div class="art-grid"></div><div class="art-copy"><span>STUDENT APP ↔ RECRUITER PANEL</span><h2>Profile.<br>Apply.<br>Hire.</h2><p>One platform, two purpose-built experiences.</p></div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}
