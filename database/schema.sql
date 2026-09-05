@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS student_profiles (
     user_id INTEGER NOT NULL UNIQUE,
     phone TEXT,
     education TEXT,
+    college TEXT,
+    graduation_year TEXT,
     skills TEXT,
     certifications TEXT,
+    preferred_job_type TEXT,
+    preferred_location TEXT,
     resume_filename TEXT,
     profile_strength INTEGER NOT NULL DEFAULT 20,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
