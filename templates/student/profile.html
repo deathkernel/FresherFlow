@@ -1,1 +1,21 @@
-{% extends 'student/base.html' %}{% block student_content %}<div class="content-card profile-card reveal"><div class="section-head"><div><h2>My Profile</h2><p>Make your profile recruiter-ready.</p></div><span class="score">{{ profile.profile_strength }}%</span></div><div class="progress mb-4"><i style="width:{{ profile.profile_strength }}%"></i></div><form method="post" class="form-grid"><div><label>Full name</label><input class="form-control" value="{{ user.name }}" disabled></div><div><label>Email</label><input class="form-control" value="{{ user.email }}" disabled></div><div><label>Phone</label><input class="form-control" name="phone" value="{{ profile.phone or '' }}"></div><div><label>Education</label><input class="form-control" name="education" value="{{ profile.education or '' }}" placeholder="B.Tech Computer Science"></div><div class="full"><label>Skills</label><textarea class="form-control" name="skills" rows="3" placeholder="Python, SQL, HTML, JavaScript">{{ profile.skills or '' }}</textarea></div><div class="full"><label>Certifications</label><textarea class="form-control" name="certifications" rows="3">{{ profile.certifications or '' }}</textarea></div><div class="full"><button class="btn btn-primary">Save profile</button></div></form></div>{% endblock %}
+{% extends 'student/base.html' %}
+{% block student_content %}
+<div class="content-card profile-card reveal">
+  <div class="section-head"><div><h2>My Profile</h2><p>Add the information recruiters use to evaluate your profile.</p></div><span class="score">{{ profile.profile_strength }}%</span></div>
+  <div class="progress mb-4"><i style="width:{{ profile.profile_strength }}%"></i></div>
+  <form method="post" enctype="multipart/form-data" class="form-grid">
+    <div><label>Full name</label><input class="form-control" value="{{ user.name }}" disabled></div>
+    <div><label>Email</label><input class="form-control" value="{{ user.email }}" disabled></div>
+    <div><label>Mobile number</label><input class="form-control" name="phone" value="{{ profile.phone or '' }}"></div>
+    <div><label>Education / Qualification</label><input class="form-control" name="education" value="{{ profile.education or '' }}" placeholder="B.Voc / B.Tech / BCA"></div>
+    <div><label>College / University</label><input class="form-control" name="college" value="{{ profile.college or '' }}"></div>
+    <div><label>Graduation year</label><input class="form-control" name="graduation_year" value="{{ profile.graduation_year or '' }}"></div>
+    <div class="full"><label>Skills</label><textarea class="form-control" name="skills" rows="3" placeholder="Python, SQL, HTML, CSS, JavaScript">{{ profile.skills or '' }}</textarea></div>
+    <div class="full"><label>Certifications</label><textarea class="form-control" name="certifications" rows="3" placeholder="Certification name and issuing organization">{{ profile.certifications or '' }}</textarea></div>
+    <div><label>Preferred opportunity</label><select class="form-select" name="preferred_job_type"><option {% if profile.preferred_job_type == 'Both' %}selected{% endif %}>Both</option><option {% if profile.preferred_job_type == 'Internship' %}selected{% endif %}>Internship</option><option {% if profile.preferred_job_type == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select></div>
+    <div><label>Preferred location</label><input class="form-control" name="preferred_location" value="{{ profile.preferred_location or '' }}" placeholder="Pune / Mumbai / Remote"></div>
+    <div class="full"><label class="upload-box"><span>{{ 'Replace resume' if profile.resume_filename else 'Upload resume' }}</span><small>PDF, DOC or DOCX · maximum 5 MB</small><input type="file" name="resume" accept=".pdf,.doc,.docx"></label>{% if profile.resume_filename %}<div class="mt-2 small"><a href="{{ url_for('student.resume') }}">View current resume</a></div>{% endif %}</div>
+    <div class="full"><button class="btn btn-primary">Save profile</button></div>
+  </form>
+</div>
+{% endblock %}
