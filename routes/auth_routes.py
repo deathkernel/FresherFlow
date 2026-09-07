@@ -1,3 +1,4 @@
+import sqlite3
 from pathlib import Path
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
@@ -97,9 +98,14 @@ def register():
                     ),
                 )
             db.commit()
-        except Exception:
+        except sqlite3.IntegrityError:
             db.rollback()
             flash("That email is already registered or the submitted data is invalid.", "error")
+            return render_template("register.html")
+        except OSError:
+            db.rollback()
+            current_app.logger.exception("Resume upload failed during registration")
+            flash("The resume could not be saved. Please try again.", "error")
             return render_template("register.html")
 
         flash("Account created. Please sign in.", "success")
