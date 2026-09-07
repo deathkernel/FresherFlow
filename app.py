@@ -1,11 +1,12 @@
-from flask import session
-from flask import Flask, redirect, url_for, render_template
 import os
+
+from flask import Flask, redirect, render_template, session, url_for
+
 from config import Config
 from database.database import close_db, init_db
 from routes.auth_routes import auth_bp
-from routes.student_routes import student_bp
 from routes.employer_routes import employer_bp
+from routes.student_routes import student_bp
 
 
 def create_app():
@@ -30,7 +31,12 @@ def create_app():
 
     return app
 
+
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(
+        host=os.environ.get("HOST", "0.0.0.0"),
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG", "0") == "1",
+    )
