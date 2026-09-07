@@ -20,7 +20,7 @@ def close_db(_error=None):
 
 
 def migrate_student_profile(db):
-    existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles").fetchall()}
+    existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles)").fetchall()}
     additions = {
         "college": "TEXT",
         "graduation_year": "TEXT",
