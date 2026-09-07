@@ -1,7 +1,8 @@
+import os
 import sqlite3
 from pathlib import Path
+
 from flask import current_app, g
-from werkzeug.security import generate_password_hash
 
 
 def get_db():
@@ -19,7 +20,7 @@ def close_db(_error=None):
 
 
 def migrate_student_profile(db):
-    existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles)").fetchall()}
+    existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles").fetchall()}
     additions = {
         "college": "TEXT",
         "graduation_year": "TEXT",
@@ -40,19 +41,27 @@ def init_db(database_path):
     db.executescript(schema)
     migrate_student_profile(db)
 
-    if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0] == 0:
-        db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (
-            "TechNova Recruiting", "demo.employer@fresherflow.local", generate_password_hash("Demo@123"), "employer"))
-        employer_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-        db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description) VALUES(?,?,?,?,?)", (
-            employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development."))
-        seed = [
-            (employer_id, "Python Developer Intern", "Internship", "Build APIs and assist the backend team.", "Pune, Maharashtra", "₹15,000/mo", "Python, Flask, SQLite", "Students / freshers with Python basics", "2026-12-31"),
-            (employer_id, "Frontend Developer", "Entry-level Job", "Create responsive user interfaces for client projects.", "Remote", "₹4.5 LPA", "HTML, CSS, JavaScript, Bootstrap", "Freshers with frontend project experience", "2026-12-31"),
-            (employer_id, "Data Analyst Intern", "Internship", "Work with datasets and create business reports.", "Mumbai, Maharashtra", "₹18,000/mo", "Python, Excel, SQL", "Students pursuing data or computer-related courses", "2026-12-31"),
-            (employer_id, "Junior Software Engineer", "Entry-level Job", "Join the engineering team and ship production features.", "Bengaluru, Karnataka", "₹6 LPA", "Python, Git, SQL", "0–1 years experience", "2026-12-31")
-        ]
-        db.executemany("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status)
-                          VALUES(?,?,?,?,?,?,?,?,?,?)""", [(*row, "active") for row in seed])
+    # Demo data is opt-in so production never receives a known account.
+    if os.environ.get("FRESHERFLOW_DEMO") == "1":
+        from werkzeug.security import generate_password_hash
+
+        if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0] == 0:
+            password = os.environ.get("DEMO_EMPLOYER_PASSWORD")
+            if password:
+                db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (
+                    "TechNova Recruiting", "demo.employer@fresherflow.local",
+                    generate_password_hash(password), "employer"))
+                employer_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description) VALUES(?,?,?,?,?)", (
+                    employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development."))
+                seed = [
+                    ("Python Developer Intern", "Internship", "Build APIs and assist the backend team.", "Pune, Maharashtra", "₹15,000/mo", "Python, Flask, SQLite", "Students / freshers with Python basics", "2026-12-31"),
+                    ("Frontend Developer", "Entry-level Job", "Create responsive user interfaces for client projects.", "Remote", "₹4.5 LPA", "HTML, CSS, JavaScript, Bootstrap", "Freshers with frontend project experience", "2026-12-31"),
+                    ("Data Analyst Intern", "Internship", "Work with datasets and create business reports.", "Mumbai, Maharashtra", "₹18,000/mo", "Python, Excel, SQL", "Students pursuing data or computer-related courses", "2026-12-31"),
+                    ("Junior Software Engineer", "Entry-level Job", "Join the engineering team and ship production features.", "Bengaluru, Karnataka", "₹6 LPA", "Python, Git, SQL", "0–1 years experience", "2026-12-31")
+                ]
+                db.executemany("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status)
+                                  VALUES(?,?,?,?,?,?,?,?,?,?)""", [(employer_id, *row, "active") for row in seed])
+
     db.commit()
     db.close()
