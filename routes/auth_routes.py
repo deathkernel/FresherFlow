@@ -46,6 +46,7 @@ def register():
             return render_template("register.html")
 
         db = get_db()
+        resume_path = None
         try:
             cur = db.execute(
                 "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
@@ -62,8 +63,10 @@ def register():
                         flash("Resume must be a PDF, DOC or DOCX file.", "error")
                         return render_template("register.html")
                     resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
-                    Path(current_app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
-                    resume.save(Path(current_app.config["UPLOAD_FOLDER"]) / resume_filename)
+                    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+                    upload_dir.mkdir(parents=True, exist_ok=True)
+                    resume_path = upload_dir / resume_filename
+                    resume.save(resume_path)
 
                 db.execute(
                     """INSERT INTO student_profiles
@@ -100,10 +103,14 @@ def register():
             db.commit()
         except sqlite3.IntegrityError:
             db.rollback()
+            if resume_path:
+                resume_path.unlink(missing_ok=True)
             flash("That email is already registered or the submitted data is invalid.", "error")
             return render_template("register.html")
         except OSError:
             db.rollback()
+            if resume_path:
+                resume_path.unlink(missing_ok=True)
             current_app.logger.exception("Resume upload failed during registration")
             flash("The resume could not be saved. Please try again.", "error")
             return render_template("register.html")
