@@ -1,12 +1,13 @@
 import os
 
-from flask import Flask, redirect, render_template, session, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 
 from config import Config
 from database.database import close_db, init_db
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.student_routes import student_bp
+from security import csrf_token, validate_csrf
 
 
 def create_app():
@@ -15,6 +16,13 @@ def create_app():
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     init_db(app.config["DATABASE"])
     app.teardown_appcontext(close_db)
+    app.jinja_env.globals["csrf_token"] = csrf_token
+
+    @app.before_request
+    def protect_forms():
+        if request.method == "POST":
+            validate_csrf(request.form.get("csrf_token"))
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
