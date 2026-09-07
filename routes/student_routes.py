@@ -1,3 +1,4 @@
+import sqlite3
 from pathlib import Path
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for, send_from_directory
@@ -104,8 +105,9 @@ def apply(vacancy_id):
     try:
         db.execute("INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, session["user_id"]))
         db.commit(); flash("Application submitted. Status: Applied.", "success")
-    except Exception:
-        db.rollback(); flash("You have already applied to this vacancy.", "error")
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("You have already applied to this vacancy.", "error")
     return redirect(request.referrer or url_for("student.jobs"))
 
 
