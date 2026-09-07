@@ -4,6 +4,7 @@
   <div class="section-head"><div><h2>My Profile</h2><p>Add the information recruiters use to evaluate your profile.</p></div><span class="score">{{ profile.profile_strength }}%</span></div>
   <div class="progress mb-4"><i style="width:{{ profile.profile_strength }}%"></i></div>
   <form method="post" enctype="multipart/form-data" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div><label>Full name</label><input class="form-control" value="{{ user.name }}" disabled></div>
     <div><label>Email</label><input class="form-control" value="{{ user.email }}" disabled></div>
     <div><label>Mobile number</label><input class="form-control" name="phone" value="{{ profile.phone or '' }}"></div>
