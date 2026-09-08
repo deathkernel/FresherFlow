@@ -1,0 +1,109 @@
+{% extends 'employer/base.html' %}
+{% block employer_content %}
+<div class="content-card reveal bulk-post-page">
+  <div class="section-head bulk-post-head">
+    <div>
+      <span class="eyebrow">BULK PUBLISH</span>
+      <h2>Publish multiple vacancies</h2>
+      <p>Add several jobs or internships below and publish them all with one click.</p>
+    </div>
+    <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a>
+  </div>
+
+  <form method="post" id="bulk-vacancy-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div id="vacancy-cards" class="bulk-vacancy-list"></div>
+
+    <div class="bulk-add-row">
+      <button type="button" class="btn btn-light" id="add-vacancy">+ Add another vacancy</button>
+      <span><strong id="vacancy-count">0</strong> vacancies ready to publish</span>
+    </div>
+
+    <div class="full form-actions bulk-submit-row">
+      <a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a>
+      <button class="btn btn-primary" type="submit">Publish all vacancies</button>
+    </div>
+  </form>
+</div>
+
+<template id="vacancy-template">
+  <article class="bulk-vacancy-card">
+    <div class="bulk-card-top">
+      <div>
+        <span class="bulk-number"></span>
+        <strong>Vacancy details</strong>
+      </div>
+      <button type="button" class="bulk-remove" aria-label="Remove vacancy">Remove</button>
+    </div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Job / internship title</label>
+        <input class="form-control" name="title" required placeholder="e.g. Python Developer Intern">
+      </div>
+      <div>
+        <label>Type</label>
+        <select class="form-select" name="vacancy_type" required>
+          <option>Internship</option>
+          <option>Entry-level Job</option>
+        </select>
+      </div>
+      <div>
+        <label>Location</label>
+        <input class="form-control" name="location" required placeholder="Pune / Remote">
+      </div>
+      <div>
+        <label>Salary / stipend</label>
+        <input class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA">
+      </div>
+      <div>
+        <label>Application deadline</label>
+        <input class="form-control" type="date" name="deadline">
+      </div>
+      <div class="full">
+        <label>Skills</label>
+        <input class="form-control" name="skills" placeholder="Python, Flask, SQL">
+      </div>
+      <div class="full">
+        <label>Eligibility</label>
+        <input class="form-control" name="eligibility" placeholder="Freshers / 0–1 years / B.Tech...">
+      </div>
+      <div class="full">
+        <label>Role description</label>
+        <textarea class="form-control" name="description" rows="5" required placeholder="Responsibilities, team and expectations..."></textarea>
+      </div>
+    </div>
+  </article>
+</template>
+
+<script>
+(() => {
+  const list = document.getElementById('vacancy-cards');
+  const template = document.getElementById('vacancy-template');
+  const addButton = document.getElementById('add-vacancy');
+  const count = document.getElementById('vacancy-count');
+
+  function refresh() {
+    const cards = [...list.querySelectorAll('.bulk-vacancy-card')];
+    cards.forEach((card, index) => {
+      card.querySelector('.bulk-number').textContent = `#${index + 1}`;
+      card.querySelector('.bulk-remove').style.display = cards.length === 1 ? 'none' : 'inline-flex';
+    });
+    count.textContent = cards.length;
+  }
+
+  function addVacancy() {
+    const card = template.content.cloneNode(true);
+    card.querySelector('.bulk-remove').addEventListener('click', (event) => {
+      event.currentTarget.closest('.bulk-vacancy-card').remove();
+      refresh();
+    });
+    list.appendChild(card);
+    refresh();
+    list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  addButton.addEventListener('click', addVacancy);
+  addVacancy();
+})();
+</script>
+{% endblock %}
