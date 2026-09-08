@@ -21,35 +21,23 @@ def close_db(_error=None):
 
 def migrate_student_profile(db):
     existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles)").fetchall()}
-    additions = {
-        "college": "TEXT",
-        "graduation_year": "TEXT",
-        "preferred_job_type": "TEXT",
-        "preferred_location": "TEXT",
-    }
+    additions = {"college": "TEXT", "graduation_year": "TEXT", "preferred_job_type": "TEXT", "preferred_location": "TEXT"}
     for column, definition in additions.items():
         if column not in existing:
             db.execute(f"ALTER TABLE student_profiles ADD COLUMN {column} {definition}")
 
 
 def migrate_role_and_moderation(db):
-    users_sql = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
-    if users_sql and "'admin'" not in users_sql[0]:
-        # SQLite cannot alter a CHECK constraint. Rebuild only the parent table,
-        # preserving all existing users and keeping foreign keys intact.
-        db.execute("PRAGMA foreign_keys = OFF")
-        db.execute("ALTER TABLE users RENAME TO users_legacy")
-        db.execute("""CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK(role IN ('student','employer','admin')),
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
-        db.execute("INSERT INTO users(id,name,email,password_hash,role,created_at) SELECT id,name,email,password_hash,role,created_at FROM users_legacy")
-        db.execute("DROP TABLE users_legacy")
-        db.execute("PRAGMA foreign_keys = ON")
+    # Existing installations may have a users CHECK constraint that predates admins.
+    # Keep that table untouched and store platform administrators separately; the
+    # application session still exposes role='admin' and server-side guards enforce it.
+    db.execute("""CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )""")
 
     employer_columns = {row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()}
     employer_additions = {
@@ -80,7 +68,7 @@ def migrate_role_and_moderation(db):
         target_id INTEGER,
         details TEXT,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(admin_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY(admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
     )""")
 
 
@@ -91,12 +79,9 @@ def ensure_env_admin(db):
     if not email or not password:
         return
     from werkzeug.security import generate_password_hash
-    existing = db.execute("SELECT id, role FROM users WHERE email=?", (email,)).fetchone()
-    if existing:
-        if existing["role"] != "admin":
-            db.execute("UPDATE users SET role='admin', name=? WHERE id=?", (name, existing["id"]))
-        return
-    db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (name, email, generate_password_hash(password), "admin"))
+    existing = db.execute("SELECT id FROM admin_users WHERE email=?", (email,)).fetchone()
+    if not existing:
+        db.execute("INSERT INTO admin_users(name,email,password_hash) VALUES(?,?,?)", (name, email, generate_password_hash(password)))
 
 
 def init_db(database_path):
@@ -110,18 +95,14 @@ def init_db(database_path):
     migrate_role_and_moderation(db)
     ensure_env_admin(db)
 
-    # Demo data is opt-in so production never receives a known account.
     if os.environ.get("FRESHERFLOW_DEMO") == "1":
         from werkzeug.security import generate_password_hash
         if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0] == 0:
             password = os.environ.get("DEMO_EMPLOYER_PASSWORD")
             if password:
-                db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (
-                    "TechNova Recruiting", "demo.employer@fresherflow.local",
-                    generate_password_hash(password), "employer"))
+                db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", ("TechNova Recruiting", "demo.employer@fresherflow.local", generate_password_hash(password), "employer"))
                 employer_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-                db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description,account_status,verification_status) VALUES(?,?,?,?,?,?,?)", (
-                    employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development.", "active", "verified"))
+                db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description,account_status,verification_status) VALUES(?,?,?,?,?,?,?)", (employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development.", "active", "verified"))
                 seed = [
                     ("Python Developer Intern", "Internship", "Build APIs and assist the backend team.", "Pune, Maharashtra", "₹15,000/mo", "Python, Flask, SQLite", "Students / freshers with Python basics", "2026-12-31"),
                     ("Frontend Developer", "Entry-level Job", "Create responsive user interfaces for client projects.", "Remote", "₹4.5 LPA", "HTML, CSS, JavaScript, Bootstrap", "Freshers with frontend project experience", "2026-12-31"),
