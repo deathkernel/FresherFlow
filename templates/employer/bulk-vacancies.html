@@ -5,17 +5,36 @@
     <div>
       <span class="eyebrow">BULK PUBLISH</span>
       <h2>Publish multiple vacancies</h2>
-      <p>Add several jobs or internships below and publish them all with one click.</p>
+      <p>Fill vacancies like a spreadsheet and publish every completed row together.</p>
     </div>
     <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a>
   </div>
 
   <form method="post" id="bulk-vacancy-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div id="vacancy-cards" class="bulk-vacancy-list"></div>
+
+    <div class="bulk-table-shell">
+      <table class="bulk-vacancy-table">
+        <thead>
+          <tr>
+            <th class="bulk-col-number">#</th>
+            <th>Job title *</th>
+            <th>Type *</th>
+            <th>Location *</th>
+            <th>Salary / stipend</th>
+            <th>Deadline</th>
+            <th>Skills</th>
+            <th>Eligibility</th>
+            <th>Role description *</th>
+            <th class="bulk-col-action"> </th>
+          </tr>
+        </thead>
+        <tbody id="vacancy-rows"></tbody>
+      </table>
+    </div>
 
     <div class="bulk-add-row">
-      <button type="button" class="btn btn-light" id="add-vacancy">+ Add another vacancy</button>
+      <button type="button" class="btn btn-light" id="add-vacancy">+ Add row</button>
       <span><strong id="vacancy-count">0</strong> vacancies ready to publish</span>
     </div>
 
@@ -26,84 +45,56 @@
   </form>
 </div>
 
-<template id="vacancy-template">
-  <article class="bulk-vacancy-card">
-    <div class="bulk-card-top">
-      <div>
-        <span class="bulk-number"></span>
-        <strong>Vacancy details</strong>
-      </div>
-      <button type="button" class="bulk-remove" aria-label="Remove vacancy">Remove</button>
-    </div>
-    <div class="form-grid">
-      <div class="full">
-        <label>Job / internship title</label>
-        <input class="form-control" name="title" required placeholder="e.g. Python Developer Intern">
-      </div>
-      <div>
-        <label>Type</label>
-        <select class="form-select" name="vacancy_type" required>
-          <option>Internship</option>
-          <option>Entry-level Job</option>
-        </select>
-      </div>
-      <div>
-        <label>Location</label>
-        <input class="form-control" name="location" required placeholder="Pune / Remote">
-      </div>
-      <div>
-        <label>Salary / stipend</label>
-        <input class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA">
-      </div>
-      <div>
-        <label>Application deadline</label>
-        <input class="form-control" type="date" name="deadline">
-      </div>
-      <div class="full">
-        <label>Skills</label>
-        <input class="form-control" name="skills" placeholder="Python, Flask, SQL">
-      </div>
-      <div class="full">
-        <label>Eligibility</label>
-        <input class="form-control" name="eligibility" placeholder="Freshers / 0–1 years / B.Tech...">
-      </div>
-      <div class="full">
-        <label>Role description</label>
-        <textarea class="form-control" name="description" rows="5" required placeholder="Responsibilities, team and expectations..."></textarea>
-      </div>
-    </div>
-  </article>
+<template id="vacancy-row-template">
+  <tr class="bulk-vacancy-row">
+    <td class="bulk-row-number"></td>
+    <td><input class="bulk-cell-input" name="title" required placeholder="Python Developer"></td>
+    <td>
+      <select class="bulk-cell-input" name="vacancy_type" required>
+        <option>Internship</option>
+        <option>Entry-level Job</option>
+      </select>
+    </td>
+    <td><input class="bulk-cell-input" name="location" required placeholder="Pune / Remote"></td>
+    <td><input class="bulk-cell-input" name="salary" placeholder="₹25k / ₹6 LPA"></td>
+    <td><input class="bulk-cell-input" type="date" name="deadline"></td>
+    <td><textarea class="bulk-cell-input bulk-cell-textarea" name="skills" rows="1" placeholder="Python, SQL"></textarea></td>
+    <td><textarea class="bulk-cell-input bulk-cell-textarea" name="eligibility" rows="1" placeholder="B.Tech / Freshers"></textarea></td>
+    <td><textarea class="bulk-cell-input bulk-description" name="description" rows="1" required placeholder="Responsibilities and expectations..."></textarea></td>
+    <td><button type="button" class="bulk-remove" aria-label="Remove vacancy">×</button></td>
+  </tr>
 </template>
 
 <script>
 (() => {
-  const list = document.getElementById('vacancy-cards');
-  const template = document.getElementById('vacancy-template');
+  const body = document.getElementById('vacancy-rows');
+  const template = document.getElementById('vacancy-row-template');
   const addButton = document.getElementById('add-vacancy');
   const count = document.getElementById('vacancy-count');
 
   function refresh() {
-    const cards = [...list.querySelectorAll('.bulk-vacancy-card')];
-    cards.forEach((card, index) => {
-      card.querySelector('.bulk-number').textContent = `#${index + 1}`;
-      card.querySelector('.bulk-remove').style.display = cards.length === 1 ? 'none' : 'inline-flex';
+    const rows = [...body.querySelectorAll('.bulk-vacancy-row')];
+    rows.forEach((row, index) => {
+      row.querySelector('.bulk-row-number').textContent = index + 1;
+      row.querySelector('.bulk-remove').style.visibility = rows.length === 1 ? 'hidden' : 'visible';
     });
-    count.textContent = cards.length;
+    count.textContent = rows.length;
   }
 
-  function addVacancy() {
-    const card = template.content.cloneNode(true);
-    card.querySelector('.bulk-remove').addEventListener('click', (event) => {
-      event.currentTarget.closest('.bulk-vacancy-card').remove();
+  function addRow() {
+    const row = template.content.cloneNode(true);
+    row.querySelector('.bulk-remove').addEventListener('click', (event) => {
+      event.currentTarget.closest('tr').remove();
       refresh();
     });
-    list.appendChild(card);
+    body.appendChild(row);
     refresh();
-    list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const lastRow = body.lastElementChild;
+    lastRow.querySelector('input, select, textarea').focus();
   }
 
-  addButton.addEventListener('click', addVacancy);
-  addVacancy();
+  addButton.addEventListener('click', addRow);
+  addRow();
 })();
 </script>
 {% endblock %}
