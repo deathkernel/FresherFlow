@@ -23,9 +23,12 @@ def dashboard():
         "active_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE status='active' AND moderation_status='approved'").fetchone()["c"],
         "pending_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='pending'").fetchone()["c"],
         "rejected_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='rejected'").fetchone()["c"]}
+    stats["needs_attention"]=stats["pending_employers"]+stats["pending_jobs"]
     employers=db.execute("SELECT u.id,u.name,u.email,u.created_at,ep.organization_name,ep.account_status,ep.verification_status FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer' ORDER BY u.id DESC LIMIT 8").fetchall()
     jobs=db.execute("SELECT v.id,v.title,v.created_at,v.status,v.moderation_status,v.vacancy_type,v.employer_id,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id ORDER BY v.id DESC LIMIT 8").fetchall()
-    return render_template("admin/dashboard.html",stats=stats,recent_employers=employers,recent_jobs=jobs)
+    pending_employers=db.execute("SELECT u.id,u.name,u.email,ep.organization_name,ep.location FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer' AND ep.verification_status='pending' ORDER BY u.id DESC LIMIT 6").fetchall()
+    pending_jobs=db.execute("SELECT v.id,v.title,v.vacancy_type,v.created_at,v.employer_id,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.moderation_status='pending' ORDER BY v.id DESC LIMIT 6").fetchall()
+    return render_template("admin/dashboard.html",stats=stats,recent_employers=employers,recent_jobs=jobs,pending_employers=pending_employers,pending_jobs=pending_jobs)
 
 @admin_bp.get("/employers")
 @role_required("admin")
