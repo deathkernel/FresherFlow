@@ -15,7 +15,7 @@ def valid_resume(filename):return "." in filename and filename.rsplit(".",1)[1].
 def dashboard():
     db=get_db();uid=session["user_id"]
     stats={"applications":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=?",(uid,)).fetchone()["c"],"shortlisted":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",(uid,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Selected'",(uid,)).fetchone()["c"],"saved":db.execute("SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?",(uid,)).fetchone()["c"]}
-    jobs=db.execute("""SELECT v.*,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND ep.verification_status='verified' ORDER BY v.id DESC LIMIT 6""").fetchall()
+    jobs=db.execute("""SELECT v.*,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6""").fetchall()
     return render_template("student/dashboard.html",stats=stats,jobs=jobs)
 
 @student_bp.route("/profile",methods=["GET","POST"])
@@ -40,7 +40,7 @@ def resume():
 @student_bp.get("/jobs")
 @role_required("student")
 def jobs():
-    db=get_db();q=request.args.get("q","").strip();typ=request.args.get("type","").strip();sql="""SELECT v.*,ep.organization_name,EXISTS(SELECT 1 FROM saved_jobs s WHERE s.vacancy_id=v.id AND s.student_id=?) saved,EXISTS(SELECT 1 FROM applications a WHERE a.vacancy_id=v.id AND a.student_id=?) applied FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND ep.verification_status='verified'""";args=[session["user_id"],session["user_id"]]
+    db=get_db();q=request.args.get("q","").strip();typ=request.args.get("type","").strip();sql="""SELECT v.*,ep.organization_name,EXISTS(SELECT 1 FROM saved_jobs s WHERE s.vacancy_id=v.id AND s.student_id=?) saved,EXISTS(SELECT 1 FROM applications a WHERE a.vacancy_id=v.id AND a.student_id=?) applied FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active'""";args=[session["user_id"],session["user_id"]]
     if q:sql+=" AND (v.title LIKE ? OR ep.organization_name LIKE ? OR v.skills LIKE ?)";args += [f"%{q}%"]*3
     if typ:sql+=" AND v.vacancy_type=?";args.append(typ)
     rows=db.execute(sql+" ORDER BY v.id DESC",args).fetchall();return render_template("student/jobs.html",jobs=rows,q=q,typ=typ)
@@ -48,14 +48,14 @@ def jobs():
 @student_bp.get("/jobs/<int:vacancy_id>")
 @role_required("student")
 def job_details(vacancy_id):
-    db=get_db();uid=session["user_id"];job=db.execute("""SELECT v.*,ep.organization_name,ep.website,ep.location employer_location FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND ep.verification_status='verified'""",(vacancy_id,)).fetchone()
+    db=get_db();uid=session["user_id"];job=db.execute("""SELECT v.*,ep.organization_name,ep.website,ep.location employer_location FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.id=? AND v.status='active' AND ep.account_status='active'""",(vacancy_id,)).fetchone()
     if not job:return render_template("404.html"),404
     applied=db.execute("SELECT 1 FROM applications WHERE vacancy_id=? AND student_id=?",(vacancy_id,uid)).fetchone();saved=db.execute("SELECT 1 FROM saved_jobs WHERE vacancy_id=? AND student_id=?",(vacancy_id,uid)).fetchone();return render_template("student/job-details.html",job=job,applied=bool(applied),saved=bool(saved))
 
 @student_bp.post("/jobs/<int:vacancy_id>/apply")
 @role_required("student")
 def apply(vacancy_id):
-    db=get_db();exists=db.execute("SELECT 1 FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND ep.verification_status='verified'",(vacancy_id,)).fetchone()
+    db=get_db();exists=db.execute("SELECT 1 FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.id=? AND v.status='active' AND ep.account_status='active'",(vacancy_id,)).fetchone()
     if not exists:flash("This opportunity is no longer active.","error");return redirect(url_for("student.jobs"))
     try:db.execute("INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",(vacancy_id,session["user_id"]));db.commit();flash("Application submitted. Status: Applied.","success")
     except sqlite3.IntegrityError:db.rollback();flash("You have already applied to this vacancy.","error")
