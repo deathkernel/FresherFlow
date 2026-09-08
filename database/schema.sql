@@ -3,15 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student','employer','admin')),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS admin_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('student','employer')),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -40,7 +32,7 @@ CREATE TABLE IF NOT EXISTS employer_profiles (
     location TEXT,
     description TEXT,
     account_status TEXT NOT NULL DEFAULT 'active' CHECK(account_status IN ('active','suspended')),
-    verification_status TEXT NOT NULL DEFAULT 'pending' CHECK(verification_status IN ('pending','verified','rejected')),
+    verification_status TEXT NOT NULL DEFAULT 'verified' CHECK(verification_status IN ('pending','verified','rejected')),
     verification_note TEXT,
     verified_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -58,7 +50,7 @@ CREATE TABLE IF NOT EXISTS vacancies (
     eligibility TEXT,
     deadline TEXT,
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','active','closed')),
-    moderation_status TEXT NOT NULL DEFAULT 'pending' CHECK(moderation_status IN ('pending','approved','rejected')),
+    moderation_status TEXT NOT NULL DEFAULT 'approved' CHECK(moderation_status IN ('pending','approved','rejected')),
     moderation_note TEXT,
     moderated_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -84,15 +76,4 @@ CREATE TABLE IF NOT EXISTS saved_jobs (
     UNIQUE(vacancy_id, student_id),
     FOREIGN KEY(vacancy_id) REFERENCES vacancies(id) ON DELETE CASCADE,
     FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS admin_activity (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    admin_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    target_type TEXT,
-    target_id INTEGER,
-    details TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
 );
