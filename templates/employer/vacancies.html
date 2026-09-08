@@ -5,7 +5,10 @@
     <h2>My Vacancies</h2>
     <p>Publish, edit and close your opportunities.</p>
   </div>
-  <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">+ New vacancy</a>
+  <div class="section-actions">
+    <a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">+ Bulk publish</a>
+    <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">+ New vacancy</a>
+  </div>
 </div>
 
 <div class="vacancy-list">
