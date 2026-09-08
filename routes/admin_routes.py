@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from database.database import get_db
 from routes.decorators import role_required
+from werkzeug.security import generate_password_hash
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -41,6 +42,54 @@ def employers():
     rows=db.execute(sql+" ORDER BY u.id DESC",args).fetchall()
     return render_template("admin/employers.html",employers=rows,q=q,status=status,verification=verification)
 
+@admin_bp.route("/employers/new", methods=["GET", "POST"])
+@role_required("admin")
+def create_employer():
+    if request.method == "GET":
+        return render_template("admin/employer_new.html")
+    db=get_db()
+    name=request.form.get("name","").strip()
+    email=request.form.get("email","").strip().lower()
+    password=request.form.get("password","")
+    organization_name=request.form.get("organization_name","").strip()
+    organization_type=request.form.get("organization_type","").strip() or None
+    website=request.form.get("website","").strip() or None
+    location=request.form.get("location","").strip() or None
+    description=request.form.get("description","").strip() or None
+    if not name or not email or not password or not organization_name:
+        flash("Recruiter name, email, password and company name are required.","error")
+        return render_template("admin/employer_new.html",form=request.form),400
+    if len(password) < 8:
+        flash("Employer password must be at least 8 characters.","error")
+        return render_template("admin/employer_new.html",form=request.form),400
+    if db.execute("SELECT 1 FROM users WHERE lower(email)=?",(email,)).fetchone() or db.execute("SELECT 1 FROM admin_users WHERE lower(email)=?",(email,)).fetchone():
+        flash("An account with this email already exists.","error")
+        return render_template("admin/employer_new.html",form=request.form),409
+    cur=db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",(name,email,generate_password_hash(password),"employer"))
+    employer_id=cur.lastrowid
+    db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,website,location,description,account_status,verification_status) VALUES(?,?,?,?,?,?,?,?)",(employer_id,organization_name,organization_type,website,location,description,"active","verified"))
+    log_action(db,"Employer created","employer",employer_id,f"Created {organization_name} ({email})")
+    db.commit()
+    flash(f"Employer account for {organization_name} created and verified.","success")
+    return redirect(url_for("admin.employer_detail",user_id=employer_id))
+
+@admin_bp.post("/employers/<int:user_id>/delete")
+@role_required("admin")
+def delete_employer(user_id):
+    db=get_db()
+    employer=db.execute("SELECT u.id,u.email,ep.organization_name FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.id=? AND u.role='employer'",(user_id,)).fetchone()
+    if not employer:
+        return render_template("404.html"),404
+    confirmation=request.form.get("confirmation","").strip().upper()
+    if confirmation != "REMOVE":
+        flash("Employer was not removed. Type REMOVE to confirm.","error")
+        return back("admin.employers")
+    log_action(db,"Employer removed","employer",user_id,f"Removed {employer['organization_name']} ({employer['email']})")
+    db.execute("DELETE FROM users WHERE id=? AND role='employer'",(user_id,))
+    db.commit()
+    flash(f"Employer {employer['organization_name']} and its published opportunities were removed.","success")
+    return redirect(url_for("admin.employers"))
+
 @admin_bp.get("/employers/<int:user_id>")
 @role_required("admin")
 def employer_detail(user_id):
@@ -48,7 +97,7 @@ def employer_detail(user_id):
     if not employer:return render_template("404.html"),404
     opportunity_type=request.args.get("type","").lower()
     jobs_sql="SELECT * FROM vacancies WHERE employer_id=?"; job_args=[user_id]
-    if opportunity_type in {"job","internship"}: jobs_sql+=" AND lower(vacancy_type)=?"; job_args.append(opportunity_type)
+    if opportunity_type in {"job","internship"}: jobs_sql+=" AND lower(vacancy_type)=?"; job_args.append("internship" if opportunity_type=="internship" else "entry-level job")
     jobs=db.execute(jobs_sql+" ORDER BY id DESC",job_args).fetchall()
     activity=db.execute("SELECT * FROM admin_activity WHERE target_type='employer' AND target_id=? ORDER BY id DESC LIMIT 10",(user_id,)).fetchall()
     counts={"jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=?",(user_id,)).fetchone()["c"],"internships":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND lower(vacancy_type)='internship'",(user_id,)).fetchone()["c"],"active":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND status='active' AND moderation_status='approved'",(user_id,)).fetchone()["c"],"pending":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND moderation_status='pending'",(user_id,)).fetchone()["c"],"applications":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",(user_id,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'",(user_id,)).fetchone()["c"]}
