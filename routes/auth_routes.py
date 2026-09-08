@@ -18,25 +18,25 @@ def login_target(role):
     return {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}[role]
 
 
+def render_login():
+    context = request.args.get("role", "student")
+    if context not in {"student", "employer", "admin"}:
+        context = "student"
+    return render_template("login.html", login_context=context)
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    login_context = request.args.get("role", "student")
+    if login_context not in {"student", "employer", "admin"}:
+        login_context = "student"
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
-        if user and check_password_hash(user["password_hash"], password):
-            if user["role"] == "employer":
-                profile = db.execute("SELECT account_status FROM employer_profiles WHERE user_id=?", (user["id"],)).fetchone()
-                if profile and profile["account_status"] == "suspended":
-                    flash("This employer account is currently suspended. Please contact support.", "error")
-                    return render_template("login.html")
-            session.clear()
-            session["user_id"] = user["id"]
-            session["name"] = user["name"]
-            session["role"] = user["role"]
-            return redirect(url_for(login_target(user["role"])))
 
+        # Admin accounts are stored separately and are never created through public registration.
         admin = db.execute("SELECT * FROM admin_users WHERE email=?", (email,)).fetchone()
         if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
@@ -45,9 +45,29 @@ def login():
             session["role"] = "admin"
             return redirect(url_for("admin.dashboard"))
 
+        user = db.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        if user and check_password_hash(user["password_hash"], password):
+            if user["role"] == "employer":
+                profile = db.execute("SELECT account_status FROM employer_profiles WHERE user_id=?", (user["id"],)).fetchone()
+                if profile and profile["account_status"] == "suspended":
+                    flash("This employer account is currently suspended. Please contact support.", "error")
+                    return render_template("login.html", login_context=login_context)
+            session.clear()
+            session["user_id"] = user["id"]
+            session["name"] = user["name"]
+            session["role"] = user["role"]
+            return redirect(url_for(login_target(user["role"])))
+
         flash("Invalid email or password.", "error")
-        return render_template("login.html")
-    return render_template("login.html")
+        return render_template("login.html", login_context=login_context)
+
+    return render_login()
+
+
+@auth_bp.get("/admin/login")
+def admin_login():
+    """Dedicated admin entry point; credentials are still verified by the shared secure login flow."""
+    return redirect(url_for("auth.login", role="admin"))
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -61,7 +81,8 @@ def register():
         role = form.get("role", "student")
         if not name or not email or len(password) < 6 or password != confirm_password or role not in {"student", "employer"}:
             flash("Please complete the form and make sure both passwords match.", "error")
-            return render_template("register.html")
+            selected_role = role if role in {"student", "employer"} else "student"
+            return render_template("register.html", selected_role=selected_role)
         db = get_db(); resume_path = None
         try:
             cur = db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (name, email, generate_password_hash(password), role))
@@ -70,7 +91,7 @@ def register():
                 resume = request.files.get("resume"); resume_filename = None
                 if resume and resume.filename:
                     if not allowed_resume(resume.filename):
-                        db.rollback(); flash("Resume must be a PDF, DOC or DOCX file.", "error"); return render_template("register.html")
+                        db.rollback(); flash("Resume must be a PDF, DOC or DOCX file.", "error"); return render_template("register.html", selected_role="student")
                     resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
                     upload_dir = Path(current_app.config["UPLOAD_FOLDER"]); upload_dir.mkdir(parents=True, exist_ok=True)
                     resume_path = upload_dir / resume_filename; resume.save(resume_path)
@@ -85,12 +106,12 @@ def register():
         except sqlite3.IntegrityError:
             db.rollback()
             if resume_path: resume_path.unlink(missing_ok=True)
-            flash("That email is already registered or the submitted data is invalid.", "error"); return render_template("register.html")
+            flash("That email is already registered or the submitted data is invalid.", "error"); return render_template("register.html", selected_role=role if role in {"student", "employer"} else "student")
         except OSError:
             db.rollback()
             if resume_path: resume_path.unlink(missing_ok=True)
             current_app.logger.exception("Resume upload failed during registration")
-            flash("The resume could not be saved. Please try again.", "error"); return render_template("register.html")
+            flash("The resume could not be saved. Please try again.", "error"); return render_template("register.html", selected_role="student")
         flash("Account created. Please sign in.", "success")
         return redirect(url_for("auth.login"))
     selected_role = request.args.get("role", "student")
