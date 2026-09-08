@@ -12,6 +12,7 @@
       <a class="active" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
       <a href="{{ url_for('employer.profile') }}">Organization Profile</a>
       <a href="{{ url_for('employer.new_vacancy') }}">Post Vacancy</a>
+      <a href="{{ url_for('employer.bulk_new_vacancies') }}">Bulk Publish</a>
       <a href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
       <a href="{{ url_for('employer.applications') }}">Applications</a>
     </nav>
@@ -35,7 +36,10 @@
         <h1>Manage your hiring.</h1>
         <p>Post openings, check applications and keep your vacancies up to date.</p>
       </div>
-      <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
+      <div class="workspace-head-actions">
+        <a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a>
+        <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
+      </div>
     </header>
 
     {% block employer_content %}{% endblock %}
