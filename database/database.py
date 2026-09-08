@@ -32,6 +32,73 @@ def migrate_student_profile(db):
             db.execute(f"ALTER TABLE student_profiles ADD COLUMN {column} {definition}")
 
 
+def migrate_role_and_moderation(db):
+    users_sql = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
+    if users_sql and "'admin'" not in users_sql[0]:
+        # SQLite cannot alter a CHECK constraint. Rebuild only the parent table,
+        # preserving all existing users and keeping foreign keys intact.
+        db.execute("PRAGMA foreign_keys = OFF")
+        db.execute("ALTER TABLE users RENAME TO users_legacy")
+        db.execute("""CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('student','employer','admin')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )""")
+        db.execute("INSERT INTO users(id,name,email,password_hash,role,created_at) SELECT id,name,email,password_hash,role,created_at FROM users_legacy")
+        db.execute("DROP TABLE users_legacy")
+        db.execute("PRAGMA foreign_keys = ON")
+
+    employer_columns = {row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()}
+    employer_additions = {
+        "account_status": "TEXT NOT NULL DEFAULT 'active'",
+        "verification_status": "TEXT NOT NULL DEFAULT 'pending'",
+        "verification_note": "TEXT",
+        "verified_at": "TEXT",
+    }
+    for column, definition in employer_additions.items():
+        if column not in employer_columns:
+            db.execute(f"ALTER TABLE employer_profiles ADD COLUMN {column} {definition}")
+
+    vacancy_columns = {row[1] for row in db.execute("PRAGMA table_info(vacancies)").fetchall()}
+    vacancy_additions = {
+        "moderation_status": "TEXT NOT NULL DEFAULT 'approved'",
+        "moderation_note": "TEXT",
+        "moderated_at": "TEXT",
+    }
+    for column, definition in vacancy_additions.items():
+        if column not in vacancy_columns:
+            db.execute(f"ALTER TABLE vacancies ADD COLUMN {column} {definition}")
+
+    db.execute("""CREATE TABLE IF NOT EXISTS admin_activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        target_type TEXT,
+        target_id INTEGER,
+        details TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(admin_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
+
+
+def ensure_env_admin(db):
+    email = os.environ.get("FRESHERFLOW_ADMIN_EMAIL", "").strip().lower()
+    password = os.environ.get("FRESHERFLOW_ADMIN_PASSWORD", "")
+    name = os.environ.get("FRESHERFLOW_ADMIN_NAME", "FresherFlow Admin").strip() or "FresherFlow Admin"
+    if not email or not password:
+        return
+    from werkzeug.security import generate_password_hash
+    existing = db.execute("SELECT id, role FROM users WHERE email=?", (email,)).fetchone()
+    if existing:
+        if existing["role"] != "admin":
+            db.execute("UPDATE users SET role='admin', name=? WHERE id=?", (name, existing["id"]))
+        return
+    db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (name, email, generate_password_hash(password), "admin"))
+
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,11 +107,12 @@ def init_db(database_path):
     schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
     db.executescript(schema)
     migrate_student_profile(db)
+    migrate_role_and_moderation(db)
+    ensure_env_admin(db)
 
     # Demo data is opt-in so production never receives a known account.
     if os.environ.get("FRESHERFLOW_DEMO") == "1":
         from werkzeug.security import generate_password_hash
-
         if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0] == 0:
             password = os.environ.get("DEMO_EMPLOYER_PASSWORD")
             if password:
@@ -52,16 +120,16 @@ def init_db(database_path):
                     "TechNova Recruiting", "demo.employer@fresherflow.local",
                     generate_password_hash(password), "employer"))
                 employer_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-                db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description) VALUES(?,?,?,?,?)", (
-                    employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development."))
+                db.execute("INSERT INTO employer_profiles(user_id,organization_name,organization_type,location,description,account_status,verification_status) VALUES(?,?,?,?,?,?,?)", (
+                    employer_id, "TechNova", "Technology", "Pune, Maharashtra", "Demo employer profile for local development.", "active", "verified"))
                 seed = [
                     ("Python Developer Intern", "Internship", "Build APIs and assist the backend team.", "Pune, Maharashtra", "₹15,000/mo", "Python, Flask, SQLite", "Students / freshers with Python basics", "2026-12-31"),
                     ("Frontend Developer", "Entry-level Job", "Create responsive user interfaces for client projects.", "Remote", "₹4.5 LPA", "HTML, CSS, JavaScript, Bootstrap", "Freshers with frontend project experience", "2026-12-31"),
                     ("Data Analyst Intern", "Internship", "Work with datasets and create business reports.", "Mumbai, Maharashtra", "₹18,000/mo", "Python, Excel, SQL", "Students pursuing data or computer-related courses", "2026-12-31"),
                     ("Junior Software Engineer", "Entry-level Job", "Join the engineering team and ship production features.", "Bengaluru, Karnataka", "₹6 LPA", "Python, Git, SQL", "0–1 years experience", "2026-12-31")
                 ]
-                db.executemany("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status)
-                                  VALUES(?,?,?,?,?,?,?,?,?,?)""", [(employer_id, *row, "active") for row in seed])
+                db.executemany("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status)
+                                  VALUES(?,?,?,?,?,?,?,?,?,?,?)""", [(employer_id, *row, "active", "approved") for row in seed])
 
     db.commit()
     db.close()
