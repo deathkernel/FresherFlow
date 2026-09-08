@@ -15,12 +15,12 @@ def allowed_resume(filename):
 
 
 def login_target(role):
-    return {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}[role]
+    return {"student": "student.dashboard", "employer": "employer.dashboard"}.get(role, "auth.login")
 
 
 def render_login():
     context = request.args.get("role", "student")
-    if context not in {"student", "employer", "admin"}:
+    if context not in {"student", "employer"}:
         context = "student"
     return render_template("login.html", login_context=context)
 
@@ -28,24 +28,14 @@ def render_login():
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     login_context = request.args.get("role", "student")
-    if login_context not in {"student", "employer", "admin"}:
+    if login_context not in {"student", "employer"}:
         login_context = "student"
 
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         db = get_db()
-
-        # Admin accounts are stored separately and are never created through public registration.
-        admin = db.execute("SELECT * FROM admin_users WHERE email=?", (email,)).fetchone()
-        if admin and check_password_hash(admin["password_hash"], password):
-            session.clear()
-            session["user_id"] = admin["id"]
-            session["name"] = admin["name"]
-            session["role"] = "admin"
-            return redirect(url_for("admin.dashboard"))
-
-        user = db.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        user = db.execute("SELECT * FROM users WHERE email=? AND role IN ('student','employer')", (email,)).fetchone()
         if user and check_password_hash(user["password_hash"], password):
             if user["role"] == "employer":
                 profile = db.execute("SELECT account_status FROM employer_profiles WHERE user_id=?", (user["id"],)).fetchone()
@@ -62,12 +52,6 @@ def login():
         return render_template("login.html", login_context=login_context)
 
     return render_login()
-
-
-@auth_bp.get("/admin/login")
-def admin_login():
-    """Dedicated admin entry point; credentials are still verified by the shared secure login flow."""
-    return redirect(url_for("auth.login", role="admin"))
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -100,8 +84,8 @@ def register():
                     VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (user_id, form.get("phone", "").strip(), form.get("education", "").strip(), form.get("college", "").strip(), form.get("graduation_year", "").strip(), form.get("skills", "").strip(), form.get("certifications", "").strip(), form.get("preferred_job_type", "Both"), form.get("preferred_location", "").strip(), resume_filename, 100 if resume_filename else 80))
             else:
                 organization = form.get("organization_name", "").strip() or name
-                db.execute("""INSERT INTO employer_profiles(user_id,organization_name,organization_type,website,location,description)
-                    VALUES(?,?,?,?,?,?)""", (user_id, organization, form.get("organization_type", "").strip(), form.get("website", "").strip(), form.get("location", "").strip(), form.get("description", "").strip()))
+                db.execute("""INSERT INTO employer_profiles(user_id,organization_name,organization_type,website,location,description,account_status,verification_status)
+                    VALUES(?,?,?,?,?,?,?,?)""", (user_id, organization, form.get("organization_type", "").strip(), form.get("website", "").strip(), form.get("location", "").strip(), form.get("description", "").strip(), "active", "verified"))
             db.commit()
         except sqlite3.IntegrityError:
             db.rollback()
