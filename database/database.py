@@ -33,10 +33,14 @@ def migrate_role_and_moderation(db):
     db.execute("""CREATE TABLE IF NOT EXISTS admin_activity(id INTEGER PRIMARY KEY AUTOINCREMENT,admin_id INTEGER NOT NULL,action TEXT NOT NULL,target_type TEXT,target_id INTEGER,details TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(admin_id) REFERENCES admin_users(id) ON DELETE CASCADE)""")
 
 def ensure_env_admin(db):
-    email=os.environ.get("FRESHERFLOW_ADMIN_EMAIL","").strip().lower();password=os.environ.get("FRESHERFLOW_ADMIN_PASSWORD","");name=os.environ.get("FRESHERFLOW_ADMIN_NAME","FresherFlow Admin").strip() or "FresherFlow Admin"
+    email=os.environ.get("FRESHERFLOW_ADMIN_EMAIL","admin@123").strip().lower()
+    password=os.environ.get("FRESHERFLOW_ADMIN_PASSWORD","admin@123")
+    name=os.environ.get("FRESHERFLOW_ADMIN_NAME","FresherFlow Admin").strip() or "FresherFlow Admin"
     if not email or not password:return
     from werkzeug.security import generate_password_hash
-    if not db.execute("SELECT id FROM admin_users WHERE email=?",(email,)).fetchone():db.execute("INSERT INTO admin_users(name,email,password_hash) VALUES(?,?,?)",(name,email,generate_password_hash(password)))
+    existing=db.execute("SELECT id FROM admin_users WHERE email=?",(email,)).fetchone()
+    if not existing:
+        db.execute("INSERT INTO admin_users(name,email,password_hash) VALUES(?,?,?)",(name,email,generate_password_hash(password)))
 
 def init_db(database_path):
     path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_role_and_moderation(db);ensure_env_admin(db)
