@@ -7,9 +7,9 @@
   <main class="auth-simple-card reveal">
     <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
     <div class="auth-heading">
-      <div class="eyebrow">{% if login_context == 'admin' %}ADMIN ACCESS{% elif login_context == 'employer' %}EMPLOYER ACCESS{% else %}WELCOME BACK{% endif %}</div>
-      <h1>{% if login_context == 'admin' %}Admin sign in{% elif login_context == 'employer' %}Employer sign in{% else %}Sign in{% endif %}</h1>
-      <p>{% if login_context == 'admin' %}Authorized platform administrators only.{% elif login_context == 'employer' %}Continue to your recruiter workspace.{% else %}Continue to your FresherFlow workspace.{% endif %}</p>
+      <div class="eyebrow">{% if login_context == 'employer' %}EMPLOYER ACCESS{% else %}WELCOME BACK{% endif %}</div>
+      <h1>{% if login_context == 'employer' %}Employer sign in{% else %}Sign in{% endif %}</h1>
+      <p>{% if login_context == 'employer' %}Continue to your recruiter workspace.{% else %}Continue to your FresherFlow workspace.{% endif %}</p>
     </div>
     <form method="post" action="{{ url_for('auth.login', role=login_context) }}" class="auth-compact-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -19,13 +19,12 @@
       <input id="password" class="form-control" type="password" name="password" autocomplete="current-password" required>
       <button class="btn btn-primary w-100" type="submit">Sign in</button>
     </form>
-    {% if login_context != 'admin' %}
+    {% if login_context != 'employer' %}
     <div class="auth-shortcuts">
       <a href="{{ url_for('auth.login', role='employer') }}"><span>Employer</span><small>Recruiter sign in</small></a>
-      <a href="{{ url_for('auth.admin_login') }}"><span>Admin</span><small>Platform sign in</small></a>
     </div>
     {% endif %}
-    <p class="auth-foot">{% if login_context == 'admin' %}<a href="{{ url_for('auth.login') }}">← Back to sign in</a>{% else %}New here? <a href="{{ url_for('auth.register') }}">Create an account</a>{% endif %}</p>
+    <p class="auth-foot">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
   </main>
   <div class="auth-page-note">FresherFlow · Secure workspace access</div>
 </div>
