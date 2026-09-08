@@ -16,21 +16,22 @@ def back(endpoint):
 def dashboard():
     db=get_db()
     stats={
-        "students":db.execute("SELECT COUNT(*) c FROM users WHERE role='student'").fetchone()["c"],
         "employers":db.execute("SELECT COUNT(*) c FROM users WHERE role='employer'").fetchone()["c"],
         "pending_employers":db.execute("SELECT COUNT(*) c FROM employer_profiles WHERE verification_status='pending'").fetchone()["c"],
+        "verified_employers":db.execute("SELECT COUNT(*) c FROM employer_profiles WHERE verification_status='verified'").fetchone()["c"],
+        "suspended_employers":db.execute("SELECT COUNT(*) c FROM employer_profiles WHERE account_status='suspended'").fetchone()["c"],
         "active_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE status='active' AND moderation_status='approved'").fetchone()["c"],
         "pending_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='pending'").fetchone()["c"],
-        "applications":db.execute("SELECT COUNT(*) c FROM applications").fetchone()["c"]}
-    employers=db.execute("""SELECT u.id,u.name,u.email,u.created_at,ep.organization_name,ep.account_status,ep.verification_status FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer' ORDER BY u.id DESC LIMIT 8""").fetchall()
-    jobs=db.execute("""SELECT v.id,v.title,v.created_at,v.status,v.moderation_status,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id ORDER BY v.id DESC LIMIT 8""").fetchall()
+        "rejected_jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='rejected'").fetchone()["c"]}
+    employers=db.execute("SELECT u.id,u.name,u.email,u.created_at,ep.organization_name,ep.account_status,ep.verification_status FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer' ORDER BY u.id DESC LIMIT 8").fetchall()
+    jobs=db.execute("SELECT v.id,v.title,v.created_at,v.status,v.moderation_status,v.vacancy_type,v.employer_id,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id ORDER BY v.id DESC LIMIT 8").fetchall()
     return render_template("admin/dashboard.html",stats=stats,recent_employers=employers,recent_jobs=jobs)
 
 @admin_bp.get("/employers")
 @role_required("admin")
 def employers():
     db=get_db(); q=request.args.get("q","").strip(); status=request.args.get("status",""); verification=request.args.get("verification","")
-    sql="""SELECT u.id,u.name,u.email,u.created_at,ep.organization_name,ep.organization_type,ep.location,ep.account_status,ep.verification_status,ep.verified_at FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer'"""; args=[]
+    sql="SELECT u.id,u.name,u.email,u.created_at,ep.organization_name,ep.organization_type,ep.location,ep.account_status,ep.verification_status,ep.verified_at FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.role='employer'"; args=[]
     if q: sql+=" AND (u.name LIKE ? OR u.email LIKE ? OR ep.organization_name LIKE ? OR ep.location LIKE ?)"; args += [f"%{q}%"]*4
     if status in {"active","suspended"}: sql+=" AND ep.account_status=?"; args.append(status)
     if verification in {"pending","verified","rejected"}: sql+=" AND ep.verification_status=?"; args.append(verification)
@@ -40,12 +41,15 @@ def employers():
 @admin_bp.get("/employers/<int:user_id>")
 @role_required("admin")
 def employer_detail(user_id):
-    db=get_db(); employer=db.execute("""SELECT u.*,ep.organization_name,ep.organization_type,ep.website,ep.location,ep.description,ep.account_status,ep.verification_status,ep.verification_note,ep.verified_at FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.id=? AND u.role='employer'""",(user_id,)).fetchone()
+    db=get_db(); employer=db.execute("SELECT u.*,ep.organization_name,ep.organization_type,ep.website,ep.location,ep.description,ep.account_status,ep.verification_status,ep.verification_note,ep.verified_at FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.id=? AND u.role='employer'",(user_id,)).fetchone()
     if not employer:return render_template("404.html"),404
-    jobs=db.execute("SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",(user_id,)).fetchall()
+    opportunity_type=request.args.get("type","").lower()
+    jobs_sql="SELECT * FROM vacancies WHERE employer_id=?"; job_args=[user_id]
+    if opportunity_type in {"job","internship"}: jobs_sql+=" AND lower(vacancy_type)=?"; job_args.append(opportunity_type)
+    jobs=db.execute(jobs_sql+" ORDER BY id DESC",job_args).fetchall()
     activity=db.execute("SELECT * FROM admin_activity WHERE target_type='employer' AND target_id=? ORDER BY id DESC LIMIT 10",(user_id,)).fetchall()
-    counts={"jobs":len(jobs),"applications":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",(user_id,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'",(user_id,)).fetchone()["c"]}
-    return render_template("admin/employer_detail.html",employer=employer,jobs=jobs,activity=activity,counts=counts)
+    counts={"jobs":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=?",(user_id,)).fetchone()["c"],"internships":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND lower(vacancy_type)='internship'",(user_id,)).fetchone()["c"],"active":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND status='active' AND moderation_status='approved'",(user_id,)).fetchone()["c"],"pending":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND moderation_status='pending'",(user_id,)).fetchone()["c"],"applications":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",(user_id,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'",(user_id,)).fetchone()["c"]}
+    return render_template("admin/employer_detail.html",employer=employer,jobs=jobs,activity=activity,counts=counts,opportunity_type=opportunity_type)
 
 @admin_bp.post("/employers/<int:user_id>/verification")
 @role_required("admin")
@@ -69,7 +73,7 @@ def employer_status(user_id):
 @role_required("admin")
 def jobs():
     db=get_db(); q=request.args.get("q","").strip(); moderation=request.args.get("moderation","")
-    sql="""SELECT v.*,u.name employer_name,u.email employer_email,ep.organization_name,ep.verification_status,ep.account_status FROM vacancies v JOIN users u ON u.id=v.employer_id JOIN employer_profiles ep ON ep.user_id=u.id WHERE 1=1"""; args=[]
+    sql="SELECT v.*,u.name employer_name,u.email employer_email,ep.organization_name,ep.verification_status,ep.account_status FROM vacancies v JOIN users u ON u.id=v.employer_id JOIN employer_profiles ep ON ep.user_id=u.id WHERE 1=1"; args=[]
     if q:sql+=" AND (v.title LIKE ? OR ep.organization_name LIKE ? OR u.email LIKE ?)";args += [f"%{q}%"]*3
     if moderation in {"pending","approved","rejected"}:sql+=" AND v.moderation_status=?";args.append(moderation)
     rows=db.execute(sql+" ORDER BY v.id DESC",args).fetchall();return render_template("admin/jobs.html",jobs=rows,q=q,moderation=moderation)
@@ -82,8 +86,8 @@ def job_moderation(vacancy_id):
     db=get_db();job=db.execute("SELECT id FROM vacancies WHERE id=?",(vacancy_id,)).fetchone()
     if not job:return render_template("404.html"),404
     now=datetime.now(timezone.utc).isoformat()
-    if action=="approve":db.execute("UPDATE vacancies SET moderation_status='approved',moderation_note=?,moderated_at=? WHERE id=?",(note,now,vacancy_id));message="Job approved."
-    else:db.execute("UPDATE vacancies SET moderation_status='rejected',moderation_note=?,moderated_at=?,status='closed' WHERE id=?",(note or ("Removed by admin" if action=="remove" else "Rejected by admin"),now,vacancy_id));message="Job removed from the platform." if action=="remove" else "Job rejected."
+    if action=="approve":db.execute("UPDATE vacancies SET moderation_status='approved',moderation_note=?,moderated_at=?,status='active' WHERE id=?",(note,now,vacancy_id));message="Opportunity approved."
+    else:db.execute("UPDATE vacancies SET moderation_status='rejected',moderation_note=?,moderated_at=?,status='closed' WHERE id=?",(note or ("Removed by admin" if action=="remove" else "Rejected by admin"),now,vacancy_id));message="Opportunity removed from the platform." if action=="remove" else "Opportunity rejected."
     log_action(db,f"Job {action}d","job",vacancy_id,note);db.commit();flash(message,"success");return back("admin.jobs")
 
 @admin_bp.get("/activity")
