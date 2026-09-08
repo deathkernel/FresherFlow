@@ -43,11 +43,10 @@ def new_vacancy():
         if error:flash(error,"error");return render_template("employer/post-vacancy.html")
         status="active" if request.form.get("publish")=="1" else "draft";db=get_db()
         try:
-            moderation="pending" if status=="active" else "pending"
-            db.execute("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",(session["user_id"],data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],status,moderation));db.commit()
+            db.execute("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",(session["user_id"],data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],status,"approved"));db.commit()
         except sqlite3.IntegrityError:
             db.rollback();flash("The vacancy could not be saved. Check the submitted values.","error");return render_template("employer/post-vacancy.html")
-        flash("Vacancy submitted for admin review." if status=="active" else "Vacancy saved as draft.","success");return redirect(url_for("employer.vacancies"))
+        flash("Vacancy published." if status=="active" else "Vacancy saved as draft.","success");return redirect(url_for("employer.vacancies"))
     return render_template("employer/post-vacancy.html")
 
 @employer_bp.get("/vacancies")
@@ -63,9 +62,9 @@ def edit_vacancy(vacancy_id):
     if request.method=="POST":
         data,error=vacancy_form(request.form)
         if error:flash(error,"error");return render_template("employer/edit-vacancy.html",job=job)
-        try:db.execute("""UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,moderation_status='pending' WHERE id=? AND employer_id=?""",(data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],vacancy_id,session["user_id"]));db.commit()
+        try:db.execute("""UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,moderation_status='approved' WHERE id=? AND employer_id=?""",(data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],vacancy_id,session["user_id"]));db.commit()
         except sqlite3.IntegrityError:db.rollback();flash("The vacancy could not be updated.","error");return render_template("employer/edit-vacancy.html",job=job)
-        flash("Vacancy updated and sent for review.","success");return redirect(url_for("employer.vacancies"))
+        flash("Vacancy updated.","success");return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html",job=job)
 
 @employer_bp.post("/vacancies/<int:vacancy_id>/status")
