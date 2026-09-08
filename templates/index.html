@@ -1,107 +1,114 @@
 {% extends 'base.html' %}
 
-{% block title %}FresherFlow — Career Launchpad{% endblock %}
+{% block title %}FresherFlow — Find your next move{% endblock %}
 
 {% block body %}
-<nav class="topbar">
-  <div class="brand">
+<nav class="topbar landing-nav">
+  <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">
     Fresher<span>Flow</span>
-  </div>
-
-  <div>
-    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Login</a>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Create account</a>
+  </a>
+  <div class="nav-actions">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Get started</a>
   </div>
 </nav>
 
 <main class="landing">
   <section class="hero-wrap">
     <div class="hero-copy reveal">
-      <div class="eyebrow">INTERNSHIPS • FRESHER JOBS • ONE PLACE</div>
-
-      <h1>
-        Turn your potential into your <span>next opportunity.</span>
-      </h1>
-
+      <div class="eyebrow">EARLY CAREERS, WITHOUT THE NOISE</div>
+      <h1>Start your career with <span>momentum.</span></h1>
       <p>
-        FresherFlow connects students with internships and entry-level jobs,
-        while giving recruiters a clean workspace to publish vacancies and
-        manage candidates.
+        FresherFlow gives students a focused path from profile to opportunity,
+        while employers get a dedicated hiring workspace built for fresh talent.
       </p>
-
       <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Get started</a>
-        <a class="text-link" href="{{ url_for('auth.login') }}">Already have an account →</a>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">I'm a student</a>
+        <a class="btn btn-outline btn-lg" href="{{ url_for('auth.register') }}?role=employer">I'm hiring</a>
+      </div>
+      <div class="hero-trust">
+        <span><i></i> Student and employer experiences stay separate</span>
+        <span><i></i> Built around internships and entry-level roles</span>
       </div>
     </div>
 
     <div class="hero-visual reveal">
       <div class="orb orb-one"></div>
       <div class="orb orb-two"></div>
-
-      <div class="preview-card float">
-        <div class="mini-head">
-          <span>Career dashboard</span>
-          <span class="live-dot">Live</span>
+      <div class="product-window">
+        <div class="window-bar">
+          <span class="window-title">FresherFlow / Student</span>
+          <span class="window-dots">•••</span>
         </div>
-
-        <div class="metric-row">
-          <div>
-            <strong>12</strong>
-            <small>Applications</small>
+        <div class="window-body">
+          <aside class="mini-sidebar">
+            <div class="mini-logo">F</div>
+            <span class="mini-active"></span>
+            <span></span><span></span><span></span>
+          </aside>
+          <div class="mini-content">
+            <div class="mini-row mini-row-top">
+              <div>
+                <small>GOOD MORNING</small>
+                <b>Ready for your next move?</b>
+              </div>
+              <span class="mini-avatar">S</span>
+            </div>
+            <div class="mini-stats">
+              <div><small>Applications</small><strong>12</strong></div>
+              <div><small>Shortlisted</small><strong>4</strong></div>
+              <div><small>Profile</small><strong>82%</strong></div>
+            </div>
+            <div class="mini-panel">
+              <div class="mini-panel-head"><b>Recommended for you</b><span>View all</span></div>
+              <div class="mini-job">
+                <span class="company-mark">TN</span>
+                <div><b>Python Developer Intern</b><small>TechNova • Pune • 0–1 yrs</small></div>
+                <span class="pill">82% match</span>
+              </div>
+              <div class="mini-job">
+                <span class="company-mark violet">AC</span>
+                <div><b>Frontend Engineer — Fresher</b><small>Arcbyte • Remote • 0–1 yrs</small></div>
+                <span class="pill neutral">New</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <strong>4</strong>
-            <small>Shortlisted</small>
-          </div>
-          <div>
-            <strong>1</strong>
-            <small>Selected</small>
-          </div>
-        </div>
-
-        <div class="progress-label">
-          <span>Profile strength</span>
-          <b>82%</b>
-        </div>
-        <div class="progress">
-          <i style="width:82%"></i>
-        </div>
-
-        <div class="job-mini">
-          <span class="company-mark">TN</span>
-          <div>
-            <b>Python Developer Intern</b>
-            <small>TechNova • Pune</small>
-          </div>
-          <span class="pill">Applied</span>
         </div>
       </div>
     </div>
   </section>
 
   <section class="role-grid">
-    <div class="role-card reveal">
-      <div class="role-number">01</div>
-      <h3>Student / Fresher</h3>
-      <p>
-        Build your profile, discover roles, apply quickly and track every application.
-      </p>
-      <a href="{{ url_for('auth.register') }}?role=student">Enter student panel →</a>
-    </div>
+    <article class="role-card reveal">
+      <div class="role-kicker">FOR STUDENTS</div>
+      <h2>Everything you need to land your first role.</h2>
+      <p>Discover jobs, strengthen your profile, manage applications and see your progress in one calm workspace.</p>
+      <a href="{{ url_for('auth.register') }}?role=student">Explore the student experience →</a>
+    </article>
 
-    <div class="role-card dark reveal">
-      <div class="role-number">02</div>
-      <h3>Employer / Recruiter</h3>
-      <p>
-        Publish vacancies, review applicants and move candidates from applied to selected.
-      </p>
-      <a href="{{ url_for('auth.register') }}?role=employer">Enter recruiter panel →</a>
+    <article class="role-card dark reveal">
+      <div class="role-kicker">FOR EMPLOYERS</div>
+      <h2>A cleaner way to hire fresh talent.</h2>
+      <p>Publish opportunities, review applicants and move strong candidates through a dedicated hiring workflow.</p>
+      <a href="{{ url_for('auth.register') }}?role=employer">Explore the employer experience →</a>
+    </article>
+  </section>
+
+  <section class="principles">
+    <div>
+      <span class="section-label">WHY FRESHERFLOW</span>
+      <h2>One brand. Two focused products.</h2>
+    </div>
+    <div class="principle-grid">
+      <div><strong>01</strong><b>Clear by default</b><p>Every screen is designed around one audience and one next action.</p></div>
+      <div><strong>02</strong><b>Less friction</b><p>Profiles, applications and hiring tasks stay organized from start to finish.</p></div>
+      <div><strong>03</strong><b>Made for first jobs</b><p>The product is centered on internships and entry-level hiring—not generic enterprise recruiting.</p></div>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  FresherFlow <span>Internship & Job Management System</span>
+  <span>FresherFlow</span>
+  <span>Career launchpad for students and a focused hiring workspace for employers.</span>
 </footer>
 {% endblock %}
