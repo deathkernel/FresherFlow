@@ -4,7 +4,6 @@ from flask import Flask, redirect, render_template, request, session, url_for
 
 from config import Config
 from database.database import close_db, init_db
-from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.student_routes import student_bp
@@ -27,7 +26,6 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
-    app.register_blueprint(admin_bp)
 
     @app.get("/")
     def index():
@@ -38,7 +36,7 @@ def create_app():
         if not session.get("user_id"):
             return redirect(url_for("auth.login"))
         role = session.get("role")
-        targets = {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}
+        targets = {"student": "student.dashboard", "employer": "employer.dashboard"}
         return redirect(url_for(targets.get(role, "auth.login")))
 
     return app
