@@ -18,32 +18,21 @@ def migrate_student_profile(db):
     for column,definition in additions.items():
         if column not in existing:db.execute(f"ALTER TABLE student_profiles ADD COLUMN {column} {definition}")
 
-def migrate_role_and_moderation(db):
-    db.execute("""CREATE TABLE IF NOT EXISTS admin_users(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
-    employer_columns={row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()};added_verification=False
-    additions={"account_status":"TEXT NOT NULL DEFAULT 'active'","verification_status":"TEXT NOT NULL DEFAULT 'pending'","verification_note":"TEXT","verified_at":"TEXT"}
+def migrate_employer_data(db):
+    employer_columns={row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()}
+    additions={"account_status":"TEXT NOT NULL DEFAULT 'active'","verification_status":"TEXT NOT NULL DEFAULT 'verified'","verification_note":"TEXT","verified_at":"TEXT"}
     for column,definition in additions.items():
-        if column not in employer_columns:
-            db.execute(f"ALTER TABLE employer_profiles ADD COLUMN {column} {definition}")
-            if column=="verification_status":added_verification=True
-    if added_verification:db.execute("UPDATE employer_profiles SET verification_status='verified' WHERE verification_status='pending'")
-    vacancy_columns={row[1] for row in db.execute("PRAGMA table_info(vacancies)").fetchall()};additions={"moderation_status":"TEXT NOT NULL DEFAULT 'approved'","moderation_note":"TEXT","moderated_at":"TEXT"}
+        if column not in employer_columns:db.execute(f"ALTER TABLE employer_profiles ADD COLUMN {column} {definition}")
+    db.execute("UPDATE employer_profiles SET account_status='active' WHERE account_status IS NULL")
+    db.execute("UPDATE employer_profiles SET verification_status='verified' WHERE verification_status IS NULL OR verification_status='pending'")
+    vacancy_columns={row[1] for row in db.execute("PRAGMA table_info(vacancies)").fetchall()}
+    additions={"moderation_status":"TEXT NOT NULL DEFAULT 'approved'","moderation_note":"TEXT","moderated_at":"TEXT"}
     for column,definition in additions.items():
         if column not in vacancy_columns:db.execute(f"ALTER TABLE vacancies ADD COLUMN {column} {definition}")
-    db.execute("""CREATE TABLE IF NOT EXISTS admin_activity(id INTEGER PRIMARY KEY AUTOINCREMENT,admin_id INTEGER NOT NULL,action TEXT NOT NULL,target_type TEXT,target_id INTEGER,details TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(admin_id) REFERENCES admin_users(id) ON DELETE CASCADE)""")
-
-def ensure_env_admin(db):
-    email=os.environ.get("FRESHERFLOW_ADMIN_EMAIL","admin@123").strip().lower()
-    password=os.environ.get("FRESHERFLOW_ADMIN_PASSWORD","admin@123")
-    name=os.environ.get("FRESHERFLOW_ADMIN_NAME","FresherFlow Admin").strip() or "FresherFlow Admin"
-    if not email or not password:return
-    from werkzeug.security import generate_password_hash
-    existing=db.execute("SELECT id FROM admin_users WHERE email=?",(email,)).fetchone()
-    if not existing:
-        db.execute("INSERT INTO admin_users(name,email,password_hash) VALUES(?,?,?)",(name,email,generate_password_hash(password)))
+    db.execute("UPDATE vacancies SET moderation_status='approved' WHERE moderation_status IS NULL OR moderation_status='pending'")
 
 def init_db(database_path):
-    path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_role_and_moderation(db);ensure_env_admin(db)
+    path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_employer_data(db)
     if os.environ.get("FRESHERFLOW_DEMO")=="1":
         from werkzeug.security import generate_password_hash
         if db.execute("SELECT COUNT(*) FROM users WHERE role='employer'").fetchone()[0]==0:
