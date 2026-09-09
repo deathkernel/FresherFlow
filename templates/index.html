@@ -2,15 +2,14 @@
 
 {% block title %}FresherFlow — Find your next move{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/career-viz.css') }}">
+{% endblock %}
+
 {% block body %}
 <nav class="topbar landing-nav">
-  <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">
-    Fresher<span>Flow</span>
-  </a>
-  <div class="nav-actions">
-    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Get started</a>
-  </div>
+  <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">Fresher<span>Flow</span></a>
+  <div class="nav-actions"><a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a><a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Get started</a></div>
 </nav>
 
 <main class="landing">
@@ -18,97 +17,61 @@
     <div class="hero-copy reveal">
       <div class="eyebrow">EARLY CAREERS, WITHOUT THE NOISE</div>
       <h1>Start your career with <span>momentum.</span></h1>
-      <p>
-        FresherFlow gives students a focused path from profile to opportunity,
-        while employers get a dedicated hiring workspace built for fresh talent.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">I'm a student</a>
-        <a class="btn btn-outline btn-lg" href="{{ url_for('auth.register') }}?role=employer">I'm hiring</a>
-      </div>
-      <div class="hero-trust">
-        <span><i></i> Student and employer experiences stay separate</span>
-        <span><i></i> Built around internships and entry-level roles</span>
-      </div>
+      <p>FresherFlow gives students a focused path from profile to opportunity, while employers get a dedicated hiring workspace built for fresh talent.</p>
+      <div class="hero-actions"><a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">I'm a student</a><a class="btn btn-outline btn-lg" href="{{ url_for('auth.register') }}?role=employer">I'm hiring</a></div>
+      <div class="hero-trust"><span><i></i> Student and employer experiences stay separate</span><span><i></i> Built around internships and entry-level roles</span></div>
     </div>
 
     <div class="hero-visual reveal">
-      <div class="orb orb-one"></div>
-      <div class="orb orb-two"></div>
+      <div class="orb orb-one"></div><div class="orb orb-two"></div>
       <div class="product-window">
-        <div class="window-bar">
-          <span class="window-title">FresherFlow / Student</span>
-          <span class="window-dots">•••</span>
-        </div>
-        <div class="window-body">
-          <aside class="mini-sidebar">
-            <div class="mini-logo">F</div>
-            <span class="mini-active"></span>
-            <span></span><span></span><span></span>
-          </aside>
-          <div class="mini-content">
-            <div class="mini-row mini-row-top">
-              <div>
-                <small>GOOD MORNING</small>
-                <b>Ready for your next move?</b>
-              </div>
-              <span class="mini-avatar">S</span>
-            </div>
-            <div class="mini-stats">
-              <div><small>Applications</small><strong>12</strong></div>
-              <div><small>Shortlisted</small><strong>4</strong></div>
-              <div><small>Profile</small><strong>82%</strong></div>
-            </div>
-            <div class="mini-panel">
-              <div class="mini-panel-head"><b>Recommended for you</b><span>View all</span></div>
-              <div class="mini-job">
-                <span class="company-mark">TN</span>
-                <div><b>Python Developer Intern</b><small>TechNova • Pune • 0–1 yrs</small></div>
-                <span class="pill">82% match</span>
-              </div>
-              <div class="mini-job">
-                <span class="company-mark violet">AC</span>
-                <div><b>Frontend Engineer — Fresher</b><small>Arcbyte • Remote • 0–1 yrs</small></div>
-                <span class="pill neutral">New</span>
-              </div>
-            </div>
+        <div class="window-bar"><span class="window-title">FresherFlow / Student</span><span class="window-dots">•••</span></div>
+        <div class="window-body"><aside class="mini-sidebar"><div class="mini-logo">F</div><span class="mini-active"></span><span></span><span></span><span></span></aside>
+          <div class="mini-content"><div class="mini-row mini-row-top"><div><small>GOOD MORNING</small><b>Ready for your next move?</b></div><span class="mini-avatar">S</span></div>
+            <div class="mini-stats"><div><small>Applications</small><strong>12</strong></div><div><small>Shortlisted</small><strong>4</strong></div><div><small>Profile</small><strong>82%</strong></div></div>
+            <div class="mini-panel"><div class="mini-panel-head"><b>Recommended for you</b><span>View all</span></div><div class="mini-job"><span class="company-mark">TN</span><div><b>Python Developer Intern</b><small>TechNova • Pune • 0–1 yrs</small></div><span class="pill">82% match</span></div><div class="mini-job"><span class="company-mark violet">AC</span><div><b>Frontend Engineer — Fresher</b><small>Arcbyte • Remote • 0–1 yrs</small></div><span class="pill neutral">New</span></div></div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
+  <section class="career-viz-section">
+    <div class="career-viz-head reveal">
+      <div><span class="section-label">CAREER INTELLIGENCE</span><h2>See the path between your skills and your next opportunity.</h2></div>
+      <p>FresherFlow turns a profile into a visual readiness map: strengths, gaps, connected skills and the application funnel in one glance.</p>
+    </div>
+
+    <div class="career-viz-shell reveal">
+      <div class="viz-card career-map">
+        <div class="viz-toolbar"><span id="viz-focus">FOCUS: PYTHON · 88%</span><div class="viz-filters"><button class="viz-filter active" data-mode="all">All skills</button><button class="viz-filter" data-mode="strength">Strengths</button><button class="viz-filter" data-mode="gap">Skill gaps</button></div></div>
+        <svg id="career-map-svg" class="career-svg" viewBox="0 0 700 480" role="img" aria-labelledby="career-viz-title career-viz-desc">
+          <title id="career-viz-title">Career readiness skill network</title><desc id="career-viz-desc">Six connected skills surround an 82 percent career readiness score. Select a skill to highlight its connections.</desc>
+          <circle class="orbit" cx="350" cy="240" r="164"></circle><circle class="orbit" cx="350" cy="240" r="112"></circle>
+          <g id="skill-links"></g>
+          <g transform="translate(350 240)"><circle class="core-ring" r="70"></circle><text class="core-score" y="10">82%</text><text class="core-label" y="29">READYNESS</text></g>
+          <g id="skill-nodes"></g>
+        </svg>
+      </div>
+
+      <aside class="viz-side">
+        <div class="viz-card viz-side-card"><h3>Profile readiness</h3><div class="readiness-row"><strong>82%</strong><span>+9 pts this month</span></div><div class="meter"><i></i></div><p class="viz-note">A composite view of skills, projects, profile completeness and application momentum.</p></div>
+        <div class="viz-card viz-side-card"><h3>Highest-impact gaps</h3><div class="gap-list"><div class="gap-item"><b>Cloud fundamentals</b><span>68%</span><div class="mini-meter"><i style="width:68%"></i></div></div><div class="gap-item"><b>SQL depth</b><span>76%</span><div class="mini-meter"><i style="width:76%"></i></div></div><div class="gap-item"><b>Project evidence</b><span>73%</span><div class="mini-meter"><i style="width:73%"></i></div></div></div></div>
+        <div class="viz-card viz-side-card"><h3>Application momentum</h3><div class="pipeline"><div class="pipe-row"><span>Applied</span><div class="pipe-bar"><i></i></div><strong>12</strong></div><div class="pipe-row"><span>Screened</span><div class="pipe-bar"><i></i></div><strong>9</strong></div><div class="pipe-row"><span>Interview</span><div class="pipe-bar"><i></i></div><strong>5</strong></div><div class="pipe-row"><span>Offer</span><div class="pipe-bar"><i></i></div><strong>2</strong></div></div></div>
+      </aside>
+    </div>
+    <p class="viz-note reveal">Demo visualization using illustrative profile data. Connect these values to FresherFlow's real student/application data when the analytics layer is available.</p>
+  </section>
+
   <section class="role-grid">
-    <article class="role-card reveal">
-      <div class="role-kicker">FOR STUDENTS</div>
-      <h2>Everything you need to land your first role.</h2>
-      <p>Discover jobs, strengthen your profile, manage applications and see your progress in one calm workspace.</p>
-      <a href="{{ url_for('auth.register') }}?role=student">Explore the student experience →</a>
-    </article>
-
-    <article class="role-card dark reveal">
-      <div class="role-kicker">FOR EMPLOYERS</div>
-      <h2>A cleaner way to hire fresh talent.</h2>
-      <p>Publish opportunities, review applicants and move strong candidates through a dedicated hiring workflow.</p>
-      <a href="{{ url_for('auth.register') }}?role=employer">Explore the employer experience →</a>
-    </article>
+    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>Everything you need to land your first role.</h2><p>Discover jobs, strengthen your profile, manage applications and see your progress in one calm workspace.</p><a href="{{ url_for('auth.register') }}?role=student">Explore the student experience →</a></article>
+    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>A cleaner way to hire fresh talent.</h2><p>Publish opportunities, review applicants and move strong candidates through a dedicated hiring workflow.</p><a href="{{ url_for('auth.register') }}?role=employer">Explore the employer experience →</a></article>
   </section>
 
-  <section class="principles">
-    <div>
-      <span class="section-label">WHY FRESHERFLOW</span>
-      <h2>One brand. Two focused products.</h2>
-    </div>
-    <div class="principle-grid">
-      <div><strong>01</strong><b>Clear by default</b><p>Every screen is designed around one audience and one next action.</p></div>
-      <div><strong>02</strong><b>Less friction</b><p>Profiles, applications and hiring tasks stay organized from start to finish.</p></div>
-      <div><strong>03</strong><b>Made for first jobs</b><p>The product is centered on internships and entry-level hiring—not generic enterprise recruiting.</p></div>
-    </div>
-  </section>
+  <section class="principles"><div><span class="section-label">WHY FRESHERFLOW</span><h2>One brand. Two focused products.</h2></div><div class="principle-grid"><div><strong>01</strong><b>Clear by default</b><p>Every screen is designed around one audience and one next action.</p></div><div><strong>02</strong><b>Less friction</b><p>Profiles, applications and hiring tasks stay organized from start to finish.</p></div><div><strong>03</strong><b>Made for first jobs</b><p>The product is centered on internships and entry-level hiring—not generic enterprise recruiting.</p></div></div></section>
 </main>
 
-<footer class="footer">
-  <span>FresherFlow</span>
-  <span>Career launchpad for students and a focused hiring workspace for employers.</span>
-</footer>
+<footer class="footer"><span>FresherFlow</span><span>Career launchpad for students and a focused hiring workspace for employers.</span></footer>
 {% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/career-viz.js') }}"></script>{% endblock %}
