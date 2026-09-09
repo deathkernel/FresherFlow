@@ -30,9 +30,7 @@ def migrate_employer_data(db):
 
 def init_db(database_path):
     path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_employer_data(db)
-    if os.environ.get("FRESHERFLOW_DEMO")=="1":
-        password=os.environ.get("DEMO_EMPLOYER_PASSWORD")
-        if password:
-            from .demo_seed import seed_demo_data
-            seed_demo_data(db,password)
+    from .demo_seed import seed_demo_data
+    password=os.environ.get("DEMO_EMPLOYER_PASSWORD") or "FresherFlowDemo@2026"
+    seed_demo_data(db,password)
     db.commit();db.close()
