@@ -31,6 +31,18 @@ def create_app():
     def index():
         return render_template("index.html")
 
+    @app.get("/student-panel")
+    def student_panel():
+        if session.get("user_id") and session.get("role") == "student":
+            return redirect(url_for("student.dashboard"))
+        return redirect(url_for("auth.login", role="student"))
+
+    @app.get("/employer-panel")
+    def employer_panel():
+        if session.get("user_id") and session.get("role") == "employer":
+            return redirect(url_for("employer.dashboard"))
+        return redirect(url_for("auth.login", role="employer"))
+
     @app.get("/dashboard")
     def dashboard_redirect():
         if not session.get("user_id"):
@@ -45,4 +57,11 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host=os.environ.get("HOST", "0.0.0.0"), port=int(os.environ.get("PORT", 5000)), debug=os.environ.get("FLASK_DEBUG", "0") == "1")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    print("\nFresherFlow is running:")
+    print(f"  Student Panel : http://127.0.0.1:{port}/student-panel")
+    print(f"  Employer Panel: http://127.0.0.1:{port}/employer-panel")
+    print("\nBoth panels use the same FresherFlow backend/database, while role-based access keeps their experiences separate.\n")
+    app.run(host=host, port=port, debug=debug)
