@@ -11,15 +11,14 @@
     {name:'Projects', score:73, x:52, y:88}
   ];
   const links = [[0,1],[0,4],[1,5],[2,5],[2,4],[3,4],[3,2],[4,5]];
-  const cx = 50, cy = 50;
   const ns = 'http://www.w3.org/2000/svg';
   const nodeLayer = svg.querySelector('#skill-nodes');
   const linkLayer = svg.querySelector('#skill-links');
 
-  skills.forEach((s, i) => {
+  links.forEach(([a,b]) => {
     const line = document.createElementNS(ns,'line');
     line.classList.add('viz-link');
-    line.dataset.a = i;
+    line.dataset.a=a; line.dataset.b=b;
     linkLayer.appendChild(line);
   });
 
@@ -45,12 +44,10 @@
     const px = p => (p / 100) * w;
     const py = p => (p / 100) * h;
     svg.querySelectorAll('.skill-node').forEach((g,i)=>g.setAttribute('transform',`translate(${px(skills[i].x)} ${py(skills[i].y)})`));
-    const lines = [...linkLayer.querySelectorAll('line')];
-    lines.forEach((line,idx)=>{
-      const [a,b]=links[idx];
+    linkLayer.querySelectorAll('line').forEach(line=>{
+      const a=Number(line.dataset.a), b=Number(line.dataset.b);
       line.setAttribute('x1',px(skills[a].x)); line.setAttribute('y1',py(skills[a].y));
       line.setAttribute('x2',px(skills[b].x)); line.setAttribute('y2',py(skills[b].y));
-      line.dataset.b=b;
     });
   }
 
@@ -58,7 +55,7 @@
     svg.querySelectorAll('.skill-node').forEach(g=>g.classList.toggle('selected', Number(g.dataset.skill)===index));
     svg.querySelectorAll('.viz-link').forEach(l=>l.classList.toggle('hot', Number(l.dataset.a)===index || Number(l.dataset.b)===index));
     const label=document.querySelector('#viz-focus');
-    if(label){ label.textContent=`Focus: ${skills[index].name} · ${skills[index].score}% readiness`; }
+    if(label) label.textContent=`Focus: ${skills[index].name} · ${skills[index].score}% readiness`;
   }
 
   svg.querySelectorAll('.skill-node').forEach(g=>{
@@ -78,8 +75,8 @@
   }));
 
   const reveal=document.querySelectorAll('.career-viz-section .reveal');
-  const io='IntersectionObserver' in window ? new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target)}}),{threshold:.12}) : null;
-  reveal.forEach(el=>io?io.observe(el):el.classList.add('is-visible'));
+  const observer='IntersectionObserver' in window ? new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target)}}),{threshold:.12}) : null;
+  reveal.forEach(el=>observer?observer.observe(el):el.classList.add('is-visible'));
   position(); select(0);
   window.addEventListener('resize',position,{passive:true});
 })();
