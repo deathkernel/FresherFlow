@@ -11,11 +11,46 @@ VACANCY_STATUSES = {"draft", "active", "closed"}
 APPLICATION_STATUSES = {"Applied", "Shortlisted", "Selected", "Rejected"}
 
 
+def experience_requirement_invalid(vacancy_type, eligibility):
+    """FresherFlow only allows zero-experience requirements for jobs.
+
+    Employers may require internship/familiarity/prior exposure for internships,
+    but an Entry-level Job must not require prior professional work experience.
+    """
+    if vacancy_type != "Entry-level Job":
+        return False
+    text = (eligibility or "").strip().lower()
+    if not text:
+        return False
+    experience_terms = (
+        "year experience",
+        "years experience",
+        "year of experience",
+        "years of experience",
+        "yr experience",
+        "yrs experience",
+        "yr of experience",
+        "yrs of experience",
+        "work experience",
+        "professional experience",
+        "prior experience",
+        "previous experience",
+        "relevant experience",
+        "industry experience",
+        "experience required",
+        "experience mandatory",
+        "minimum experience",
+    )
+    return any(term in text for term in experience_terms)
+
+
 def vacancy_form(form):
-    title=form.get("title","").strip(); vacancy_type=form.get("vacancy_type","").strip(); location=form.get("location","").strip(); description=form.get("description","").strip()
+    title=form.get("title","").strip(); vacancy_type=form.get("vacancy_type","").strip(); location=form.get("location","").strip(); description=form.get("description","").strip(); eligibility=form.get("eligibility","").strip()
     if not title or not location or not description:return None,"Title, location and description are required."
     if vacancy_type not in VACANCY_TYPES:return None,"Choose a valid vacancy type."
-    return {"title":title,"vacancy_type":vacancy_type,"description":description,"location":location,"salary":form.get("salary","").strip(),"skills":form.get("skills","").strip(),"eligibility":form.get("eligibility","").strip(),"deadline":form.get("deadline") or None},None
+    if experience_requirement_invalid(vacancy_type, eligibility):
+        return None,"Entry-level Jobs cannot require prior work experience. For roles requiring experience, publish an Internship instead."
+    return {"title":title,"vacancy_type":vacancy_type,"description":description,"location":location,"salary":form.get("salary","").strip(),"skills":form.get("skills","").strip(),"eligibility":eligibility,"deadline":form.get("deadline") or None},None
 
 
 def bulk_vacancy_forms(form):
@@ -46,6 +81,8 @@ def bulk_vacancy_forms(form):
             return None,f"Vacancy {i + 1}: title, location and description are required."
         if data["vacancy_type"] not in VACANCY_TYPES:
             return None,f"Vacancy {i + 1}: choose a valid vacancy type."
+        if experience_requirement_invalid(data["vacancy_type"], data["eligibility"]):
+            return None,f"Vacancy {i + 1}: Entry-level Jobs cannot require prior work experience. Publish it as an Internship instead."
         vacancies.append(data)
     return vacancies,None
 
@@ -125,7 +162,14 @@ def edit_vacancy(vacancy_id):
 def vacancy_status(vacancy_id):
     status=request.form.get("status")
     if status not in VACANCY_STATUSES:return redirect(url_for("employer.vacancies"))
-    db=get_db();db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?",(status,vacancy_id,session["user_id"]));db.commit();flash(f"Vacancy marked {status}.","success");return redirect(url_for("employer.vacancies"))
+    db=get_db();
+    if status == "active":
+        job=db.execute("SELECT vacancy_type,eligibility FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
+        if not job:return redirect(url_for("employer.vacancies"))
+        if experience_requirement_invalid(job["vacancy_type"], job["eligibility"]):
+            flash("Entry-level Jobs cannot require prior work experience. Publish it as an Internship instead.","error")
+            return redirect(url_for("employer.vacancies"))
+    db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?",(status,vacancy_id,session["user_id"]));db.commit();flash(f"Vacancy marked {status}.","success");return redirect(url_for("employer.vacancies"))
 
 @employer_bp.get("/applications")
 @role_required("employer")
