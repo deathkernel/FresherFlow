@@ -25,7 +25,10 @@
           <small>Employer / Recruiter</small>
         </div>
       </div>
-      <a href="{{ url_for('auth.logout') }}" class="logout">Log out</a>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="logout">Log out</button>
+      </form>
     </div>
   </aside>
 
