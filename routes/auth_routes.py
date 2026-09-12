@@ -8,6 +8,7 @@ from database.database import get_db
 
 auth_bp = Blueprint("auth", __name__)
 ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
+MIN_PASSWORD_LENGTH = 12
 
 
 def allowed_resume(filename):
@@ -38,7 +39,7 @@ def login():
         user = db.execute("SELECT * FROM users WHERE email=? AND role IN ('student','employer')", (email,)).fetchone()
         if user and check_password_hash(user["password_hash"], password):
             if user["role"] == "employer":
-                profile = db.execute("SELECT account_status FROM employer_profiles WHERE user_id=?", (user["id"],)).fetchone()
+                profile = db.execute("SELECT account_status, verification_status FROM employer_profiles WHERE user_id=?", (user["id"],)).fetchone()
                 if profile and profile["account_status"] == "suspended":
                     flash("This employer account is currently suspended. Please contact support.", "error")
                     return render_template("login.html", login_context=login_context)
@@ -46,6 +47,7 @@ def login():
             session["user_id"] = user["id"]
             session["name"] = user["name"]
             session["role"] = user["role"]
+            session.permanent = True
             return redirect(url_for(login_target(user["role"])))
 
         flash("Invalid email or password.", "error")
@@ -63,8 +65,8 @@ def register():
         password = form.get("password", "")
         confirm_password = form.get("confirm_password", "")
         role = form.get("role", "student")
-        if not name or not email or len(password) < 6 or password != confirm_password or role not in {"student", "employer"}:
-            flash("Please complete the form and make sure both passwords match.", "error")
+        if not name or not email or len(password) < MIN_PASSWORD_LENGTH or password != confirm_password or role not in {"student", "employer"}:
+            flash(f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.", "error")
             selected_role = role if role in {"student", "employer"} else "student"
             return render_template("register.html", selected_role=selected_role)
         db = get_db(); resume_path = None
@@ -85,7 +87,7 @@ def register():
             else:
                 organization = form.get("organization_name", "").strip() or name
                 db.execute("""INSERT INTO employer_profiles(user_id,organization_name,organization_type,website,location,description,account_status,verification_status)
-                    VALUES(?,?,?,?,?,?,?,?)""", (user_id, organization, form.get("organization_type", "").strip(), form.get("website", "").strip(), form.get("location", "").strip(), form.get("description", "").strip(), "active", "verified"))
+                    VALUES(?,?,?,?,?,?,?,?)""", (user_id, organization, form.get("organization_type", "").strip(), form.get("website", "").strip(), form.get("location", "").strip(), form.get("description", "").strip(), "active", "pending"))
             db.commit()
         except sqlite3.IntegrityError:
             db.rollback()
@@ -103,6 +105,6 @@ def register():
     return render_template("register.html", selected_role=selected_role)
 
 
-@auth_bp.get("/logout")
+@auth_bp.post("/logout")
 def logout():
     session.clear(); flash("You have been logged out.", "success"); return redirect(url_for("index"))
