@@ -34,7 +34,7 @@
         <div class="form-two"><div><label for="organization-type">Industry</label><input id="organization-type" class="form-control" name="organization_type" placeholder="Technology"></div><div><label for="location">Location</label><input id="location" class="form-control" name="location" placeholder="Pune"></div></div>
         <label for="website">Website</label><input id="website" class="form-control" name="website" placeholder="https://..."><label for="description">Short description</label><textarea id="description" class="form-control" name="description" rows="2"></textarea>
       </section>
-      <div class="form-two security-row"><div><label for="password">Password</label><input id="password" class="form-control" type="password" name="password" minlength="6" required></div><div><label for="confirm-password">Confirm</label><input id="confirm-password" class="form-control" type="password" name="confirm_password" minlength="6" required></div></div>
+      <div class="form-two security-row"><div><label for="password">Password</label><input id="password" class="form-control" type="password" name="password" minlength="12" autocomplete="new-password" required></div><div><label for="confirm-password">Confirm</label><input id="confirm-password" class="form-control" type="password" name="confirm_password" minlength="12" autocomplete="new-password" required></div></div>
       <button class="btn btn-primary w-100" type="submit">Create account</button>
     </form>
     <p class="auth-foot">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
