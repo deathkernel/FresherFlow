@@ -1,5 +1,6 @@
 import os
 import secrets
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -17,8 +18,15 @@ def local_secret():
 
 
 class Config:
-    # Flask sessions need a signing key. It is generated locally and never stored in source.
+    # Production deployments should provide a stable secret through the environment.
+    # Local development can use the instance-local generated secret.
     SECRET_KEY = os.environ.get("SECRET_KEY") or local_secret()
     DATABASE = str(INSTANCE_DIR / "fresherflow.db")
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+
+    # Harden Flask's signed session cookie. Secure is opt-in for local HTTP development.
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
