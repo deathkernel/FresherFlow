@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — FresherFlow{% endblock %}
+{% block body %}
+<div class="app-shell" style="min-height:100vh;">
+  <aside class="sidebar">
+    <div class="brand">Fresher<span>Flow</span></div>
+    <div class="side-label">ADMIN CONSOLE</div>
+    <nav>
+      <a class="active" href="{{ url_for('admin.dashboard') }}">API Jobs</a>
+      <a href="{{ url_for('public_jobs.public_jobs_page') }}" target="_blank">Public Feed ↗</a>
+    </nav>
+    <div class="side-bottom">
+      <div class="user-chip"><div class="avatar">A</div><div><b>Administrator</b><small>API management</small></div></div>
+      <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+    </div>
+  </aside>
+  <section class="workspace">
+    <header class="workspace-head">
+      <div><span class="eyebrow">PUBLIC JOB SOURCES</span><h1>API Jobs Control Center</h1><p>Monitor, filter and control jobs imported from public APIs.</p></div>
+      <form method="post" action="{{ url_for('admin.sync_jobs') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit">↻ Sync Now</button></form>
+    </header>
+
+    <div class="stat-grid">
+      <div class="dash-stat"><span>Total imported</span><strong>{{ stats.total }}</strong><small>All API records</small></div>
+      <div class="dash-stat"><span>Active</span><strong>{{ stats.active }}</strong><small>Visible to students</small></div>
+      <div class="dash-stat"><span>Himalayas</span><strong>{{ stats.himalayas }}</strong><small>Source records</small></div>
+      <div class="dash-stat"><span>Jobicy</span><strong>{{ stats.jobicy }}</strong><small>Source records</small></div>
+    </div>
+
+    <form class="filter-bar mt-4" method="get">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company, skill or location">
+      <select class="form-select" name="source"><option value="">All sources</option><option value="himalayas" {% if source == 'himalayas' %}selected{% endif %}>Himalayas</option><option value="jobicy" {% if source == 'jobicy' %}selected{% endif %}>Jobicy</option></select>
+      <select class="form-select" name="status"><option value="">All status</option><option value="active" {% if status == 'active' %}selected{% endif %}>Active</option><option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option></select>
+      <button class="btn btn-primary" type="submit">Filter</button>
+    </form>
+
+    <div class="table-responsive mt-4">
+      <table class="table align-middle">
+        <thead><tr><th>Job</th><th>Company</th><th>Source</th><th>Type</th><th>Location</th><th>Posted</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for job in jobs %}
+          <tr>
+            <td><strong>{{ job.title }}</strong><br><small class="text-muted">#{{ job.id }}</small></td>
+            <td>{{ job.company or '—' }}</td>
+            <td><span class="badge bg-light text-dark">{{ job.source|capitalize }}</span></td>
+            <td>{{ job.job_type }}</td>
+            <td>{{ job.location }}</td>
+            <td>{{ job.posted_at or '—' }}</td>
+            <td><span class="badge {{ 'bg-success' if job.active else 'bg-secondary' }}">{{ 'Active' if job.active else 'Hidden' }}</span></td>
+            <td class="text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Details</a><form class="d-inline" method="post" action="{{ url_for('admin.toggle_job', job_id=job.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Hide' if job.active else 'Show' }}</button></form></td>
+          </tr>
+        {% else %}<tr><td colspan="8" class="text-center py-5">No API jobs match the current filters.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
