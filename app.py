@@ -12,6 +12,9 @@ from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf
 
 
+SYNC_PATH = "/api/internal/public-jobs/sync"
+
+
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
@@ -22,7 +25,7 @@ def create_app():
 
     @app.before_request
     def protect_forms():
-        if request.method == "POST":
+        if request.method == "POST" and request.path != SYNC_PATH:
             validate_csrf(request.form.get("csrf_token"))
 
     @app.after_request
