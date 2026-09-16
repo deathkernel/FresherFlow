@@ -2,17 +2,19 @@ import sqlite3
 from pathlib import Path
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from database.database import get_db
+from security import valid_resume_upload
 
 auth_bp = Blueprint("auth", __name__)
-ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
 MIN_PASSWORD_LENGTH = 12
 
 
 def allowed_resume(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_RESUME_EXTENSIONS
+    """Backward-compatible extension check for callers/templates."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in {"pdf", "doc", "docx"}
 
 
 def login_target(role):
@@ -69,18 +71,24 @@ def register():
             flash(f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.", "error")
             selected_role = role if role in {"student", "employer"} else "student"
             return render_template("register.html", selected_role=selected_role)
-        db = get_db(); resume_path = None
+        db = get_db()
+        resume_path = None
         try:
             cur = db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", (name, email, generate_password_hash(password), role))
             user_id = cur.lastrowid
             if role == "student":
-                resume = request.files.get("resume"); resume_filename = None
+                resume = request.files.get("resume")
+                resume_filename = None
                 if resume and resume.filename:
-                    if not allowed_resume(resume.filename):
-                        db.rollback(); flash("Resume must be a PDF, DOC or DOCX file.", "error"); return render_template("register.html", selected_role="student")
+                    if not valid_resume_upload(resume):
+                        db.rollback()
+                        flash("Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error")
+                        return render_template("register.html", selected_role="student")
                     resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
-                    upload_dir = Path(current_app.config["UPLOAD_FOLDER"]); upload_dir.mkdir(parents=True, exist_ok=True)
-                    resume_path = upload_dir / resume_filename; resume.save(resume_path)
+                    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+                    upload_dir.mkdir(parents=True, exist_ok=True)
+                    resume_path = upload_dir / resume_filename
+                    resume.save(resume_path)
                 db.execute("""INSERT INTO student_profiles
                     (user_id,phone,education,college,graduation_year,skills,certifications,preferred_job_type,preferred_location,resume_filename,profile_strength)
                     VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (user_id, form.get("phone", "").strip(), form.get("education", "").strip(), form.get("college", "").strip(), form.get("graduation_year", "").strip(), form.get("skills", "").strip(), form.get("certifications", "").strip(), form.get("preferred_job_type", "Both"), form.get("preferred_location", "").strip(), resume_filename, 100 if resume_filename else 80))
@@ -91,20 +99,27 @@ def register():
             db.commit()
         except sqlite3.IntegrityError:
             db.rollback()
-            if resume_path: resume_path.unlink(missing_ok=True)
-            flash("That email is already registered or the submitted data is invalid.", "error"); return render_template("register.html", selected_role=role if role in {"student", "employer"} else "student")
+            if resume_path:
+                resume_path.unlink(missing_ok=True)
+            flash("That email is already registered or the submitted data is invalid.", "error")
+            return render_template("register.html", selected_role=role if role in {"student", "employer"} else "student")
         except OSError:
             db.rollback()
-            if resume_path: resume_path.unlink(missing_ok=True)
+            if resume_path:
+                resume_path.unlink(missing_ok=True)
             current_app.logger.exception("Resume upload failed during registration")
-            flash("The resume could not be saved. Please try again.", "error"); return render_template("register.html", selected_role="student")
+            flash("The resume could not be saved. Please try again.", "error")
+            return render_template("register.html", selected_role="student")
         flash("Account created. Please sign in.", "success")
         return redirect(url_for("auth.login"))
     selected_role = request.args.get("role", "student")
-    if selected_role not in {"student", "employer"}: selected_role = "student"
+    if selected_role not in {"student", "employer"}:
+        selected_role = "student"
     return render_template("register.html", selected_role=selected_role)
 
 
 @auth_bp.post("/logout")
 def logout():
-    session.clear(); flash("You have been logged out.", "success"); return redirect(url_for("index"))
+    session.clear()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("index"))
