@@ -29,7 +29,7 @@
     <h3>{{ job.title }}</h3><b>{{ job.company or 'Company not specified' }}</b>
     <p>{{ (job.description or '')|striptags|truncate(220) }}</p>
     <div class="tags">{% for skill in (job.skills or '').split(',')[:4] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
-    <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a class="btn btn-sm btn-primary" href="{{ job.apply_url or job.source_url }}" target="_blank" rel="noopener noreferrer">Apply ↗</a></div>
+    <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a class="btn btn-sm btn-primary" href="{{ url_for('student.public_job_details', job_id=job.id) }}">View details</a></div>
   </article>
   {% endfor %}
 
