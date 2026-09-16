@@ -2,13 +2,13 @@ import os
 
 
 def get_admin_credentials():
-    """Return explicitly configured admin credentials.
+    """Return explicitly configured admin credentials as (email, password_hash).
 
-    Production must never fall back to a known/default password. The application
-    treats missing credentials as an unavailable admin login instead.
+    The admin password must be supplied as a Werkzeug password hash. There is
+    deliberately no default credential and no plaintext-password fallback.
     """
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
-    password = os.environ.get("ADMIN_PASSWORD", "")
-    if not email or not password:
+    password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    if not email or not password_hash:
         return None, None
-    return email, password
+    return email, password_hash
