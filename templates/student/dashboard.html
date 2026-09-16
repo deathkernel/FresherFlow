@@ -1,58 +1,38 @@
 {% extends 'student/base.html' %}
 {% block student_content %}
 <div class="stat-grid">
-  <div class="dash-stat reveal">
-    <span>Applications</span>
-    <strong>{{ stats.applications }}</strong>
-    <small>Total submitted</small>
-  </div>
-  <div class="dash-stat reveal">
-    <span>Shortlisted</span>
-    <strong>{{ stats.shortlisted }}</strong>
-    <small>In review</small>
-  </div>
-  <div class="dash-stat reveal">
-    <span>Selected</span>
-    <strong>{{ stats.selected }}</strong>
-    <small>Offers / selections</small>
-  </div>
-  <div class="dash-stat reveal">
-    <span>Saved jobs</span>
-    <strong>{{ stats.saved }}</strong>
-    <small>For later</small>
-  </div>
+  <div class="dash-stat reveal"><span>Applications</span><strong>{{ stats.applications }}</strong><small>Total submitted</small></div>
+  <div class="dash-stat reveal"><span>Shortlisted</span><strong>{{ stats.shortlisted }}</strong><small>In review</small></div>
+  <div class="dash-stat reveal"><span>Selected</span><strong>{{ stats.selected }}</strong><small>Offers / selections</small></div>
+  <div class="dash-stat reveal"><span>Saved jobs</span><strong>{{ stats.saved }}</strong><small>For later</small></div>
 </div>
 
 <div class="section-head">
-  <div>
-    <h2>Latest opportunities</h2>
-    <p>Fresh vacancies from recruiters.</p>
-  </div>
+  <div><h2>Latest opportunities</h2><p>Recruiter vacancies and jobs imported from public APIs.</p></div>
   <a href="{{ url_for('student.jobs') }}">View all →</a>
 </div>
 
 <div class="job-grid">
   {% for job in jobs %}
   <article class="job-card reveal">
-    <div class="job-top">
-      <span class="type-pill">{{ job.vacancy_type }}</span>
-      <span>{{ job.location }}</span>
-    </div>
-    <h3>{{ job.title }}</h3>
-    <b>{{ job.organization_name }}</b>
+    <div class="job-top"><span class="type-pill">{{ job.vacancy_type }}</span><span>{{ job.location }}</span></div>
+    <h3>{{ job.title }}</h3><b>{{ job.organization_name }}</b>
     <p>{{ job.description }}</p>
-    <div class="tags">
-      {% for skill in job.skills.split(',')[:4] %}
-      <span>{{ skill.strip() }}</span>
-      {% endfor %}
-    </div>
-    <div class="job-bottom">
-      <span>{{ job.salary or 'Compensation not specified' }}</span>
-      <a href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role →</a>
-    </div>
+    <div class="tags">{% for skill in (job.skills or '').split(',')[:4] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
+    <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role →</a></div>
   </article>
-  {% else %}
-  <div class="empty-state">No active vacancies yet.</div>
   {% endfor %}
+
+  {% for job in external_jobs %}
+  <article class="job-card reveal">
+    <div class="job-top"><span class="type-pill">{{ job.job_type or 'Job' }}</span><span>{{ job.location or 'Remote' }}</span></div>
+    <h3>{{ job.title }}</h3><b>{{ job.company or 'Company not specified' }}</b>
+    <p>{{ (job.description or '')|striptags|truncate(220) }}</p>
+    <div class="tags">{% for skill in (job.skills or '').split(',')[:4] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
+    <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a class="btn btn-sm btn-primary" href="{{ job.apply_url or job.source_url }}" target="_blank" rel="noopener noreferrer">Apply ↗</a></div>
+  </article>
+  {% endfor %}
+
+  {% if not jobs and not external_jobs %}<div class="empty-state">No opportunities available right now.</div>{% endif %}
 </div>
 {% endblock %}
