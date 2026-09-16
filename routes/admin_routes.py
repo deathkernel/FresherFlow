@@ -54,7 +54,7 @@ def dashboard():
         "approved_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='approved'").fetchone()["c"],
         "rejected_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='rejected'").fetchone()["c"],
         "api_jobs": db.execute("SELECT COUNT(*) c FROM external_jobs").fetchone()["c"],
-        "applications": db.execute("SELECT COUNT(*) c FROM applications").fetchone()["c"],
+        "applications": db.execute("SELECT COUNT(*) FROM applications").fetchone()[0] + db.execute("SELECT COUNT(*) FROM external_applications").fetchone()[0],
     }
     q = request.args.get("q", "").strip()
     moderation = request.args.get("moderation", "").strip().lower()
@@ -69,32 +69,49 @@ def dashboard():
         job_clauses.append("v.moderation_status=?")
         job_args.append(moderation)
     jobs = db.execute("""
-        SELECT v.*,
-               COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
+        SELECT v.*, COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
                COALESCE(u.email, '—') AS employer_email,
                (SELECT COUNT(*) FROM applications a WHERE a.vacancy_id=v.id) AS application_count
         FROM vacancies v
         LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
         LEFT JOIN users u ON u.id=v.employer_id
         WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC LIMIT 100", job_args).fetchall()
+
     application_clauses = ["1=1"]
     application_args = []
     if q:
-        application_clauses.append("(v.title LIKE ? OR COALESCE(ep.organization_name, '') LIKE ? OR u.name LIKE ? OR u.email LIKE ?)")
+        application_clauses.append("(title LIKE ? OR organization_name LIKE ? OR student_name LIKE ? OR student_email LIKE ?)")
         term = f"%{q}%"
         application_args += [term, term, term, term]
     applications = db.execute("""
-        SELECT a.id, a.status, a.applied_at,
-               v.id AS vacancy_id, v.title, v.vacancy_type,
-               COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
-               u.id AS student_id, u.name AS student_name, u.email AS student_email,
-               sp.college, sp.education, sp.skills, sp.resume_filename
-        FROM applications a
-        JOIN vacancies v ON v.id=a.vacancy_id
-        LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
-        JOIN users u ON u.id=a.student_id
-        LEFT JOIN student_profiles sp ON sp.user_id=u.id
-        WHERE """ + " AND ".join(application_clauses) + " ORDER BY a.applied_at DESC, a.id DESC LIMIT 200", application_args).fetchall()
+        SELECT * FROM (
+            SELECT a.id, a.status, a.applied_at,
+                   v.id AS vacancy_id, v.title, v.vacancy_type,
+                   COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
+                   u.id AS student_id, u.name AS student_name, u.email AS student_email,
+                   sp.college, sp.education, sp.skills, sp.resume_filename,
+                   'Company Job' AS application_source
+            FROM applications a
+            JOIN vacancies v ON v.id=a.vacancy_id
+            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+            JOIN users u ON u.id=a.student_id
+            LEFT JOIN student_profiles sp ON sp.user_id=u.id
+
+            UNION ALL
+
+            SELECT ea.id, ea.status, ea.applied_at,
+                   ej.id AS vacancy_id, ej.title, ej.job_type AS vacancy_type,
+                   COALESCE(ej.company, 'External company') AS organization_name,
+                   u.id AS student_id, u.name AS student_name, u.email AS student_email,
+                   sp.college, sp.education, sp.skills, sp.resume_filename,
+                   'Public/API Job' AS application_source
+            FROM external_applications ea
+            JOIN external_jobs ej ON ej.id=ea.external_job_id
+            JOIN users u ON u.id=ea.student_id
+            LEFT JOIN student_profiles sp ON sp.user_id=u.id
+        )
+        WHERE """ + " AND ".join(application_clauses) + " ORDER BY applied_at DESC, id DESC LIMIT 500", application_args).fetchall()
+
     company_clauses = ["1=1"]
     company_args = []
     if q:
