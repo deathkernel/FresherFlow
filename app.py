@@ -4,6 +4,7 @@ from flask import Flask, redirect, render_template, request, session, url_for
 
 from config import Config
 from database.database import close_db, init_db
+from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.public_jobs_routes import public_jobs_bp
@@ -44,6 +45,7 @@ def create_app():
     app.register_blueprint(employer_bp)
     app.register_blueprint(public_jobs_bp)
     app.register_blueprint(public_jobs_sync_bp)
+    app.register_blueprint(admin_bp)
 
     @app.get("/")
     def index():
@@ -66,7 +68,7 @@ def create_app():
         if not session.get("user_id"):
             return redirect(url_for("auth.login"))
         role = session.get("role")
-        targets = {"student": "student.dashboard", "employer": "employer.dashboard"}
+        targets = {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}
         return redirect(url_for(targets.get(role, "auth.login")))
 
     return app
@@ -81,5 +83,6 @@ if __name__ == "__main__":
     print("\nFresherFlow is running:")
     print(f"  Student Panel : http://127.0.0.1:{port}/student-panel")
     print(f"  Employer Panel: http://127.0.0.1:{port}/employer-panel")
-    print("\nBoth panels use the same FresherFlow backend/database, while role-based access keeps their experiences separate.\n")
+    print(f"  Admin Console : http://127.0.0.1:{port}/admin/login")
+    print("\nAll panels use the same FresherFlow backend/database, with role-based access.\n")
     app.run(host=host, port=port, debug=debug)
