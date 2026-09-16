@@ -51,17 +51,32 @@ def create_app():
     def index():
         return render_template("index.html")
 
-    @app.get("/student-panel")
-    def student_panel():
+    @app.get("/student")
+    def student_portal():
         if session.get("user_id") and session.get("role") == "student":
             return redirect(url_for("student.dashboard"))
         return redirect(url_for("auth.login", role="student"))
 
-    @app.get("/employer-panel")
-    def employer_panel():
+    @app.get("/employer")
+    def employer_portal():
         if session.get("user_id") and session.get("role") == "employer":
             return redirect(url_for("employer.dashboard"))
         return redirect(url_for("auth.login", role="employer"))
+
+    @app.get("/admin")
+    def admin_portal():
+        if session.get("user_id") and session.get("role") == "admin":
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("admin.login"))
+
+    # Backward-compatible panel URLs.
+    @app.get("/student-panel")
+    def student_panel():
+        return redirect(url_for("student_portal"))
+
+    @app.get("/employer-panel")
+    def employer_panel():
+        return redirect(url_for("employer_portal"))
 
     @app.get("/dashboard")
     def dashboard_redirect():
@@ -80,9 +95,15 @@ if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    print("\nFresherFlow is running:")
-    print(f"  Student Panel : http://127.0.0.1:{port}/student-panel")
-    print(f"  Employer Panel: http://127.0.0.1:{port}/employer-panel")
-    print(f"  Admin Console : http://127.0.0.1:{port}/admin/login")
-    print("\nAll panels use the same FresherFlow backend/database, with role-based access.\n")
+    print("\n" + "=" * 58)
+    print("                 FRESHERFLOW")
+    print("              College Job Portal")
+    print("=" * 58)
+    print("\n  Server running successfully!\n")
+    print(f"  Student  -> http://127.0.0.1:{port}/student")
+    print(f"  Employer -> http://127.0.0.1:{port}/employer")
+    print(f"  Admin    -> http://127.0.0.1:{port}/admin")
+    print(f"\n  Home     -> http://127.0.0.1:{port}/")
+    print("\n  Press Ctrl+C to stop the server.")
+    print("=" * 58 + "\n")
     app.run(host=host, port=port, debug=debug)
