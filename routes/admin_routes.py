@@ -120,8 +120,58 @@ def dashboard():
     if account in {"active", "suspended"}:
         company_clauses.append("ep.account_status=?")
         company_args.append(account)
-    companies = db.execute("SELECT ep.*, u.name contact_name, u.email FROM employer_profiles ep JOIN users u ON u.id=ep.user_id WHERE " + " AND ".join(company_clauses) + " ORDER BY ep.id DESC LIMIT 100", company_args).fetchall()
+    companies = db.execute("SELECT ep.*,u.name contact_name,u.email FROM employer_profiles ep JOIN users u ON u.id=ep.user_id WHERE " + " AND ".join(company_clauses) + " ORDER BY ep.id DESC LIMIT 100", company_args).fetchall()
     return render_template("admin/dashboard.html", stats=stats, jobs=jobs, applications=applications, companies=companies, q=q, moderation=moderation, account=account)
+
+
+@admin_bp.get("/students/<int:student_id>")
+@admin_required
+def student_profile(student_id):
+    db = get_db()
+    user = db.execute("SELECT id, name, email, role FROM users WHERE id=? AND role='student'", (student_id,)).fetchone()
+    if not user:
+        return render_template("404.html"), 404
+
+    profile = db.execute("SELECT * FROM student_profiles WHERE user_id=?", (student_id,)).fetchone()
+    if not profile:
+        profile = {
+            "profile_strength": 0,
+            "phone": None,
+            "education": None,
+            "college": None,
+            "graduation_year": None,
+            "skills": None,
+            "certifications": None,
+            "preferred_job_type": None,
+            "preferred_location": None,
+            "resume_filename": None,
+        }
+
+    applications = db.execute("""
+        SELECT * FROM (
+            SELECT a.id, a.status, a.applied_at,
+                   v.id AS vacancy_id, v.title, v.vacancy_type,
+                   COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
+                   'Company Job' AS application_source
+            FROM applications a
+            JOIN vacancies v ON v.id=a.vacancy_id
+            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+            WHERE a.student_id=?
+
+            UNION ALL
+
+            SELECT ea.id, ea.status, ea.applied_at,
+                   ej.id AS vacancy_id, ej.title, ej.job_type AS vacancy_type,
+                   COALESCE(ej.company, 'External company') AS organization_name,
+                   'Public/API Job' AS application_source
+            FROM external_applications ea
+            JOIN external_jobs ej ON ej.id=ea.external_job_id
+            WHERE ea.student_id=?
+        )
+        ORDER BY applied_at DESC, id DESC
+    """, (student_id, student_id)).fetchall()
+
+    return render_template("admin/student-profile.html", user=user, profile=profile, applications=applications)
 
 
 @admin_bp.get("/companies/<int:user_id>")
@@ -173,7 +223,7 @@ def job_detail(job_id):
     job = db.execute("SELECT v.*,ep.organization_name,u.email employer_email,(SELECT COUNT(*) FROM applications a WHERE a.vacancy_id=v.id) application_count FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id JOIN users u ON u.id=v.employer_id WHERE v.id=?", (job_id,)).fetchone()
     if not job:
         return render_template("404.html"), 404
-    applications = db.execute("SELECT a.*,u.name,u.email,sp.education,sp.college,sp.skills,sp.resume_filename FROM applications a JOIN users u ON u.id=a.student_id LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE a.vacancy_id=? ORDER BY a.id DESC", (job_id,)).fetchall()
+    applications = db.execute("SELECT a.*,u.name,u.email,sp.education,sp.college,sp.skills,sp.resume_filename FROM applications a JOIN users u ON u.id=a.student_id LEFT JOIN student_profiles sp ON sp.user_id=a.student_id WHERE a.vacancy_id=? ORDER BY a.id DESC", (job_id,)).fetchall()
     return render_template("admin/job-detail.html", job=job, applications=applications, internal=True)
 
 
