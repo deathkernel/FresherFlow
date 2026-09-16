@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, redirect, render_template, request, session, render_template, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 
 from config import Config
 from database.database import close_db, init_db
