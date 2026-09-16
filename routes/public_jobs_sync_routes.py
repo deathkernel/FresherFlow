@@ -1,24 +1,24 @@
-"""Sync public job APIs into FresherFlow's external_jobs table."""
-from __future__ import annotations
-
 import os
 import sqlite3
-import sys
-from pathlib import Path
+from hmac import compare_digest
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+from flask import Blueprint, jsonify, request
 
-from config import Config  # noqa: E402
-from database.database import init_db  # noqa: E402
-from services.public_jobs import fetch_all  # noqa: E402
+from database.database import get_db
+from services.public_jobs import fetch_all
+
+public_jobs_sync_bp = Blueprint("public_jobs_sync", __name__)
 
 
-def main() -> int:
-    init_db(Config.DATABASE)
+@public_jobs_sync_bp.post("/api/internal/public-jobs/sync")
+def sync_public_jobs():
+    expected = os.environ.get("PUBLIC_JOB_SYNC_TOKEN", "").strip()
+    provided = request.headers.get("X-FresherFlow-Sync-Token", "")
+    if not expected or not provided or not compare_digest(provided, expected):
+        return jsonify({"error": "Unauthorized"}), 401
+
     jobs, errors = fetch_all()
-    db = sqlite3.connect(Config.DATABASE)
-    db.execute("PRAGMA foreign_keys = ON")
+    db = get_db()
     inserted = updated = 0
     for job in jobs:
         if not job["source"] or not job["source_id"] or not job["title"] or not job["apply_url"]:
@@ -37,7 +37,7 @@ def main() -> int:
                 """UPDATE external_jobs SET title=?, company=?, location=?, job_type=?,
                 description=?, skills=?, salary=?, apply_url=?, posted_at=?, source_url=?,
                 updated_at=CURRENT_TIMESTAMP, active=1 WHERE id=?""",
-                (*values, existing[0]),
+                (*values, existing["id"]),
             )
             updated += 1
         else:
@@ -50,13 +50,4 @@ def main() -> int:
             )
             inserted += 1
     db.commit()
-    db.close()
-    print(f"FresherFlow public job sync: {inserted} inserted, {updated} updated, {len(errors)} source errors")
-    for source, error in errors.items():
-        print(f"::warning title={source}::{error}")
-    # A partial sync is useful, but CI should fail if every source is unavailable.
-    return 1 if errors and not jobs else 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return jsonify({"inserted": inserted, "updated": updated, "source_errors": errors})

@@ -1,0 +1,41 @@
+name: Public Job API Sync
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-public-jobs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Sync deployed FresherFlow database
+        if: ${{ secrets.FRESHERFLOW_SYNC_URL != '' && secrets.PUBLIC_JOB_SYNC_TOKEN != '' }}
+        env:
+          SYNC_URL: ${{ secrets.FRESHERFLOW_SYNC_URL }}
+          SYNC_TOKEN: ${{ secrets.PUBLIC_JOB_SYNC_TOKEN }}
+        run: |
+          curl --fail --silent --show-error \
+            --request POST "$SYNC_URL/api/internal/public-jobs/sync" \
+            --header "X-FresherFlow-Sync-Token: $SYNC_TOKEN" \
+            --header "Accept: application/json"
+
+      - name: Local sync smoke test
+        if: ${{ secrets.FRESHERFLOW_SYNC_URL == '' || secrets.PUBLIC_JOB_SYNC_TOKEN == '' }}
+        run: python scripts/sync_public_jobs.py

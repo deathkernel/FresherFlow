@@ -1,0 +1,47 @@
+{% extends 'student/base.html' %}
+{% block student_content %}
+<div class="section-head">
+  <div>
+    <h2>Public Job Feed</h2>
+    <p>Fresh opportunities imported from public job APIs. Always verify the source listing before applying.</p>
+  </div>
+</div>
+
+<form class="filter-bar" method="get">
+  <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company or skill">
+  <select class="form-select" name="source">
+    <option value="">All sources</option>
+    <option value="himalayas" {% if source == 'himalayas' %}selected{% endif %}>Himalayas</option>
+    <option value="jobicy" {% if source == 'jobicy' %}selected{% endif %}>Jobicy</option>
+  </select>
+  <button class="btn btn-primary">Search</button>
+</form>
+
+<div class="job-grid mt-4">
+  {% for job in jobs %}
+  <article class="job-card reveal">
+    <div class="job-top">
+      <span class="type-pill">{{ job.job_type }}</span>
+      <span>{{ job.location }}</span>
+    </div>
+    <h3>{{ job.title }}</h3>
+    <b>{{ job.company or 'Company not specified' }}</b>
+    <p>{{ job.description|striptags|truncate(260) }}</p>
+    <div class="tags">
+      {% for skill in job.skills.split(',')[:5] if skill.strip() %}
+      <span>{{ skill.strip() }}</span>
+      {% endfor %}
+    </div>
+    <div class="job-bottom">
+      <span>{{ job.salary or 'Compensation not specified' }}</span>
+      <div>
+        <a class="badge bg-light text-dark text-decoration-none" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Source: {{ job.source|capitalize }}</a>
+        <a class="btn btn-sm btn-primary" href="{{ job.apply_url }}" target="_blank" rel="noopener noreferrer">Apply</a>
+      </div>
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state">No imported roles match your search. Run the public-job sync first.</div>
+  {% endfor %}
+</div>
+{% endblock %}
