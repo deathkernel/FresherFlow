@@ -14,9 +14,9 @@ def valid_resume(filename):return "." in filename and filename.rsplit(".",1)[1].
 @role_required("student")
 def dashboard():
     db=get_db();uid=session["user_id"]
-    stats={"applications":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=?",(uid,)).fetchone()["c"],"shortlisted":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",(uid,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Selected'",(uid,)).fetchone()["c"],"saved":db.execute("SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?",(uid,)).fetchone()["c"]}
+    stats={"applications":db.execute("SELECT (SELECT COUNT(*) FROM applications WHERE student_id=?) + (SELECT COUNT(*) FROM external_applications WHERE student_id=?) c",(uid,uid)).fetchone()["c"],"shortlisted":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",(uid,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Selected'",(uid,)).fetchone()["c"],"saved":db.execute("SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?",(uid,)).fetchone()["c"]}
     jobs=db.execute("""SELECT v.*,ep.organization_name,0 is_external,NULL apply_url FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6""").fetchall()
-    external_jobs=db.execute("""SELECT id,title,company,location,job_type,description,skills,salary,apply_url,source,source_url,posted_at FROM external_jobs WHERE active=1 ORDER BY COALESCE(posted_at,created_at) DESC LIMIT 6""").fetchall()
+    external_jobs=db.execute("""SELECT id,title,company,location,job_type,description,skills,salary,apply_url,source,source_url,posted_at,EXISTS(SELECT 1 FROM external_applications ea WHERE ea.external_job_id=external_jobs.id AND ea.student_id=?) applied FROM external_jobs WHERE active=1 ORDER BY COALESCE(posted_at,created_at) DESC LIMIT 6""",(uid,)).fetchall()
     return render_template("student/dashboard.html",stats=stats,jobs=jobs,external_jobs=external_jobs)
 
 @student_bp.route("/profile",methods=["GET","POST"])
@@ -46,11 +46,23 @@ def jobs():
     if q:sql+=" AND (v.title LIKE ? OR ep.organization_name LIKE ? OR v.skills LIKE ?)";args += [f"%{q}%"]*3
     if typ:sql+=" AND v.vacancy_type=?";args.append(typ)
     internal=db.execute(sql,args).fetchall()
-    external_sql="""SELECT id,title,job_type vacancy_type,description,location,salary,skills,company organization_name,0 saved,0 applied,1 is_external,apply_url,source,source_url FROM external_jobs WHERE active=1""";external_args=[]
+    external_sql="""SELECT id,title,job_type vacancy_type,description,location,salary,skills,company organization_name,0 saved,EXISTS(SELECT 1 FROM external_applications ea WHERE ea.external_job_id=external_jobs.id AND ea.student_id=?) applied,1 is_external,apply_url,source,source_url FROM external_jobs WHERE active=1""";external_args=[uid]
     if q:external_sql+=" AND (title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)";external_args += [f"%{q}%"]*4
     if typ:external_sql+=" AND job_type=?";external_args.append(typ)
     external=db.execute(external_sql+" ORDER BY COALESCE(posted_at,created_at) DESC",external_args).fetchall()
     return render_template("student/jobs.html",jobs=[*internal,*external],q=q,typ=typ)
+
+@student_bp.post("/external-jobs/<int:job_id>/apply")
+@role_required("student")
+def apply_external_job(job_id):
+    db=get_db();uid=session["user_id"]
+    job=db.execute("SELECT id FROM external_jobs WHERE id=? AND active=1",(job_id,)).fetchone()
+    if not job:flash("This public job is no longer available.","error");return redirect(request.referrer or url_for("student.jobs"))
+    try:
+        db.execute("INSERT INTO external_applications(external_job_id,student_id) VALUES(?,?)",(job_id,uid));db.commit();flash("Application recorded in FresherFlow. The external employer has not been contacted.","success")
+    except sqlite3.IntegrityError:
+        db.rollback();flash("You have already applied to this public job.","error")
+    return redirect(request.referrer or url_for("student.jobs"))
 
 @student_bp.get("/jobs/<int:vacancy_id>")
 @role_required("student")
@@ -79,4 +91,5 @@ def save(vacancy_id):
 @student_bp.get("/applications")
 @role_required("student")
 def applications():
-    rows=get_db().execute("""SELECT a.*,v.title,v.vacancy_type,v.location,ep.organization_name FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE a.student_id=? ORDER BY a.id DESC""",(session["user_id"],)).fetchall();return render_template("student/applications.html",applications=rows)
+    db=get_db();uid=session["user_id"]
+    rows=db.execute("""SELECT a.id,a.title,a.vacancy_type,a.location,a.organization_name,a.applied_at,a.status,a.is_external FROM (SELECT a.id,v.title,v.vacancy_type,v.location,ep.organization_name,a.applied_at,a.status,0 is_external FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE a.student_id=? UNION ALL SELECT ea.id,ej.title,ej.job_type,ej.location,ej.company,ea.applied_at,ea.status,1 FROM external_applications ea JOIN external_jobs ej ON ej.id=ea.external_job_id WHERE ea.student_id=?) a ORDER BY a.applied_at DESC""",(uid,uid)).fetchall();return render_template("student/applications.html",applications=rows)
