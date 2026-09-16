@@ -64,7 +64,8 @@ CREATE TABLE IF NOT EXISTS applications (
     status TEXT NOT NULL DEFAULT 'Applied' CHECK(status IN ('Applied','Shortlisted','Selected','Rejected')),
     applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(vacancy_id, student_id),
-    FOREIGN KEY(vacancy_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY(vacancy_id) REFERENCES vacancies(id) ON DELETE CASCADE,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS saved_jobs (
