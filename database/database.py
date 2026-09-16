@@ -27,8 +27,24 @@ def migrate_employer_data(db):
     for column,definition in additions.items():
         if column not in vacancy_columns:db.execute(f"ALTER TABLE vacancies ADD COLUMN {column} {definition}")
 
+def migrate_application_data(db):
+    # Older local databases may have been created before public/API applications existed.
+    # Keep existing data and add the project-only application table automatically.
+    db.execute("""CREATE TABLE IF NOT EXISTS external_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        external_job_id INTEGER NOT NULL,
+        student_id INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'Applied' CHECK(status IN ('Applied','Withdrawn')),
+        applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(external_job_id, student_id),
+        FOREIGN KEY(external_job_id) REFERENCES external_jobs(id) ON DELETE CASCADE,
+        FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_external_applications_student ON external_applications(student_id, applied_at)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_external_applications_job ON external_applications(external_job_id, applied_at)")
+
 def init_db(database_path):
-    path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_employer_data(db)
+    path=Path(database_path);path.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(path);db.execute("PRAGMA foreign_keys = ON");schema=Path(__file__).with_name("schema.sql").read_text(encoding="utf-8");db.executescript(schema);migrate_student_profile(db);migrate_employer_data(db);migrate_application_data(db)
     from .demo_seed import seed_demo_data
     # Demo accounts are opt-in and must never use a hard-coded credential.
     password=os.environ.get("DEMO_EMPLOYER_PASSWORD")
