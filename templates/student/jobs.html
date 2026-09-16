@@ -22,13 +22,7 @@
     <div class="job-bottom">
       <span>{{ job.salary or 'Compensation not specified' }}</span>
       {% if job.is_external %}
-      <div>
-        <span class="badge bg-light text-dark">{{ job.source|capitalize }}</span>
-        <form class="d-inline" method="post" action="{{ url_for('student.apply_external_job', job_id=job.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn-sm btn-primary" type="submit">{{ 'Applied' if job.applied else 'Apply' }}</button>
-        </form>
-      </div>
+      <div><span class="badge bg-light text-dark">{{ job.source|capitalize }}</span><a class="btn btn-sm btn-primary" href="{{ url_for('student.public_job_details', job_id=job.id) }}">View details</a></div>
       {% else %}
       <div>
         <form class="d-inline" method="post" action="{{ url_for('student.save', vacancy_id=job.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light">{{ 'Saved' if job.saved else 'Save' }}</button></form>
