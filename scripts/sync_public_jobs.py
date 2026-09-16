@@ -10,9 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from config import Config  # noqa: E402
-from database.database import init_db  # noqa: E402
-from services.public_jobs import fetch_all  # noqa: E402
+from config import Config
+from database.database import init_db
+from services.public_jobs import fetch_all
 
 
 def main() -> int:
@@ -69,7 +69,7 @@ def main() -> int:
     )
     for source, error in errors.items():
         print(f"::warning title={source}::{error}")
-    # A partial sync is useful, but CI should fail if every source is unavailable.
+
     return 1 if errors and not jobs else 0
 
 

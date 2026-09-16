@@ -18,7 +18,6 @@ def main() -> int:
     db.execute("PRAGMA foreign_keys = ON")
     before = db.execute("SELECT COUNT(*) FROM vacancies").fetchone()[0]
 
-    # demo_seed.py creates employers with this unique email prefix.
     cursor = db.execute("""DELETE FROM vacancies
            WHERE employer_id IN (
                SELECT id FROM users WHERE email LIKE 'demo.employer%@fresherflow.local'

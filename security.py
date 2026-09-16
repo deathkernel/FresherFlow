@@ -45,5 +45,5 @@ def valid_resume_upload(file_storage):
         return header.startswith(b"%PDF-")
     if extension == "docx":
         return header.startswith(b"PK\x03\x04")
-    # Legacy .doc files use the OLE Compound File signature.
+
     return header.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1")

@@ -77,7 +77,6 @@ def create_app():
             return redirect(url_for("admin.dashboard"))
         return redirect(url_for("admin.login"))
 
-    # Backward-compatible panel URLs.
     @app.get("/student-panel")
     def student_panel():
         return redirect(url_for("student_portal"))
@@ -119,5 +118,3 @@ if __name__ == "__main__":
     print("\n  Press Ctrl+C to stop the server.")
     print("=" * 58 + "\n")
     app.run(host=host, port=port, debug=debug)
-
-# trigger source comment cleanup

@@ -66,8 +66,7 @@ def migrate_employer_data(db):
 
 
 def migrate_application_data(db):
-    # Older local databases may have been created before public/API applications existed.
-    # Keep existing data and add the project-only application table automatically.
+
     db.execute("""CREATE TABLE IF NOT EXISTS external_applications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         external_job_id INTEGER NOT NULL,
@@ -98,7 +97,6 @@ def init_db(database_path):
     migrate_application_data(db)
     from .demo_seed import seed_demo_data
 
-    # Demo accounts are opt-in and must never use a hard-coded credential.
     password = os.environ.get("DEMO_EMPLOYER_PASSWORD")
     if os.environ.get("FRESHERFLOW_DEMO") == "1" and password:
         seed_demo_data(db, password)
