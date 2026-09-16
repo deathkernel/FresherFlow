@@ -1,5 +1,6 @@
 import importlib
 
+import pytest
 from werkzeug.security import generate_password_hash
 
 
@@ -24,3 +25,12 @@ def test_admin_credentials_load_hashed_password(monkeypatch):
     email, configured_hash = admin_config.get_admin_credentials()
     assert email == "admin@example.com"
     assert configured_hash == password_hash
+
+
+def test_production_requires_secret_key(monkeypatch):
+    monkeypatch.setenv("FRESHERFLOW_ENV", "production")
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+
+    import config
+    with pytest.raises(RuntimeError, match="SECRET_KEY must be configured"):
+        importlib.reload(config)
