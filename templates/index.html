@@ -64,14 +64,15 @@
   </section>
 
   <section class="role-grid">
-    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>Everything you need to land your first role.</h2><p>Discover jobs, strengthen your profile, manage applications and see your progress in one calm workspace.</p><a href="{{ url_for('auth.register') }}?role=student">Explore the student experience →</a></article>
-    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>A cleaner way to hire fresh talent.</h2><p>Publish opportunities, review applicants and move strong candidates through a dedicated hiring workflow.</p><a href="{{ url_for('auth.register') }}?role=employer">Explore the employer experience →</a></article>
+    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>Apply for your next opportunity.</h2><p>Discover internships and entry-level jobs, manage your applications, strengthen your profile and track your progress.</p><a href="{{ url_for('auth.login', role='student') }}">Student Portal — Apply Jobs →</a></article>
+    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>Post jobs and find fresh talent.</h2><p>Publish opportunities, manage your vacancies, review applicants and move candidates through your hiring workflow.</p><a href="{{ url_for('auth.login', role='employer') }}">Employer Portal — Post Jobs →</a></article>
+    <article class="role-card reveal"><div class="role-kicker">FOR ADMIN</div><h2>Control the FresherFlow platform.</h2><p>Manage students and employers, moderate jobs and keep the platform organized from one administration portal.</p><a href="{{ url_for('auth.login', role='admin') }}">Admin Portal — Control →</a></article>
   </section>
 
-  <section class="principles"><div><span class="section-label">WHY FRESHERFLOW</span><h2>One brand. Two focused products.</h2></div><div class="principle-grid"><div><strong>01</strong><b>Clear by default</b><p>Every screen is designed around one audience and one next action.</p></div><div><strong>02</strong><b>Less friction</b><p>Profiles, applications and hiring tasks stay organized from start to finish.</p></div><div><strong>03</strong><b>Made for first jobs</b><p>The product is centered on internships and entry-level hiring—not generic enterprise recruiting.</p></div></div></section>
+  <section class="principles"><div><span class="section-label">WHY FRESHERFLOW</span><h2>Three focused portals. One platform.</h2></div><div class="principle-grid"><div><strong>01</strong><b>Student Portal</b><p>Find and apply for internships and entry-level opportunities.</p></div><div><strong>02</strong><b>Employer Portal</b><p>Post jobs and manage candidates from a dedicated workspace.</p></div><div><strong>03</strong><b>Admin Portal</b><p>Manage students, employers and platform activity in one place.</p></div></div></section>
 </main>
 
-<footer class="footer"><span>FresherFlow</span><span>Career launchpad for students and a focused hiring workspace for employers.</span></footer>
+<footer class="footer"><span>FresherFlow</span><span>Career launchpad for students, employers and administrators.</span></footer>
 {% endblock %}
 
 {% block scripts %}<script src="{{ url_for('static', filename='js/career-viz.js') }}"></script>{% endblock %}
