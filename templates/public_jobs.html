@@ -35,7 +35,7 @@
     <div class="job-bottom">
       <span>{{ job.salary or 'Compensation not specified' }}</span>
       <div>
-        <span class="badge bg-light text-dark">{{ job.source|capitalize }}</span>
+        <a class="badge bg-light text-dark text-decoration-none" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Source: {{ job.source|capitalize }}</a>
         <a class="btn btn-sm btn-primary" href="{{ job.apply_url }}" target="_blank" rel="noopener noreferrer">Apply</a>
       </div>
     </div>
