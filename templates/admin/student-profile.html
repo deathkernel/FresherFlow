@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Student Profile — FresherFlow{% endblock %}
+{% block body %}
+<div class="app-shell" style="min-height:100vh;">
+  <aside class="sidebar">
+    <div class="brand">Fresher<span>Flow</span></div>
+    <div class="side-label">DEVELOPER CONSOLE</div>
+    <nav>
+      <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+      <a class="active" href="{{ url_for('admin.dashboard') }}#applications">Applications</a>
+      <a href="{{ url_for('admin.dashboard') }}#companies">Companies</a>
+    </nav>
+    <div class="side-bottom">
+      <div class="user-chip"><div class="avatar">D</div><div><b>Developer</b><small>Platform control</small></div></div>
+      <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+    </div>
+  </aside>
+  <section class="workspace">
+    <header class="workspace-head">
+      <div>
+        <span class="eyebrow">STUDENT APPLICATION REVIEW</span>
+        <h1>{{ user.name }}</h1>
+        <p>{{ user.email }} · Review the student's profile submitted with their application.</p>
+      </div>
+      <a class="btn btn-outline-primary" href="{{ url_for('admin.dashboard') }}#applications">← Back to Applications</a>
+    </header>
+
+    <div class="stat-grid">
+      <div class="dash-stat"><span>Profile strength</span><strong>{{ profile.profile_strength or 0 }}%</strong><small>Profile completeness</small></div>
+      <div class="dash-stat"><span>Education</span><strong style="font-size:1.05rem;">{{ profile.education or '—' }}</strong><small>{{ profile.college or 'College not provided' }}</small></div>
+      <div class="dash-stat"><span>Graduation</span><strong>{{ profile.graduation_year or '—' }}</strong><small>Expected / completed</small></div>
+      <div class="dash-stat"><span>Applications</span><strong>{{ applications|length }}</strong><small>Submitted by student</small></div>
+    </div>
+
+    <div class="content-card mt-4">
+      <div class="section-head"><div><h2>Profile</h2><p>Information available to recruiters for this student's applications.</p></div></div>
+      <div class="form-grid">
+        <div><label>Full name</label><div class="form-control">{{ user.name }}</div></div>
+        <div><label>Email</label><div class="form-control">{{ user.email }}</div></div>
+        <div><label>Mobile number</label><div class="form-control">{{ profile.phone or 'Not provided' }}</div></div>
+        <div><label>Education / Qualification</label><div class="form-control">{{ profile.education or 'Not provided' }}</div></div>
+        <div><label>College / University</label><div class="form-control">{{ profile.college or 'Not provided' }}</div></div>
+        <div><label>Graduation year</label><div class="form-control">{{ profile.graduation_year or 'Not provided' }}</div></div>
+        <div class="full"><label>Skills</label><div class="form-control" style="min-height:80px;white-space:pre-wrap;">{{ profile.skills or 'Not provided' }}</div></div>
+        <div class="full"><label>Certifications</label><div class="form-control" style="min-height:80px;white-space:pre-wrap;">{{ profile.certifications or 'Not provided' }}</div></div>
+        <div><label>Preferred opportunity</label><div class="form-control">{{ profile.preferred_job_type or 'Not provided' }}</div></div>
+        <div><label>Preferred location</label><div class="form-control">{{ profile.preferred_location or 'Not provided' }}</div></div>
+        <div class="full"><label>Resume</label><div class="form-control">{{ profile.resume_filename or 'Resume not uploaded' }}</div></div>
+      </div>
+    </div>
+
+    <div class="section-head mt-5"><div><h2>Applications</h2><p>Jobs this student has applied for.</p></div></div>
+    <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Job</th><th>Company</th><th>Source</th><th>Applied</th><th>Status</th></tr></thead><tbody>
+      {% for application in applications %}
+      <tr><td><strong>{{ application.title }}</strong><br><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td><td>{{ application.organization_name }}</td><td>{{ application.application_source }}</td><td>{{ application.applied_at }}</td><td><span class="badge {% if application.status=='Selected' %}bg-success{% elif application.status=='Rejected' %}bg-danger{% elif application.status=='Shortlisted' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ application.status }}</span></td></tr>
+      {% else %}<tr><td colspan="5" class="text-center py-5">No applications found.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</div>
+{% endblock %}
