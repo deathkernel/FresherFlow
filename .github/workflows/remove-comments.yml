@@ -30,23 +30,13 @@ jobs:
 
           def strip_python(text):
               lines = text.splitlines(keepends=True)
-              out = []
-              first = True
-              tokens = tokenize.generate_tokens(io.StringIO(text).readline)
-              for tok in tokens:
-                  if tok.type == tokenize.COMMENT:
-                      if first and tok.string.startswith('#!'):
-                          out.append(tok.string)
-                      else:
-                          out.append('')
-                  else:
-                      out.append(None)
-                  first = tok.start[0] != 1
               result = list(lines)
-              for tok, replacement in zip(tokenize.generate_tokens(io.StringIO(text).readline), out):
-                  if tok.type == tokenize.COMMENT and not (tok.start[0] == 1 and tok.string.startswith('#!')):
-                      line = result[tok.start[0] - 1]
-                      result[tok.start[0] - 1] = line[:tok.start[1]] + ('\\n' if line.endswith('\\n') else '')
+              for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+                  if tok.type != tokenize.COMMENT or (tok.start[0] == 1 and tok.string.startswith('#!')):
+                      continue
+                  line = result[tok.start[0] - 1]
+                  newline = '\\n' if line.endswith('\\n') else ''
+                  result[tok.start[0] - 1] = line[:tok.start[1]] + newline
               return ''.join(result)
 
           def strip_c_style(text):
@@ -91,8 +81,7 @@ jobs:
                           out.append(' ')
                           i += 2
                       else:
-                          if c == '\\n':
-                              out.append('\\n')
+                          out.append('\\n' if c == '\\n' else '')
                           i += 1
                   else:
                       if c == '\\n':
@@ -143,8 +132,7 @@ jobs:
                           out.append(' ')
                           i += 2
                       else:
-                          if c == '\\n':
-                              out.append('\\n')
+                          out.append('\\n' if c == '\\n' else '')
                           i += 1
                   else:
                       if c == '\\n':
@@ -167,11 +155,12 @@ jobs:
                   original = path.read_text(encoding='utf-8')
               except UnicodeDecodeError:
                   continue
-              if path.suffix.lower() == '.py':
+              suffix = path.suffix.lower()
+              if suffix == '.py':
                   updated = strip_python(original)
-              elif path.suffix.lower() in {'.html', '.htm'}:
+              elif suffix in {'.html', '.htm'}:
                   updated = strip_html(original)
-              elif path.suffix.lower() == '.sql':
+              elif suffix == '.sql':
                   updated = strip_sql(original)
               else:
                   updated = strip_c_style(original)
@@ -187,7 +176,7 @@ jobs:
       - name: Commit changes
         run: |
           if git diff --quiet; then
-            echo "No code comments found."
+            echo "No source-code comments found."
             exit 0
           fi
           git config user.name "github-actions[bot]"
