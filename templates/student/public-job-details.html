@@ -38,7 +38,7 @@
         <button class="btn btn-success w-100" type="button" disabled>✓ Applied</button>
         <p class="small text-muted mt-2 mb-0">Your application is recorded in FresherFlow.</p>
       {% else %}
-        <form method="post" action="{{ url_for('student.apply_external_job', job_id=job.id) }}">
+        <form method="post" action="{{ url_for('student.apply_public_job', job_id=job.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn btn-primary w-100" type="submit">Apply Now</button>
         </form>
