@@ -1,6 +1,7 @@
 import os
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
 from admin_config import get_admin_credentials
 from database.database import get_db
@@ -15,8 +16,13 @@ def admin_required(view):
 
 
 def admin_credentials_valid(email, password):
-    configured_email, configured_password = get_admin_credentials()
-    return bool(email == configured_email and password == configured_password)
+    configured_email, configured_password_hash = get_admin_credentials()
+    if not configured_email or not configured_password_hash:
+        return False
+    try:
+        return email == configured_email and check_password_hash(configured_password_hash, password)
+    except (ValueError, TypeError):
+        return False
 
 
 @admin_bp.route("/login", methods=["GET", "POST"])
