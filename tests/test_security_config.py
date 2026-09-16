@@ -1,9 +1,11 @@
 import importlib
 
+from werkzeug.security import generate_password_hash
 
-def test_admin_credentials_are_not_default(monkeypatch):
+
+def test_admin_credentials_require_explicit_hash(monkeypatch):
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
-    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
     import admin_config
     importlib.reload(admin_config)
@@ -11,14 +13,14 @@ def test_admin_credentials_are_not_default(monkeypatch):
     assert admin_config.get_admin_credentials() == (None, None)
 
 
-def test_admin_credentials_are_loaded_from_environment(monkeypatch):
+def test_admin_credentials_load_hashed_password(monkeypatch):
     monkeypatch.setenv("ADMIN_EMAIL", "Admin@Example.com")
-    monkeypatch.setenv("ADMIN_PASSWORD", "a-strong-test-password")
+    password_hash = generate_password_hash("a-strong-test-password")
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", password_hash)
 
     import admin_config
     importlib.reload(admin_config)
 
-    assert admin_config.get_admin_credentials() == (
-        "admin@example.com",
-        "a-strong-test-password",
-    )
+    email, configured_hash = admin_config.get_admin_credentials()
+    assert email == "admin@example.com"
+    assert configured_hash == password_hash
