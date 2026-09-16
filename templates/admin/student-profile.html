@@ -1,5 +1,39 @@
 {% extends 'base.html' %}
-{% block title %}Student Profile — FresherFlow{% endblock %}
+{% block title %}Student Review — FresherFlow{% endblock %}
+{% block head %}
+<style>
+  .student-review{max-width:1280px;margin:0 auto;padding-bottom:48px}
+  .review-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px 30px;margin-bottom:22px;background:linear-gradient(135deg,#f8fbff,#fff);border:1px solid #e5eaf2;border-radius:20px;box-shadow:0 8px 30px rgba(30,55,90,.06)}
+  .student-identity{display:flex;align-items:center;gap:18px}
+  .student-avatar{width:72px;height:72px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,#1769e0,#5b8def);color:#fff;font-size:28px;font-weight:800;box-shadow:0 8px 20px rgba(23,105,224,.22)}
+  .student-identity h1{margin:0 0 5px;font-size:1.7rem;font-weight:800;color:#172033}
+  .student-identity p{margin:0;color:#667085}
+  .review-label{font-size:.72rem;letter-spacing:.1em;font-weight:800;color:#1769e0;margin-bottom:7px}
+  .review-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .review-stat{padding:20px;background:#fff;border:1px solid #e7ebf1;border-radius:16px;box-shadow:0 5px 20px rgba(20,40,70,.04)}
+  .review-stat .label{font-size:.78rem;color:#7a8495;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .review-stat .value{display:block;margin-top:8px;font-size:1.35rem;font-weight:800;color:#172033}
+  .review-stat .sub{display:block;margin-top:4px;font-size:.78rem;color:#8a93a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .review-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.8fr);gap:22px;align-items:start}
+  .review-card{background:#fff;border:1px solid #e5e9f0;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(20,40,70,.045)}
+  .review-card-head{padding:20px 24px;border-bottom:1px solid #edf0f4;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .review-card-head h2{font-size:1.05rem;margin:0;color:#172033;font-weight:800}
+  .review-card-head p{margin:4px 0 0;color:#7a8495;font-size:.82rem}
+  .review-card-body{padding:24px}
+  .info-section{margin-bottom:27px}.info-section:last-child{margin-bottom:0}
+  .info-section-title{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:#1769e0;font-weight:800;margin-bottom:13px}
+  .info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #edf0f4;border-radius:14px;overflow:hidden}
+  .info-item{padding:15px 17px;background:#fff}.info-item:nth-child(odd){background:#fbfcfe}.info-item:nth-child(-n+2){border-bottom:1px solid #edf0f4}.info-item:nth-child(even){border-left:1px solid #edf0f4}.info-item label{display:block;font-size:.72rem;color:#8a93a3;font-weight:700;margin-bottom:5px}.info-item .value{font-size:.92rem;color:#273247;font-weight:650;overflow-wrap:anywhere}
+  .full-info{grid-column:1/-1;border-top:1px solid #edf0f4}.full-info:nth-child(odd){background:#fff}
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px}.skill-chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef5ff;color:#1557b0;border:1px solid #d8e7ff;font-size:.8rem;font-weight:700}
+  .text-block{padding:15px 17px;border:1px solid #edf0f4;border-radius:14px;color:#4b5567;line-height:1.65;font-size:.88rem;white-space:pre-wrap;overflow-wrap:anywhere}
+  .side-card{padding:22px}.profile-progress{height:9px;background:#edf1f6;border-radius:99px;overflow:hidden;margin:12px 0 8px}.profile-progress span{display:block;height:100%;background:linear-gradient(90deg,#1769e0,#42a5f5);border-radius:99px}
+  .resume-box{display:flex;align-items:center;gap:13px;padding:15px;border:1px solid #e5eaf2;border-radius:14px;background:#f8faff}.resume-icon{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:#e9f2ff;color:#1769e0;font-weight:800}.resume-name{font-weight:750;color:#273247;font-size:.86rem;overflow-wrap:anywhere}.resume-label{font-size:.72rem;color:#8a93a3;margin-top:2px}
+  .applications-wrap{margin-top:22px}.application-table{margin:0}.application-table thead th{background:#f8fafc;border-bottom:1px solid #e5e9f0;color:#697386;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:800;padding:14px 16px;white-space:nowrap}.application-table tbody td{padding:16px;border-bottom:1px solid #edf0f4;color:#465166;font-size:.86rem}.application-table tbody tr:last-child td{border-bottom:0}.job-title{color:#1d2939;font-weight:750}.job-meta{font-size:.74rem;color:#929aaa;margin-top:4px}.source-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#f1f4f8;color:#647084;font-size:.72rem;font-weight:750}.status-pill{display:inline-flex;padding:5px 10px;border-radius:999px;font-size:.72rem;font-weight:800;background:#eef1f5;color:#667085}.status-selected{background:#e8f7ee;color:#16804b}.status-rejected{background:#fdecec;color:#bd2c2c}.status-shortlisted{background:#fff5d9;color:#9a6900}
+  @media(max-width:900px){.review-grid{grid-template-columns:1fr}.review-stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.review-hero{align-items:flex-start;flex-direction:column;padding:22px}.student-identity{align-items:flex-start}.review-stats{grid-template-columns:1fr 1fr}.info-grid{grid-template-columns:1fr}.info-item,.info-item:nth-child(even){border-left:0;border-bottom:1px solid #edf0f4}.info-item:last-child{border-bottom:0}.full-info{grid-column:auto}.review-card-body{padding:18px}.application-table{min-width:760px}}
+</style>
+{% endblock %}
 {% block body %}
 <div class="app-shell" style="min-height:100vh;">
   <aside class="sidebar">
@@ -15,46 +49,101 @@
       <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
     </div>
   </aside>
+
   <section class="workspace">
-    <header class="workspace-head">
-      <div>
-        <span class="eyebrow">STUDENT APPLICATION REVIEW</span>
-        <h1>{{ user.name }}</h1>
-        <p>{{ user.email }} · Review the student's profile submitted with their application.</p>
+    <div class="student-review">
+      <header class="workspace-head" style="margin-bottom:18px;">
+        <div>
+          <span class="eyebrow">STUDENT APPLICATION REVIEW</span>
+          <p style="margin-top:6px;">Review the student's profile and application history.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="{{ url_for('admin.dashboard') }}#applications">← Back to Applications</a>
+      </header>
+
+      <div class="review-hero">
+        <div class="student-identity">
+          <div class="student-avatar">{{ (user.name or 'S')[:1]|upper }}</div>
+          <div><div class="review-label">STUDENT PROFILE</div><h1>{{ user.name }}</h1><p>{{ user.email }}</p></div>
+        </div>
+        <div><span class="source-pill">Student ID #{{ user.id }}</span></div>
       </div>
-      <a class="btn btn-outline-primary" href="{{ url_for('admin.dashboard') }}#applications">← Back to Applications</a>
-    </header>
 
-    <div class="stat-grid">
-      <div class="dash-stat"><span>Profile strength</span><strong>{{ profile.profile_strength or 0 }}%</strong><small>Profile completeness</small></div>
-      <div class="dash-stat"><span>Education</span><strong style="font-size:1.05rem;">{{ profile.education or '—' }}</strong><small>{{ profile.college or 'College not provided' }}</small></div>
-      <div class="dash-stat"><span>Graduation</span><strong>{{ profile.graduation_year or '—' }}</strong><small>Expected / completed</small></div>
-      <div class="dash-stat"><span>Applications</span><strong>{{ applications|length }}</strong><small>Submitted by student</small></div>
-    </div>
+      <div class="review-stats">
+        <div class="review-stat"><span class="label">Profile Strength</span><span class="value">{{ profile.profile_strength or 0 }}%</span><span class="sub">Profile completeness</span></div>
+        <div class="review-stat"><span class="label">Education</span><span class="value" style="font-size:1rem;">{{ profile.education or 'Not provided' }}</span><span class="sub">{{ profile.college or 'College not provided' }}</span></div>
+        <div class="review-stat"><span class="label">Graduation</span><span class="value">{{ profile.graduation_year or '—' }}</span><span class="sub">Expected / completed</span></div>
+        <div class="review-stat"><span class="label">Applications</span><span class="value">{{ applications|length }}</span><span class="sub">Submitted by student</span></div>
+      </div>
 
-    <div class="content-card mt-4">
-      <div class="section-head"><div><h2>Profile</h2><p>Information available to recruiters for this student's applications.</p></div></div>
-      <div class="form-grid">
-        <div><label>Full name</label><div class="form-control">{{ user.name }}</div></div>
-        <div><label>Email</label><div class="form-control">{{ user.email }}</div></div>
-        <div><label>Mobile number</label><div class="form-control">{{ profile.phone or 'Not provided' }}</div></div>
-        <div><label>Education / Qualification</label><div class="form-control">{{ profile.education or 'Not provided' }}</div></div>
-        <div><label>College / University</label><div class="form-control">{{ profile.college or 'Not provided' }}</div></div>
-        <div><label>Graduation year</label><div class="form-control">{{ profile.graduation_year or 'Not provided' }}</div></div>
-        <div class="full"><label>Skills</label><div class="form-control" style="min-height:80px;white-space:pre-wrap;">{{ profile.skills or 'Not provided' }}</div></div>
-        <div class="full"><label>Certifications</label><div class="form-control" style="min-height:80px;white-space:pre-wrap;">{{ profile.certifications or 'Not provided' }}</div></div>
-        <div><label>Preferred opportunity</label><div class="form-control">{{ profile.preferred_job_type or 'Not provided' }}</div></div>
-        <div><label>Preferred location</label><div class="form-control">{{ profile.preferred_location or 'Not provided' }}</div></div>
-        <div class="full"><label>Resume</label><div class="form-control">{{ profile.resume_filename or 'Resume not uploaded' }}</div></div>
+      <div class="review-grid">
+        <div class="review-card">
+          <div class="review-card-head"><div><h2>Student Information</h2><p>Profile details submitted by the student</p></div></div>
+          <div class="review-card-body">
+            <div class="info-section">
+              <div class="info-section-title">Personal Details</div>
+              <div class="info-grid">
+                <div class="info-item"><label>Full Name</label><div class="value">{{ user.name }}</div></div>
+                <div class="info-item"><label>Email Address</label><div class="value">{{ user.email }}</div></div>
+                <div class="info-item"><label>Mobile Number</label><div class="value">{{ profile.phone or 'Not provided' }}</div></div>
+                <div class="info-item"><label>Preferred Location</label><div class="value">{{ profile.preferred_location or 'Not provided' }}</div></div>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <div class="info-section-title">Education</div>
+              <div class="info-grid">
+                <div class="info-item"><label>Qualification</label><div class="value">{{ profile.education or 'Not provided' }}</div></div>
+                <div class="info-item"><label>College / University</label><div class="value">{{ profile.college or 'Not provided' }}</div></div>
+                <div class="info-item full-info"><label>Graduation Year</label><div class="value">{{ profile.graduation_year or 'Not provided' }}</div></div>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <div class="info-section-title">Skills & Certifications</div>
+              {% if profile.skills %}
+                <div class="chip-list">{% for skill in profile.skills.replace(',', '\n').splitlines() if skill.strip() %}<span class="skill-chip">{{ skill.strip() }}</span>{% endfor %}</div>
+              {% else %}<div class="text-block">No skills provided.</div>{% endif %}
+              <div style="margin-top:14px;">{% if profile.certifications %}<div class="text-block">{{ profile.certifications }}</div>{% else %}<div class="text-block">No certifications provided.</div>{% endif %}</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="review-card side-card">
+            <div class="review-label">PROFILE COMPLETENESS</div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;"><strong style="font-size:1.7rem;color:#172033;">{{ profile.profile_strength or 0 }}%</strong><span style="font-size:.75rem;color:#8a93a3;">complete</span></div>
+            <div class="profile-progress"><span style="width:{{ profile.profile_strength or 0 }}%;"></span></div>
+            <p style="margin:0;color:#7a8495;font-size:.8rem;line-height:1.5;">Based on the information available in the student's profile.</p>
+          </div>
+
+          <div class="review-card side-card" style="margin-top:18px;">
+            <div class="review-label">PREFERENCES</div>
+            <div class="info-item" style="padding:12px 0;border-bottom:1px solid #edf0f4;"><label>Preferred Opportunity</label><div class="value">{{ profile.preferred_job_type or 'Not provided' }}</div></div>
+            <div class="info-item" style="padding:12px 0;"><label>Preferred Location</label><div class="value">{{ profile.preferred_location or 'Not provided' }}</div></div>
+          </div>
+
+          <div class="review-card side-card" style="margin-top:18px;">
+            <div class="review-label">RESUME</div>
+            <div class="resume-box"><div class="resume-icon">PDF</div><div><div class="resume-name">{{ profile.resume_filename or 'Resume not uploaded' }}</div><div class="resume-label">Student document</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card applications-wrap">
+        <div class="review-card-head"><div><h2>Application History</h2><p>Jobs this student has applied for through FresherFlow</p></div><span class="source-pill">{{ applications|length }} total</span></div>
+        <div class="table-responsive"><table class="table align-middle application-table"><thead><tr><th>Job</th><th>Company</th><th>Source</th><th>Applied</th><th>Status</th></tr></thead><tbody>
+          {% for application in applications %}
+          <tr>
+            <td><div class="job-title">{{ application.title }}</div><div class="job-meta">{{ application.vacancy_type }} · #{{ application.vacancy_id }}</div></td>
+            <td>{{ application.organization_name }}</td>
+            <td><span class="source-pill">{{ application.application_source }}</span></td>
+            <td>{{ application.applied_at }}</td>
+            <td><span class="status-pill {% if application.status=='Selected' %}status-selected{% elif application.status=='Rejected' %}status-rejected{% elif application.status=='Shortlisted' %}status-shortlisted{% endif %}">{{ application.status }}</span></td>
+          </tr>
+          {% else %}<tr><td colspan="5" class="text-center py-5">No applications found.</td></tr>{% endfor %}
+        </tbody></table></div>
       </div>
     </div>
-
-    <div class="section-head mt-5"><div><h2>Applications</h2><p>Jobs this student has applied for.</p></div></div>
-    <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Job</th><th>Company</th><th>Source</th><th>Applied</th><th>Status</th></tr></thead><tbody>
-      {% for application in applications %}
-      <tr><td><strong>{{ application.title }}</strong><br><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td><td>{{ application.organization_name }}</td><td>{{ application.application_source }}</td><td>{{ application.applied_at }}</td><td><span class="badge {% if application.status=='Selected' %}bg-success{% elif application.status=='Rejected' %}bg-danger{% elif application.status=='Shortlisted' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ application.status }}</span></td></tr>
-      {% else %}<tr><td colspan="5" class="text-center py-5">No applications found.</td></tr>{% endfor %}
-    </tbody></table></div>
   </section>
 </div>
 {% endblock %}
