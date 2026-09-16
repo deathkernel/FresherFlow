@@ -64,12 +64,12 @@
   </section>
 
   <section class="role-grid">
-    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>Apply for your next opportunity.</h2><p>Discover internships and entry-level jobs, manage your applications, strengthen your profile and track your progress.</p><a href="{{ url_for('auth.login', role='student') }}">Student Portal — Apply Jobs →</a></article>
-    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>Post jobs and find fresh talent.</h2><p>Publish opportunities, manage your vacancies, review applicants and move candidates through your hiring workflow.</p><a href="{{ url_for('auth.login', role='employer') }}">Employer Portal — Post Jobs →</a></article>
-    <article class="role-card reveal"><div class="role-kicker">FOR ADMIN</div><h2>Control the FresherFlow platform.</h2><p>Manage students and employers, moderate jobs and keep the platform organized from one administration portal.</p><a href="{{ url_for('auth.login', role='admin') }}">Admin Portal — Control →</a></article>
+    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>Apply for your next opportunity.</h2><p>Discover internships and entry-level jobs, manage your applications, strengthen your profile and track your progress.</p><a href="{{ url_for('student_portal') }}">Student Portal — Apply Jobs →</a></article>
+    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>Post jobs and find fresh talent.</h2><p>Publish opportunities, manage your vacancies, review applicants and move candidates through your hiring workflow.</p><a href="{{ url_for('employer_portal') }}">Employer Portal — Post Jobs →</a></article>
+    <article class="role-card reveal"><div class="role-kicker">FOR ADMIN</div><h2>Control the FresherFlow platform.</h2><p>Manage students and employers, moderate jobs and keep the platform organized from one administration portal.</p><a href="{{ url_for('admin_portal') }}">Admin Portal — Control →</a></article>
   </section>
 
-  <section class="principles"><div><span class="section-label">WHY FRESHERFLOW</span><h2>Three focused portals. One platform.</h2></div><div class="principle-grid"><div><strong>01</strong><b>Student Portal</b><p>Find and apply for internships and entry-level opportunities.</p></div><div><strong>02</strong><b>Employer Portal</b><p>Post jobs and manage candidates from a dedicated workspace.</p></div><div><strong>03</strong><b>Admin Portal</b><p>Manage students, employers and platform activity in one place.</p></div></div></section>
+  <section class="principles"><div><span class="section-label">WHY FRESHERFLOW</span><h2>Three focused portals. One platform.</h2></div><div class="principle-grid"><div><strong>01</strong><b>Student Portal</b><p>Find and apply for internships and entry-level opportunities.</p></div><div><strong>02</strong><b>Employer Portal</b><p>Post jobs and manage candidates from a dedicated workspace.</p></div><div><strong>03</strong><b>Admin Portal</b><p>Manage students, employers and platform activity in one place.</p></div></section>
 </main>
 
 <footer class="footer"><span>FresherFlow</span><span>Career launchpad for students, employers and administrators.</span></footer>
