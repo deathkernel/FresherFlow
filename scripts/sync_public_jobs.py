@@ -1,6 +1,10 @@
 """Sync public job APIs into FresherFlow's external_jobs table."""
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> main
 import sqlite3
 import sys
 from pathlib import Path
@@ -9,12 +13,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from config import Config  # noqa: E402
+<<<<<<< HEAD
 from database.database import init_db  # noqa: E402
+=======
+>>>>>>> main
 from services.public_jobs import fetch_all  # noqa: E402
 
 
 def main() -> int:
+<<<<<<< HEAD
     init_db(Config.DATABASE)
+=======
+>>>>>>> main
     jobs, errors = fetch_all()
     db = sqlite3.connect(Config.DATABASE)
     db.execute("PRAGMA foreign_keys = ON")
@@ -53,6 +63,10 @@ def main() -> int:
     print(f"FresherFlow public job sync: {inserted} inserted, {updated} updated, {len(errors)} source errors")
     for source, error in errors.items():
         print(f"::warning title={source}::{error}")
+<<<<<<< HEAD
+=======
+    # A partial sync is useful, but CI should fail if every source is unavailable.
+>>>>>>> main
     return 1 if errors and not jobs else 0
 
 
