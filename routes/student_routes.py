@@ -52,17 +52,23 @@ def jobs():
     external=db.execute(external_sql+" ORDER BY COALESCE(posted_at,created_at) DESC",external_args).fetchall()
     return render_template("student/jobs.html",jobs=[*internal,*external],q=q,typ=typ)
 
-@student_bp.post("/external-jobs/<int:job_id>/apply")
+@student_bp.get("/public-jobs/<int:job_id>")
 @role_required("student")
-def apply_external_job(job_id):
-    db=get_db();uid=session["user_id"]
-    job=db.execute("SELECT id FROM external_jobs WHERE id=? AND active=1",(job_id,)).fetchone()
-    if not job:flash("This public job is no longer available.","error");return redirect(request.referrer or url_for("student.jobs"))
+def public_job_details(job_id):
+    db=get_db();uid=session["user_id"];job=db.execute("""SELECT e.*,EXISTS(SELECT 1 FROM external_applications ea WHERE ea.external_job_id=e.id AND ea.student_id=?) applied FROM external_jobs e WHERE e.id=? AND e.active=1""",(uid,job_id)).fetchone()
+    if not job:return render_template("404.html"),404
+    return render_template("student/public-job-details.html",job=job,applied=bool(job["applied"]))
+
+@student_bp.post("/public-jobs/<int:job_id>/apply")
+@role_required("student")
+def apply_public_job(job_id):
+    db=get_db();uid=session["user_id"];job=db.execute("SELECT id FROM external_jobs WHERE id=? AND active=1",(job_id,)).fetchone()
+    if not job:flash("This public job is no longer available.","error");return redirect(url_for("student.jobs"))
     try:
-        db.execute("INSERT INTO external_applications(external_job_id,student_id) VALUES(?,?)",(job_id,uid));db.commit();flash("Application recorded in FresherFlow. The external employer has not been contacted.","success")
+        db.execute("INSERT INTO external_applications(external_job_id,student_id) VALUES(?,?)",(job_id,uid));db.commit();flash("Application recorded in FresherFlow. The external employer has not been contacted automatically.","success")
     except sqlite3.IntegrityError:
         db.rollback();flash("You have already applied to this public job.","error")
-    return redirect(request.referrer or url_for("student.jobs"))
+    return redirect(url_for("student.public_job_details",job_id=job_id))
 
 @student_bp.get("/jobs/<int:vacancy_id>")
 @role_required("student")
