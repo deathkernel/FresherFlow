@@ -24,41 +24,37 @@ jobs:
           import re
           import tokenize
 
-          ROOT = Path('.')
-          EXCLUDED = {'.git', '.venv', 'venv', 'node_modules', '__pycache__'}
-          EXTENSIONS = {'.py', '.js', '.css', '.html', '.htm', '.sql', '.sh'}
+          root = Path('.')
+          extensions = {'.py', '.js', '.css', '.html', '.htm', '.sql', '.sh'}
+          excluded = {'.git', '.venv', 'venv', 'node_modules', '__pycache__'}
 
-          def strip_python(text):
+          def python_comments(text):
               lines = text.splitlines(keepends=True)
-              result = list(lines)
               for tok in tokenize.generate_tokens(io.StringIO(text).readline):
-                  if tok.type != tokenize.COMMENT or (tok.start[0] == 1 and tok.string.startswith('#!')):
-                      continue
-                  line = result[tok.start[0] - 1]
-                  newline = '\\n' if line.endswith('\\n') else ''
-                  result[tok.start[0] - 1] = line[:tok.start[1]] + newline
-              return ''.join(result)
+                  if tok.type == tokenize.COMMENT and not (tok.start[0] == 1 and tok.string.startswith('#!')):
+                      line = lines[tok.start[0] - 1]
+                      lines[tok.start[0] - 1] = line[:tok.start[1]] + ('\n' if line.endswith('\n') else '')
+              return ''.join(lines)
 
-          def strip_c_style(text):
+          def c_comments(text):
               out = []
               i = 0
-              n = len(text)
               state = 'code'
               quote = ''
-              while i < n:
+              while i < len(text):
                   c = text[i]
-                  nxt = text[i + 1] if i + 1 < n else ''
+                  n = text[i + 1] if i + 1 < len(text) else ''
                   if state == 'code':
                       if c in ('"', "'", '`'):
                           quote = c
                           state = 'string'
                           out.append(c)
                           i += 1
-                      elif c == '/' and nxt == '*':
+                      elif c == '/' and n == '*':
                           state = 'block'
                           out.append(' ')
                           i += 2
-                      elif c == '/' and nxt == '/':
+                      elif c == '/' and n == '/':
                           state = 'line'
                           out.append(' ')
                           i += 2
@@ -67,7 +63,7 @@ jobs:
                           i += 1
                   elif state == 'string':
                       out.append(c)
-                      if c == '\\\\' and i + 1 < n:
+                      if c == '\\' and i + 1 < len(text):
                           out.append(text[i + 1])
                           i += 2
                       elif c == quote:
@@ -76,80 +72,27 @@ jobs:
                       else:
                           i += 1
                   elif state == 'block':
-                      if c == '*' and nxt == '/':
+                      if c == '*' and n == '/':
                           state = 'code'
                           out.append(' ')
                           i += 2
                       else:
-                          out.append('\\n' if c == '\\n' else '')
+                          out.append('\n' if c == '\n' else '')
                           i += 1
                   else:
-                      if c == '\\n':
+                      if c == '\n':
                           state = 'code'
-                          out.append('\\n')
+                          out.append('\n')
                       i += 1
               return ''.join(out)
 
-          def strip_sql(text):
-              out = []
-              i = 0
-              n = len(text)
-              state = 'code'
-              quote = ''
-              while i < n:
-                  c = text[i]
-                  nxt = text[i + 1] if i + 1 < n else ''
-                  if state == 'code':
-                      if c in ("'", '"', '`'):
-                          quote = c
-                          state = 'string'
-                          out.append(c)
-                          i += 1
-                      elif c == '-' and nxt == '-':
-                          state = 'line'
-                          out.append(' ')
-                          i += 2
-                      elif c == '/' and nxt == '*':
-                          state = 'block'
-                          out.append(' ')
-                          i += 2
-                      else:
-                          out.append(c)
-                          i += 1
-                  elif state == 'string':
-                      out.append(c)
-                      if c == quote and nxt == quote:
-                          out.append(nxt)
-                          i += 2
-                      elif c == quote:
-                          state = 'code'
-                          i += 1
-                      else:
-                          i += 1
-                  elif state == 'block':
-                      if c == '*' and nxt == '/':
-                          state = 'code'
-                          out.append(' ')
-                          i += 2
-                      else:
-                          out.append('\\n' if c == '\\n' else '')
-                          i += 1
-                  else:
-                      if c == '\\n':
-                          state = 'code'
-                          out.append('\\n')
-                      i += 1
-              return ''.join(out)
+          def sql_comments(text):
+              return re.sub(r'--[^\n]*', '', c_comments(text))
 
-          def strip_html(text):
-              text = re.sub(r'<!--.*?-->', '', text, flags=re.S)
-              return re.sub(r'\{#.*?#\}', '', text, flags=re.S)
-
-          changed = []
-          for path in ROOT.rglob('*'):
-              if not path.is_file() or path.suffix.lower() not in EXTENSIONS:
+          for path in root.rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in extensions:
                   continue
-              if any(part in EXCLUDED for part in path.parts):
+              if any(part in excluded for part in path.parts):
                   continue
               try:
                   original = path.read_text(encoding='utf-8')
@@ -157,20 +100,16 @@ jobs:
                   continue
               suffix = path.suffix.lower()
               if suffix == '.py':
-                  updated = strip_python(original)
+                  updated = python_comments(original)
               elif suffix in {'.html', '.htm'}:
-                  updated = strip_html(original)
+                  updated = re.sub(r'<!--.*?-->', '', original, flags=re.S)
+                  updated = re.sub(r'\{#.*?#\}', '', updated, flags=re.S)
               elif suffix == '.sql':
-                  updated = strip_sql(original)
+                  updated = sql_comments(original)
               else:
-                  updated = strip_c_style(original)
+                  updated = c_comments(original)
               if updated != original:
                   path.write_text(updated, encoding='utf-8')
-                  changed.append(str(path))
-
-          print(f'Updated {len(changed)} files')
-          for path in changed:
-              print(path)
           PY
 
       - name: Commit changes
