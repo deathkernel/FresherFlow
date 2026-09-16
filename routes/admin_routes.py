@@ -54,6 +54,7 @@ def dashboard():
         "approved_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='approved'").fetchone()["c"],
         "rejected_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='rejected'").fetchone()["c"],
         "api_jobs": db.execute("SELECT COUNT(*) c FROM external_jobs").fetchone()["c"],
+        "applications": db.execute("SELECT COUNT(*) c FROM applications").fetchone()["c"],
     }
     q = request.args.get("q", "").strip()
     moderation = request.args.get("moderation", "").strip().lower()
@@ -76,6 +77,24 @@ def dashboard():
         LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
         LEFT JOIN users u ON u.id=v.employer_id
         WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC LIMIT 100", job_args).fetchall()
+    application_clauses = ["1=1"]
+    application_args = []
+    if q:
+        application_clauses.append("(v.title LIKE ? OR COALESCE(ep.organization_name, '') LIKE ? OR u.name LIKE ? OR u.email LIKE ?)")
+        term = f"%{q}%"
+        application_args += [term, term, term, term]
+    applications = db.execute("""
+        SELECT a.id, a.status, a.applied_at,
+               v.id AS vacancy_id, v.title, v.vacancy_type,
+               COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
+               u.id AS student_id, u.name AS student_name, u.email AS student_email,
+               sp.college, sp.education, sp.skills, sp.resume_filename
+        FROM applications a
+        JOIN vacancies v ON v.id=a.vacancy_id
+        LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+        JOIN users u ON u.id=a.student_id
+        LEFT JOIN student_profiles sp ON sp.user_id=u.id
+        WHERE """ + " AND ".join(application_clauses) + " ORDER BY a.applied_at DESC, a.id DESC LIMIT 200", application_args).fetchall()
     company_clauses = ["1=1"]
     company_args = []
     if q:
@@ -85,7 +104,7 @@ def dashboard():
         company_clauses.append("ep.account_status=?")
         company_args.append(account)
     companies = db.execute("SELECT ep.*, u.name contact_name, u.email FROM employer_profiles ep JOIN users u ON u.id=ep.user_id WHERE " + " AND ".join(company_clauses) + " ORDER BY ep.id DESC LIMIT 100", company_args).fetchall()
-    return render_template("admin/dashboard.html", stats=stats, jobs=jobs, companies=companies, q=q, moderation=moderation, account=account)
+    return render_template("admin/dashboard.html", stats=stats, jobs=jobs, applications=applications, companies=companies, q=q, moderation=moderation, account=account)
 
 
 @admin_bp.get("/companies/<int:user_id>")
@@ -133,10 +152,12 @@ def moderate_vacancy(vacancy_id):
 @admin_bp.get("/jobs/<int:job_id>")
 @admin_required
 def job_detail(job_id):
-    job = get_db().execute("SELECT v.*,ep.organization_name,u.email employer_email FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id JOIN users u ON u.id=v.employer_id WHERE v.id=?", (job_id,)).fetchone()
+    db = get_db()
+    job = db.execute("SELECT v.*,ep.organization_name,u.email employer_email,(SELECT COUNT(*) FROM applications a WHERE a.vacancy_id=v.id) application_count FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id JOIN users u ON u.id=v.employer_id WHERE v.id=?", (job_id,)).fetchone()
     if not job:
         return render_template("404.html"), 404
-    return render_template("admin/job-detail.html", job=job, internal=True)
+    applications = db.execute("SELECT a.*,u.name,u.email,sp.education,sp.college,sp.skills,sp.resume_filename FROM applications a JOIN users u ON u.id=a.student_id LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE a.vacancy_id=? ORDER BY a.id DESC", (job_id,)).fetchall()
+    return render_template("admin/job-detail.html", job=job, applications=applications, internal=True)
 
 
 @admin_bp.post("/jobs/<int:job_id>/toggle")
