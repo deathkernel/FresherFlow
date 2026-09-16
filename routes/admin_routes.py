@@ -61,12 +61,21 @@ def dashboard():
     job_clauses = ["1=1"]
     job_args = []
     if q:
-        job_clauses.append("(v.title LIKE ? OR ep.organization_name LIKE ? OR v.location LIKE ?)")
-        job_args += [f"%{q}%"] * 3
+        job_clauses.append("(v.title LIKE ? OR COALESCE(ep.organization_name, '') LIKE ? OR v.location LIKE ? OR COALESCE(u.email, '') LIKE ?)")
+        term = f"%{q}%"
+        job_args += [term, term, term, term]
     if moderation in {"pending", "approved", "rejected"}:
         job_clauses.append("v.moderation_status=?")
         job_args.append(moderation)
-    jobs = db.execute("SELECT v.*, ep.organization_name, u.email employer_email FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id JOIN users u ON u.id=v.employer_id WHERE " + " AND ".join(job_clauses) + " ORDER BY CASE v.moderation_status WHEN 'pending' THEN 0 ELSE 1 END, v.id DESC LIMIT 100", job_args).fetchall()
+    jobs = db.execute("""
+        SELECT v.*,
+               COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
+               COALESCE(u.email, '—') AS employer_email,
+               (SELECT COUNT(*) FROM applications a WHERE a.vacancy_id=v.id) AS application_count
+        FROM vacancies v
+        LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+        LEFT JOIN users u ON u.id=v.employer_id
+        WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC LIMIT 100", job_args).fetchall()
     company_clauses = ["1=1"]
     company_args = []
     if q:
