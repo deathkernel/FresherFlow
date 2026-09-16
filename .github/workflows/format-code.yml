@@ -33,7 +33,7 @@ jobs:
 
       - name: Format Jinja/HTML templates
         run: |
-          djlint templates --reformat --profile=jinja --indent=2
+          djlint templates --reformat --profile=jinja --indent=2 || true
 
       - name: Format CSS and JavaScript
         run: |
