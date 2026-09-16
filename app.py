@@ -1,12 +1,13 @@
 import os
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session, render_template, url_for
 
 from config import Config
 from database.database import close_db, init_db
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.public_jobs_routes import public_jobs_bp
+from routes.public_jobs_sync_routes import public_jobs_sync_bp
 from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf
 
@@ -39,6 +40,7 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
     app.register_blueprint(public_jobs_bp)
+    app.register_blueprint(public_jobs_sync_bp)
 
     @app.get("/")
     def index():
