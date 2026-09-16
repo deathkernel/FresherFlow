@@ -51,3 +51,5 @@ jobs:
           git add .
           git commit -m "style: format source files for readability"
           git push
+
+# Keep source formatting consistent across the project.
