@@ -12,7 +12,6 @@ from routes.public_jobs_sync_routes import public_jobs_sync_bp
 from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf
 
-
 SYNC_PATH = "/api/internal/public-jobs/sync"
 
 
@@ -33,11 +32,20 @@ def create_app():
     def security_headers(response):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-        response.headers.setdefault("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+        response.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin"
+        )
+        response.headers.setdefault(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+        )
         if request.is_secure:
-            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
         return response
 
     app.register_blueprint(auth_bp)
@@ -83,7 +91,11 @@ def create_app():
         if not session.get("user_id"):
             return redirect(url_for("auth.login"))
         role = session.get("role")
-        targets = {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}
+        targets = {
+            "student": "student.dashboard",
+            "employer": "employer.dashboard",
+            "admin": "admin.dashboard",
+        }
         return redirect(url_for(targets.get(role, "auth.login")))
 
     return app

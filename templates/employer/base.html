@@ -1,51 +1,46 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block title %}Employer Dashboard — FresherFlow{% endblock %}
-
 {% block body %}
-<div class="app-shell employer-theme">
-  <aside class="sidebar">
-    <div class="brand">Fresher<span>Flow</span></div>
-    <div class="side-label">RECRUITER WORKSPACE</div>
-
-    <nav>
-      <a class="active" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('employer.profile') }}">Organization Profile</a>
-      <a href="{{ url_for('employer.new_vacancy') }}">Post Vacancy</a>
-      <a href="{{ url_for('employer.bulk_new_vacancies') }}">Bulk Publish</a>
-      <a href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
-      <a href="{{ url_for('employer.applications') }}">Applications</a>
-    </nav>
-
-    <div class="side-bottom">
-      <div class="user-chip">
-        <div class="avatar">{{ session.name[:1]|upper }}</div>
-        <div>
-          <b>{{ session.name }}</b>
-          <small>Employer / Recruiter</small>
+  <div class="app-shell employer-theme">
+    <aside class="sidebar">
+      <div class="brand">Fresher<span>Flow</span></div>
+      <div class="side-label">RECRUITER WORKSPACE</div>
+      <nav>
+        <a class="active" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('employer.profile') }}">Organization Profile</a>
+        <a href="{{ url_for('employer.new_vacancy') }}">Post Vacancy</a>
+        <a href="{{ url_for('employer.bulk_new_vacancies') }}">Bulk Publish</a>
+        <a href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
+        <a href="{{ url_for('employer.applications') }}">Applications</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="user-chip">
+          <div class="avatar">{{ session.name[:1]|upper }}</div>
+          <div>
+            <b>{{ session.name }}</b>
+            <small>Employer / Recruiter</small>
+          </div>
         </div>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="logout">Log out</button>
+        </form>
       </div>
-      <form method="post" action="{{ url_for('auth.logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="logout">Log out</button>
-      </form>
-    </div>
-  </aside>
-
-  <section class="workspace">
-    <header class="workspace-head">
-      <div>
-        <span class="eyebrow">RECRUITER PANEL</span>
-        <h1>Manage your hiring.</h1>
-        <p>Post openings, check applications and keep your vacancies up to date.</p>
-      </div>
-      <div class="workspace-head-actions">
-        <a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a>
-        <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
-      </div>
-    </header>
-
-    {% block employer_content %}{% endblock %}
-  </section>
-</div>
+    </aside>
+    <section class="workspace">
+      <header class="workspace-head">
+        <div>
+          <span class="eyebrow">RECRUITER PANEL</span>
+          <h1>Manage your hiring.</h1>
+          <p>Post openings, check applications and keep your vacancies up to date.</p>
+        </div>
+        <div class="workspace-head-actions">
+          <a href="{{ url_for('employer.bulk_new_vacancies') }}"
+             class="btn btn-light">Bulk publish</a>
+          <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
+        </div>
+      </header>
+      {% block employer_content %}{% endblock %}
+    </section>
+  </div>
 {% endblock %}

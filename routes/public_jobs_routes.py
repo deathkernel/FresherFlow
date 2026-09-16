@@ -17,14 +17,18 @@ def api_public_jobs():
     clauses = ["active=1"]
     args = []
     if q:
-        clauses.append("(title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)")
+        clauses.append(
+            "(title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)"
+        )
         args.extend([f"%{q}%"] * 4)
     if source:
         clauses.append("source=?")
         args.append(source)
     rows = _rows(
         "SELECT id, source, source_id, title, company, location, job_type, description, skills, salary, apply_url, posted_at, source_url "
-        "FROM external_jobs WHERE " + " AND ".join(clauses) + " ORDER BY COALESCE(posted_at, created_at) DESC LIMIT ?",
+        "FROM external_jobs WHERE "
+        + " AND ".join(clauses)
+        + " ORDER BY COALESCE(posted_at, created_at) DESC LIMIT ?",
         (*args, limit),
     )
     return jsonify({"count": len(rows), "jobs": [dict(row) for row in rows]})
@@ -37,13 +41,17 @@ def public_jobs_page():
     clauses = ["active=1"]
     args = []
     if q:
-        clauses.append("(title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)")
+        clauses.append(
+            "(title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)"
+        )
         args.extend([f"%{q}%"] * 4)
     if source:
         clauses.append("source=?")
         args.append(source)
     jobs = _rows(
-        "SELECT * FROM external_jobs WHERE " + " AND ".join(clauses) + " ORDER BY COALESCE(posted_at, created_at) DESC LIMIT 100",
+        "SELECT * FROM external_jobs WHERE "
+        + " AND ".join(clauses)
+        + " ORDER BY COALESCE(posted_at, created_at) DESC LIMIT 100",
         args,
     )
     return render_template("public_jobs.html", jobs=jobs, q=q, source=source)

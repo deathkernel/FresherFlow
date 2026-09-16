@@ -8,112 +8,365 @@ VACANCY_TYPES = {"Internship", "Entry-level Job"}
 VACANCY_STATUSES = {"draft", "active", "closed"}
 APPLICATION_STATUSES = {"Applied", "Shortlisted", "Selected", "Rejected"}
 
+
 def experience_requirement_invalid(vacancy_type, eligibility):
-    if vacancy_type != "Entry-level Job": return False
+    if vacancy_type != "Entry-level Job":
+        return False
     text = (eligibility or "").strip().lower()
-    if not text: return False
-    terms = ("year experience","years experience","year of experience","years of experience","yr experience","yrs experience","yr of experience","yrs of experience","work experience","professional experience","prior experience","previous experience","relevant experience","industry experience","experience required","experience mandatory","minimum experience")
+    if not text:
+        return False
+    terms = (
+        "year experience",
+        "years experience",
+        "year of experience",
+        "years of experience",
+        "yr experience",
+        "yrs experience",
+        "yr of experience",
+        "yrs of experience",
+        "work experience",
+        "professional experience",
+        "prior experience",
+        "previous experience",
+        "relevant experience",
+        "industry experience",
+        "experience required",
+        "experience mandatory",
+        "minimum experience",
+    )
     return any(term in text for term in terms)
 
+
 def vacancy_form(form):
-    title=form.get("title","").strip(); vacancy_type=form.get("vacancy_type","").strip(); location=form.get("location","").strip(); description=form.get("description","").strip(); eligibility=form.get("eligibility","").strip()
-    if not title or not location or not description:return None,"Title, location and description are required."
-    if vacancy_type not in VACANCY_TYPES:return None,"Choose a valid vacancy type."
-    if experience_requirement_invalid(vacancy_type, eligibility):return None,"Entry-level Jobs cannot require prior work experience. For roles requiring experience, publish an Internship instead."
-    return {"title":title,"vacancy_type":vacancy_type,"description":description,"location":location,"salary":form.get("salary","").strip(),"skills":form.get("skills","").strip(),"eligibility":eligibility,"deadline":form.get("deadline") or None},None
+    title = form.get("title", "").strip()
+    vacancy_type = form.get("vacancy_type", "").strip()
+    location = form.get("location", "").strip()
+    description = form.get("description", "").strip()
+    eligibility = form.get("eligibility", "").strip()
+    if not title or not location or not description:
+        return None, "Title, location and description are required."
+    if vacancy_type not in VACANCY_TYPES:
+        return None, "Choose a valid vacancy type."
+    if experience_requirement_invalid(vacancy_type, eligibility):
+        return (
+            None,
+            "Entry-level Jobs cannot require prior work experience. For roles requiring experience, publish an Internship instead.",
+        )
+    return {
+        "title": title,
+        "vacancy_type": vacancy_type,
+        "description": description,
+        "location": location,
+        "salary": form.get("salary", "").strip(),
+        "skills": form.get("skills", "").strip(),
+        "eligibility": eligibility,
+        "deadline": form.get("deadline") or None,
+    }, None
+
 
 def bulk_vacancy_forms(form):
-    titles=form.getlist("title");types=form.getlist("vacancy_type");locations=form.getlist("location");descriptions=form.getlist("description");salaries=form.getlist("salary");skills=form.getlist("skills");eligibilities=form.getlist("eligibility");deadlines=form.getlist("deadline");count=len(titles)
-    if not count or count != len(types) or count != len(locations) or count != len(descriptions):return None,"Please complete each vacancy card before publishing."
-    vacancies=[]
+    titles = form.getlist("title")
+    types = form.getlist("vacancy_type")
+    locations = form.getlist("location")
+    descriptions = form.getlist("description")
+    salaries = form.getlist("salary")
+    skills = form.getlist("skills")
+    eligibilities = form.getlist("eligibility")
+    deadlines = form.getlist("deadline")
+    count = len(titles)
+    if (
+        not count
+        or count != len(types)
+        or count != len(locations)
+        or count != len(descriptions)
+    ):
+        return None, "Please complete each vacancy card before publishing."
+    vacancies = []
     for i in range(count):
-        data={"title":titles[i].strip(),"vacancy_type":types[i].strip(),"location":locations[i].strip(),"description":descriptions[i].strip(),"salary":salaries[i].strip() if i<len(salaries) else "","skills":skills[i].strip() if i<len(skills) else "","eligibility":eligibilities[i].strip() if i<len(eligibilities) else "","deadline":deadlines[i] if i<len(deadlines) else None}
-        if not data["title"] or not data["location"] or not data["description"]:return None,f"Vacancy {i+1}: title, location and description are required."
-        if data["vacancy_type"] not in VACANCY_TYPES:return None,f"Vacancy {i+1}: choose a valid vacancy type."
-        if experience_requirement_invalid(data["vacancy_type"],data["eligibility"]):return None,f"Vacancy {i+1}: Entry-level Jobs cannot require prior work experience."
+        data = {
+            "title": titles[i].strip(),
+            "vacancy_type": types[i].strip(),
+            "location": locations[i].strip(),
+            "description": descriptions[i].strip(),
+            "salary": salaries[i].strip() if i < len(salaries) else "",
+            "skills": skills[i].strip() if i < len(skills) else "",
+            "eligibility": eligibilities[i].strip() if i < len(eligibilities) else "",
+            "deadline": deadlines[i] if i < len(deadlines) else None,
+        }
+        if not data["title"] or not data["location"] or not data["description"]:
+            return None, f"Vacancy {i+1}: title, location and description are required."
+        if data["vacancy_type"] not in VACANCY_TYPES:
+            return None, f"Vacancy {i+1}: choose a valid vacancy type."
+        if experience_requirement_invalid(data["vacancy_type"], data["eligibility"]):
+            return (
+                None,
+                f"Vacancy {i+1}: Entry-level Jobs cannot require prior work experience.",
+            )
         vacancies.append(data)
-    return vacancies,None
+    return vacancies, None
+
 
 @employer_bp.get("/dashboard")
 @role_required("employer")
 def dashboard():
-    db=get_db();uid=session["user_id"]
-    stats={"vacancies":db.execute("SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND status='active' AND moderation_status='approved'",(uid,)).fetchone()["c"],"applications":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",(uid,)).fetchone()["c"],"shortlisted":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Shortlisted'",(uid,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'",(uid,)).fetchone()["c"]}
-    applications=db.execute("SELECT a.*,v.title,u.name,u.email FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id WHERE v.employer_id=? ORDER BY a.id DESC LIMIT 8",(uid,)).fetchall()
-    return render_template("employer/dashboard.html",stats=stats,applications=applications)
+    db = get_db()
+    uid = session["user_id"]
+    stats = {
+        "vacancies": db.execute(
+            "SELECT COUNT(*) c FROM vacancies WHERE employer_id=? AND status='active' AND moderation_status='approved'",
+            (uid,),
+        ).fetchone()["c"],
+        "applications": db.execute(
+            "SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
+            (uid,),
+        ).fetchone()["c"],
+        "shortlisted": db.execute(
+            "SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Shortlisted'",
+            (uid,),
+        ).fetchone()["c"],
+        "selected": db.execute(
+            "SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'",
+            (uid,),
+        ).fetchone()["c"],
+    }
+    applications = db.execute(
+        "SELECT a.*,v.title,u.name,u.email FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id WHERE v.employer_id=? ORDER BY a.id DESC LIMIT 8",
+        (uid,),
+    ).fetchall()
+    return render_template(
+        "employer/dashboard.html", stats=stats, applications=applications
+    )
 
-@employer_bp.route("/profile",methods=["GET","POST"])
+
+@employer_bp.route("/profile", methods=["GET", "POST"])
 @role_required("employer")
 def profile():
-    db=get_db();uid=session["user_id"]
-    if request.method=="POST":
-        data=[request.form.get(k,"").strip() for k in ("organization_name","organization_type","website","location","description")]
-        if not data[0]:flash("Organization name is required.","error");return redirect(url_for("employer.profile"))
-        db.execute("UPDATE employer_profiles SET organization_name=?,organization_type=?,website=?,location=?,description=? WHERE user_id=?",(*data,uid));db.commit();flash("Organization profile updated.","success");return redirect(url_for("employer.profile"))
-    profile=db.execute("SELECT * FROM employer_profiles WHERE user_id=?",(uid,)).fetchone();return render_template("employer/profile.html",profile=profile)
+    db = get_db()
+    uid = session["user_id"]
+    if request.method == "POST":
+        data = [
+            request.form.get(k, "").strip()
+            for k in (
+                "organization_name",
+                "organization_type",
+                "website",
+                "location",
+                "description",
+            )
+        ]
+        if not data[0]:
+            flash("Organization name is required.", "error")
+            return redirect(url_for("employer.profile"))
+        db.execute(
+            "UPDATE employer_profiles SET organization_name=?,organization_type=?,website=?,location=?,description=? WHERE user_id=?",
+            (*data, uid),
+        )
+        db.commit()
+        flash("Organization profile updated.", "success")
+        return redirect(url_for("employer.profile"))
+    profile = db.execute(
+        "SELECT * FROM employer_profiles WHERE user_id=?", (uid,)
+    ).fetchone()
+    return render_template("employer/profile.html", profile=profile)
 
-@employer_bp.route("/vacancies/new",methods=["GET","POST"])
+
+@employer_bp.route("/vacancies/new", methods=["GET", "POST"])
 @role_required("employer")
 def new_vacancy():
-    if request.method=="POST":
-        data,error=vacancy_form(request.form)
-        if error:flash(error,"error");return render_template("employer/post-vacancy.html")
-        status="draft";db=get_db()
-        try:db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(session["user_id"],data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],status,"pending"));db.commit()
-        except sqlite3.IntegrityError:db.rollback();flash("The vacancy could not be saved.","error");return render_template("employer/post-vacancy.html")
-        flash("Vacancy submitted for developer review." if request.form.get("publish")=="1" else "Vacancy saved as draft.","success");return redirect(url_for("employer.vacancies"))
+    if request.method == "POST":
+        data, error = vacancy_form(request.form)
+        if error:
+            flash(error, "error")
+            return render_template("employer/post-vacancy.html")
+        status = "draft"
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    session["user_id"],
+                    data["title"],
+                    data["vacancy_type"],
+                    data["description"],
+                    data["location"],
+                    data["salary"],
+                    data["skills"],
+                    data["eligibility"],
+                    data["deadline"],
+                    status,
+                    "pending",
+                ),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            db.rollback()
+            flash("The vacancy could not be saved.", "error")
+            return render_template("employer/post-vacancy.html")
+        flash(
+            (
+                "Vacancy submitted for developer review."
+                if request.form.get("publish") == "1"
+                else "Vacancy saved as draft."
+            ),
+            "success",
+        )
+        return redirect(url_for("employer.vacancies"))
     return render_template("employer/post-vacancy.html")
 
-@employer_bp.route("/vacancies/bulk-new",methods=["GET","POST"])
+
+@employer_bp.route("/vacancies/bulk-new", methods=["GET", "POST"])
 @role_required("employer")
 def bulk_new_vacancies():
-    if request.method=="GET":return render_template("employer/bulk-vacancies.html")
-    vacancies,error=bulk_vacancy_forms(request.form)
-    if error:flash(error,"error");return render_template("employer/bulk-vacancies.html"),400
-    db=get_db();uid=session["user_id"]
+    if request.method == "GET":
+        return render_template("employer/bulk-vacancies.html")
+    vacancies, error = bulk_vacancy_forms(request.form)
+    if error:
+        flash(error, "error")
+        return render_template("employer/bulk-vacancies.html"), 400
+    db = get_db()
+    uid = session["user_id"]
     try:
-        for data in vacancies:db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(uid,data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],"draft","pending"))
+        for data in vacancies:
+            db.execute(
+                "INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    uid,
+                    data["title"],
+                    data["vacancy_type"],
+                    data["description"],
+                    data["location"],
+                    data["salary"],
+                    data["skills"],
+                    data["eligibility"],
+                    data["deadline"],
+                    "draft",
+                    "pending",
+                ),
+            )
         db.commit()
-    except sqlite3.IntegrityError:db.rollback();flash("None of the vacancies were published because one or more entries were invalid.","error");return render_template("employer/bulk-vacancies.html"),400
-    flash(f"{len(vacancies)} vacancies submitted for developer review.","success");return redirect(url_for("employer.vacancies"))
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash(
+            "None of the vacancies were published because one or more entries were invalid.",
+            "error",
+        )
+        return render_template("employer/bulk-vacancies.html"), 400
+    flash(f"{len(vacancies)} vacancies submitted for developer review.", "success")
+    return redirect(url_for("employer.vacancies"))
+
 
 @employer_bp.get("/vacancies")
 @role_required("employer")
 def vacancies():
-    rows=get_db().execute("SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",(session["user_id"],)).fetchall();return render_template("employer/vacancies.html",vacancies=rows)
+    rows = (
+        get_db()
+        .execute(
+            "SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",
+            (session["user_id"],),
+        )
+        .fetchall()
+    )
+    return render_template("employer/vacancies.html", vacancies=rows)
 
-@employer_bp.route("/vacancies/<int:vacancy_id>/edit",methods=["GET","POST"])
+
+@employer_bp.route("/vacancies/<int:vacancy_id>/edit", methods=["GET", "POST"])
 @role_required("employer")
 def edit_vacancy(vacancy_id):
-    db=get_db();job=db.execute("SELECT * FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
-    if not job:return render_template("404.html"),404
-    if request.method=="POST":
-        data,error=vacancy_form(request.form)
-        if error:flash(error,"error");return render_template("employer/edit-vacancy.html",job=job)
-        try:db.execute("UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,status='draft',moderation_status='pending',moderation_note=NULL,moderated_at=NULL WHERE id=? AND employer_id=?",(data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],vacancy_id,session["user_id"]));db.commit()
-        except sqlite3.IntegrityError:db.rollback();flash("The vacancy could not be updated.","error");return render_template("employer/edit-vacancy.html",job=job)
-        flash("Vacancy updated and resubmitted for developer review.","success");return redirect(url_for("employer.vacancies"))
-    return render_template("employer/edit-vacancy.html",job=job)
+    db = get_db()
+    job = db.execute(
+        "SELECT * FROM vacancies WHERE id=? AND employer_id=?",
+        (vacancy_id, session["user_id"]),
+    ).fetchone()
+    if not job:
+        return render_template("404.html"), 404
+    if request.method == "POST":
+        data, error = vacancy_form(request.form)
+        if error:
+            flash(error, "error")
+            return render_template("employer/edit-vacancy.html", job=job)
+        try:
+            db.execute(
+                "UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,status='draft',moderation_status='pending',moderation_note=NULL,moderated_at=NULL WHERE id=? AND employer_id=?",
+                (
+                    data["title"],
+                    data["vacancy_type"],
+                    data["description"],
+                    data["location"],
+                    data["salary"],
+                    data["skills"],
+                    data["eligibility"],
+                    data["deadline"],
+                    vacancy_id,
+                    session["user_id"],
+                ),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            db.rollback()
+            flash("The vacancy could not be updated.", "error")
+            return render_template("employer/edit-vacancy.html", job=job)
+        flash("Vacancy updated and resubmitted for developer review.", "success")
+        return redirect(url_for("employer.vacancies"))
+    return render_template("employer/edit-vacancy.html", job=job)
+
 
 @employer_bp.post("/vacancies/<int:vacancy_id>/status")
 @role_required("employer")
 def vacancy_status(vacancy_id):
-    status=request.form.get("status")
-    if status not in VACANCY_STATUSES:return redirect(url_for("employer.vacancies"))
-    db=get_db();job=db.execute("SELECT vacancy_type,eligibility,moderation_status FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
-    if not job:return redirect(url_for("employer.vacancies"))
-    if status=="active" and job["moderation_status"]!="approved":flash("A developer must approve this vacancy before it can be published.","error");return redirect(url_for("employer.vacancies"))
-    if status=="active" and experience_requirement_invalid(job["vacancy_type"],job["eligibility"]):flash("Entry-level Jobs cannot require prior work experience.","error");return redirect(url_for("employer.vacancies"))
-    db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?",(status,vacancy_id,session["user_id"]));db.commit();flash(f"Vacancy marked {status}.","success");return redirect(url_for("employer.vacancies"))
+    status = request.form.get("status")
+    if status not in VACANCY_STATUSES:
+        return redirect(url_for("employer.vacancies"))
+    db = get_db()
+    job = db.execute(
+        "SELECT vacancy_type,eligibility,moderation_status FROM vacancies WHERE id=? AND employer_id=?",
+        (vacancy_id, session["user_id"]),
+    ).fetchone()
+    if not job:
+        return redirect(url_for("employer.vacancies"))
+    if status == "active" and job["moderation_status"] != "approved":
+        flash(
+            "A developer must approve this vacancy before it can be published.", "error"
+        )
+        return redirect(url_for("employer.vacancies"))
+    if status == "active" and experience_requirement_invalid(
+        job["vacancy_type"], job["eligibility"]
+    ):
+        flash("Entry-level Jobs cannot require prior work experience.", "error")
+        return redirect(url_for("employer.vacancies"))
+    db.execute(
+        "UPDATE vacancies SET status=? WHERE id=? AND employer_id=?",
+        (status, vacancy_id, session["user_id"]),
+    )
+    db.commit()
+    flash(f"Vacancy marked {status}.", "success")
+    return redirect(url_for("employer.vacancies"))
+
 
 @employer_bp.get("/applications")
 @role_required("employer")
 def applications():
-    rows=get_db().execute("SELECT a.*,v.title,v.vacancy_type,u.name,u.email,sp.education,sp.skills,sp.resume_filename FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE v.employer_id=? ORDER BY a.id DESC",(session["user_id"],)).fetchall();return render_template("employer/applications.html",applications=rows)
+    rows = (
+        get_db()
+        .execute(
+            "SELECT a.*,v.title,v.vacancy_type,u.name,u.email,sp.education,sp.skills,sp.resume_filename FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE v.employer_id=? ORDER BY a.id DESC",
+            (session["user_id"],),
+        )
+        .fetchall()
+    )
+    return render_template("employer/applications.html", applications=rows)
+
 
 @employer_bp.post("/applications/<int:application_id>/status")
 @role_required("employer")
 def application_status(application_id):
-    status=request.form.get("status")
-    if status not in APPLICATION_STATUSES:return redirect(url_for("employer.applications"))
-    db=get_db();db.execute("UPDATE applications SET status=? WHERE id=? AND vacancy_id IN (SELECT id FROM vacancies WHERE employer_id=?)",(status,application_id,session["user_id"]));db.commit();flash(f"Application marked {status}.","success");return redirect(request.referrer or url_for("employer.applications"))
+    status = request.form.get("status")
+    if status not in APPLICATION_STATUSES:
+        return redirect(url_for("employer.applications"))
+    db = get_db()
+    db.execute(
+        "UPDATE applications SET status=? WHERE id=? AND vacancy_id IN (SELECT id FROM vacancies WHERE employer_id=?)",
+        (status, application_id, session["user_id"]),
+    )
+    db.commit()
+    flash(f"Application marked {status}.", "success")
+    return redirect(request.referrer or url_for("employer.applications"))

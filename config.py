@@ -23,7 +23,9 @@ class Config:
     ENVIRONMENT = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
     configured_secret = os.environ.get("SECRET_KEY", "").strip()
     if ENVIRONMENT == "production" and not configured_secret:
-        raise RuntimeError("SECRET_KEY must be configured when FRESHERFLOW_ENV=production")
+        raise RuntimeError(
+            "SECRET_KEY must be configured when FRESHERFLOW_ENV=production"
+        )
 
     SECRET_KEY = configured_secret or local_secret()
     DATABASE = str(INSTANCE_DIR / "fresherflow.db")

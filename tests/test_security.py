@@ -18,7 +18,9 @@ def test_rejects_fake_pdf():
 
 
 def test_accepts_doc_signature():
-    assert valid_resume_upload(upload("resume.doc", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"x"))
+    assert valid_resume_upload(
+        upload("resume.doc", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"x")
+    )
 
 
 def test_accepts_docx_zip_signature():
@@ -30,4 +32,6 @@ def test_rejects_disallowed_extension():
 
 
 def test_rejects_oversized_upload():
-    assert not valid_resume_upload(upload("resume.pdf", b"%PDF-" + b"x" * (5 * 1024 * 1024)))
+    assert not valid_resume_upload(
+        upload("resume.pdf", b"%PDF-" + b"x" * (5 * 1024 * 1024))
+    )

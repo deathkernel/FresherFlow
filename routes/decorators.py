@@ -12,5 +12,7 @@ def role_required(role):
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
             return view(*args, **kwargs)
+
         return wrapped
+
     return decorator

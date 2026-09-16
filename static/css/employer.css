@@ -14,7 +14,7 @@
 }
 
 .candidate-card {
-  transition: .3s;
+  transition: 0.3s;
 }
 
 .candidate-card:hover {
@@ -65,7 +65,7 @@
   color: #475467;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
   text-align: left;
   white-space: nowrap;
 }
@@ -134,14 +134,30 @@
   color: #98a2b3;
 }
 
-.bulk-vacancy-table td:nth-child(2) .bulk-cell-input { min-width: 210px; }
-.bulk-vacancy-table td:nth-child(3) .bulk-cell-input { min-width: 145px; }
-.bulk-vacancy-table td:nth-child(4) .bulk-cell-input { min-width: 155px; }
-.bulk-vacancy-table td:nth-child(5) .bulk-cell-input { min-width: 145px; }
-.bulk-vacancy-table td:nth-child(6) .bulk-cell-input { min-width: 145px; }
-.bulk-vacancy-table td:nth-child(7) .bulk-cell-input { min-width: 180px; }
-.bulk-vacancy-table td:nth-child(8) .bulk-cell-input { min-width: 180px; }
-.bulk-vacancy-table td:nth-child(9) .bulk-cell-input { min-width: 300px; }
+.bulk-vacancy-table td:nth-child(2) .bulk-cell-input {
+  min-width: 210px;
+}
+.bulk-vacancy-table td:nth-child(3) .bulk-cell-input {
+  min-width: 145px;
+}
+.bulk-vacancy-table td:nth-child(4) .bulk-cell-input {
+  min-width: 155px;
+}
+.bulk-vacancy-table td:nth-child(5) .bulk-cell-input {
+  min-width: 145px;
+}
+.bulk-vacancy-table td:nth-child(6) .bulk-cell-input {
+  min-width: 145px;
+}
+.bulk-vacancy-table td:nth-child(7) .bulk-cell-input {
+  min-width: 180px;
+}
+.bulk-vacancy-table td:nth-child(8) .bulk-cell-input {
+  min-width: 180px;
+}
+.bulk-vacancy-table td:nth-child(9) .bulk-cell-input {
+  min-width: 300px;
+}
 
 .bulk-cell-textarea {
   resize: vertical;

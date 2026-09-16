@@ -1,45 +1,131 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block title %}Create account — FresherFlow{% endblock %}
-
 {% block body %}
-<div class="auth-simple-shell">
-  <main class="auth-simple-card auth-register-card reveal">
-    <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
-    <div class="auth-heading">
-      <div class="eyebrow">GET STARTED</div>
-      <h1>Create account</h1>
-      <p>Choose how you'll use FresherFlow.</p>
-    </div>
-    <div class="role-switch" role="tablist" aria-label="Account type">
-      <button type="button" class="role-choice {% if selected_role == 'student' %}active{% endif %}" data-role="student">Student / Fresher</button>
-      <button type="button" class="role-choice {% if selected_role == 'employer' %}active{% endif %}" data-role="employer">Employer / Recruiter</button>
-    </div>
-    <form method="post" enctype="multipart/form-data" class="auth-compact-form" id="registerForm">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="role" id="role" value="{{ selected_role }}">
-      <section class="form-step active" data-panel="student">
-        <label for="student-name">Full name</label><input id="student-name" class="form-control" name="name" required>
-        <label for="student-email">Email</label><input id="student-email" class="form-control" type="email" name="email" required>
-        <div class="form-two"><div><label for="phone">Mobile</label><input id="phone" class="form-control" name="phone"></div><div><label for="education">Education</label><input id="education" class="form-control" name="education" placeholder="B.Tech / BCA"></div></div>
-        <label for="college">College / University</label><input id="college" class="form-control" name="college">
-        <div class="form-two"><div><label for="graduation-year">Graduation year</label><input id="graduation-year" class="form-control" name="graduation_year" placeholder="2027"></div><div><label for="preferred-location">Preferred location</label><input id="preferred-location" class="form-control" name="preferred_location" placeholder="Pune / Remote"></div></div>
-        <label for="skills">Skills</label><input id="skills" class="form-control" name="skills" placeholder="Python, SQL, JavaScript">
-        <label class="upload-box compact-upload"><span>Upload resume</span><small>PDF, DOC or DOCX</small><input type="file" name="resume" accept=".pdf,.doc,.docx"></label>
-      </section>
-      <section class="form-step" data-panel="employer">
-        <label for="employer-name">Recruiter name</label><input id="employer-name" class="form-control" name="name" disabled required>
-        <label for="employer-email">Work email</label><input id="employer-email" class="form-control" type="email" name="email" disabled required>
-        <label for="organization-name">Organization name</label><input id="organization-name" class="form-control" name="organization_name" placeholder="Company / organization">
-        <div class="form-two"><div><label for="organization-type">Industry</label><input id="organization-type" class="form-control" name="organization_type" placeholder="Technology"></div><div><label for="location">Location</label><input id="location" class="form-control" name="location" placeholder="Pune"></div></div>
-        <label for="website">Website</label><input id="website" class="form-control" name="website" placeholder="https://..."><label for="description">Short description</label><textarea id="description" class="form-control" name="description" rows="2"></textarea>
-      </section>
-      <div class="form-two security-row"><div><label for="password">Password</label><input id="password" class="form-control" type="password" name="password" minlength="12" autocomplete="new-password" required></div><div><label for="confirm-password">Confirm</label><input id="confirm-password" class="form-control" type="password" name="confirm_password" minlength="12" autocomplete="new-password" required></div></div>
-      <button class="btn btn-primary w-100" type="submit">Create account</button>
-    </form>
-    <p class="auth-foot">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
-  </main>
-  <div class="auth-page-note">FresherFlow · Student &amp; hiring platform</div>
-</div>
+  <div class="auth-simple-shell">
+    <main class="auth-simple-card auth-register-card reveal">
+      <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
+      <div class="auth-heading">
+        <div class="eyebrow">GET STARTED</div>
+        <h1>Create account</h1>
+        <p>Choose how you'll use FresherFlow.</p>
+      </div>
+      <div class="role-switch" role="tablist" aria-label="Account type">
+        <button type="button"
+                class="role-choice {% if selected_role == 'student' %}active{% endif %}"
+                data-role="student">Student / Fresher</button>
+        <button type="button"
+                class="role-choice {% if selected_role == 'employer' %}active{% endif %}"
+                data-role="employer">Employer / Recruiter</button>
+      </div>
+      <form method="post"
+            enctype="multipart/form-data"
+            class="auth-compact-form"
+            id="registerForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="role" id="role" value="{{ selected_role }}">
+        <section class="form-step active" data-panel="student">
+          <label for="student-name">Full name</label><input id="student-name" class="form-control" name="name" required>
+          <label for="student-email">Email</label><input id="student-email"
+       class="form-control"
+       type="email"
+       name="email"
+       required>
+          <div class="form-two">
+            <div>
+              <label for="phone">Mobile</label><input id="phone" class="form-control" name="phone">
+            </div>
+            <div>
+              <label for="education">Education</label><input id="education"
+       class="form-control"
+       name="education"
+       placeholder="B.Tech / BCA">
+            </div>
+          </div>
+          <label for="college">College / University</label><input id="college" class="form-control" name="college">
+          <div class="form-two">
+            <div>
+              <label for="graduation-year">Graduation year</label><input id="graduation-year"
+       class="form-control"
+       name="graduation_year"
+       placeholder="2027">
+            </div>
+            <div>
+              <label for="preferred-location">Preferred location</label><input id="preferred-location"
+       class="form-control"
+       name="preferred_location"
+       placeholder="Pune / Remote">
+            </div>
+          </div>
+          <label for="skills">Skills</label><input id="skills"
+       class="form-control"
+       name="skills"
+       placeholder="Python, SQL, JavaScript">
+          <label class="upload-box compact-upload">
+            <span>Upload resume</span><small>PDF, DOC or DOCX</small><input type="file"
+       name="resume"
+       accept=".pdf,.doc,.docx">
+          </label>
+        </section>
+        <section class="form-step" data-panel="employer">
+          <label for="employer-name">Recruiter name</label><input id="employer-name"
+       class="form-control"
+       name="name"
+       disabled
+       required>
+          <label for="employer-email">Work email</label><input id="employer-email"
+       class="form-control"
+       type="email"
+       name="email"
+       disabled
+       required>
+          <label for="organization-name">Organization name</label><input id="organization-name"
+       class="form-control"
+       name="organization_name"
+       placeholder="Company / organization">
+          <div class="form-two">
+            <div>
+              <label for="organization-type">Industry</label><input id="organization-type"
+       class="form-control"
+       name="organization_type"
+       placeholder="Technology">
+            </div>
+            <div>
+              <label for="location">Location</label><input id="location"
+       class="form-control"
+       name="location"
+       placeholder="Pune">
+            </div>
+          </div>
+          <label for="website">Website</label><input id="website"
+       class="form-control"
+       name="website"
+       placeholder="https://..."><label for="description">Short description</label><textarea id="description" class="form-control" name="description" rows="2"></textarea>
+        </section>
+        <div class="form-two security-row">
+          <div>
+            <label for="password">Password</label><input id="password"
+       class="form-control"
+       type="password"
+       name="password"
+       minlength="12"
+       autocomplete="new-password"
+       required>
+          </div>
+          <div>
+            <label for="confirm-password">Confirm</label><input id="confirm-password"
+       class="form-control"
+       type="password"
+       name="confirm_password"
+       minlength="12"
+       autocomplete="new-password"
+       required>
+          </div>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">Create account</button>
+      </form>
+      <p class="auth-foot">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </main>
+    <div class="auth-page-note">FresherFlow · Student &amp; hiring platform</div>
+  </div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}

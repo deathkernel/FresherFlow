@@ -21,16 +21,28 @@ def sync_public_jobs():
     db = get_db()
     inserted = updated = 0
     for job in jobs:
-        if not job["source"] or not job["source_id"] or not job["title"] or not job["apply_url"]:
+        if (
+            not job["source"]
+            or not job["source_id"]
+            or not job["title"]
+            or not job["apply_url"]
+        ):
             continue
         existing = db.execute(
             "SELECT id FROM external_jobs WHERE source=? AND source_id=?",
             (job["source"], job["source_id"]),
         ).fetchone()
         values = (
-            job["title"], job["company"], job["location"], job["job_type"],
-            job["description"], job["skills"], job["salary"], job["apply_url"],
-            job["posted_at"], job["source_url"],
+            job["title"],
+            job["company"],
+            job["location"],
+            job["job_type"],
+            job["description"],
+            job["skills"],
+            job["salary"],
+            job["apply_url"],
+            job["posted_at"],
+            job["source_url"],
         )
         if existing:
             db.execute(

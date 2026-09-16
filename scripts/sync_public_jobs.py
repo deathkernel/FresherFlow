@@ -1,4 +1,5 @@
 """Sync public job APIs into FresherFlow's external_jobs table."""
+
 from __future__ import annotations
 
 import os
@@ -21,16 +22,28 @@ def main() -> int:
     db.execute("PRAGMA foreign_keys = ON")
     inserted = updated = 0
     for job in jobs:
-        if not job["source"] or not job["source_id"] or not job["title"] or not job["apply_url"]:
+        if (
+            not job["source"]
+            or not job["source_id"]
+            or not job["title"]
+            or not job["apply_url"]
+        ):
             continue
         existing = db.execute(
             "SELECT id FROM external_jobs WHERE source=? AND source_id=?",
             (job["source"], job["source_id"]),
         ).fetchone()
         values = (
-            job["title"], job["company"], job["location"], job["job_type"],
-            job["description"], job["skills"], job["salary"], job["apply_url"],
-            job["posted_at"], job["source_url"],
+            job["title"],
+            job["company"],
+            job["location"],
+            job["job_type"],
+            job["description"],
+            job["skills"],
+            job["salary"],
+            job["apply_url"],
+            job["posted_at"],
+            job["source_url"],
         )
         if existing:
             db.execute(
@@ -51,7 +64,9 @@ def main() -> int:
             inserted += 1
     db.commit()
     db.close()
-    print(f"FresherFlow public job sync: {inserted} inserted, {updated} updated, {len(errors)} source errors")
+    print(
+        f"FresherFlow public job sync: {inserted} inserted, {updated} updated, {len(errors)} source errors"
+    )
     for source, error in errors.items():
         print(f"::warning title={source}::{error}")
     # A partial sync is useful, but CI should fail if every source is unavailable.

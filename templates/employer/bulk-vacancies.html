@@ -1,72 +1,99 @@
-{% extends 'employer/base.html' %}
+{% extends "employer/base.html" %}
 {% block employer_content %}
-<div class="content-card reveal bulk-post-page">
-  <div class="section-head bulk-post-head">
-    <div>
-      <span class="eyebrow">BULK PUBLISH</span>
-      <h2>Publish multiple vacancies</h2>
-      <p>Fill vacancies like a spreadsheet and publish every completed row together.</p>
-      <p class="form-note">FresherFlow is for freshers: <strong>Entry-level Jobs cannot require prior work experience.</strong> Roles requiring prior professional experience must be posted as Internships.</p>
+  <div class="content-card reveal bulk-post-page">
+    <div class="section-head bulk-post-head">
+      <div>
+        <span class="eyebrow">BULK PUBLISH</span>
+        <h2>Publish multiple vacancies</h2>
+        <p>Fill vacancies like a spreadsheet and publish every completed row together.</p>
+        <p class="form-note">FresherFlow is for freshers: <strong>Entry-level Jobs cannot require prior work experience.</strong> Roles requiring prior professional experience must be posted as Internships.</p>
+      </div>
+      <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a>
     </div>
-    <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a>
+    <form method="post" id="bulk-vacancy-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="bulk-table-shell">
+        <table class="bulk-vacancy-table">
+          <thead>
+            <tr>
+              <th class="bulk-col-number">#</th>
+              <th>Job title *</th>
+              <th>Type *</th>
+              <th>Location *</th>
+              <th>Salary / stipend</th>
+              <th>Deadline</th>
+              <th>Skills</th>
+              <th>Eligibility</th>
+              <th>Role description *</th>
+              <th class="bulk-col-action"></th>
+            </tr>
+          </thead>
+          <tbody id="vacancy-rows">
+          </tbody>
+        </table>
+      </div>
+      <div class="bulk-add-row">
+        <button type="button" class="btn btn-light" id="add-vacancy">+ Add row</button>
+        <span><strong id="vacancy-count">0</strong> vacancies ready to publish</span>
+      </div>
+      <div class="full form-actions bulk-submit-row">
+        <a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a>
+        <button class="btn btn-primary" type="submit">Publish all vacancies</button>
+      </div>
+    </form>
   </div>
-
-  <form method="post" id="bulk-vacancy-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-    <div class="bulk-table-shell">
-      <table class="bulk-vacancy-table">
-        <thead>
-          <tr>
-            <th class="bulk-col-number">#</th>
-            <th>Job title *</th>
-            <th>Type *</th>
-            <th>Location *</th>
-            <th>Salary / stipend</th>
-            <th>Deadline</th>
-            <th>Skills</th>
-            <th>Eligibility</th>
-            <th>Role description *</th>
-            <th class="bulk-col-action"> </th>
-          </tr>
-        </thead>
-        <tbody id="vacancy-rows"></tbody>
-      </table>
-    </div>
-
-    <div class="bulk-add-row">
-      <button type="button" class="btn btn-light" id="add-vacancy">+ Add row</button>
-      <span><strong id="vacancy-count">0</strong> vacancies ready to publish</span>
-    </div>
-
-    <div class="full form-actions bulk-submit-row">
-      <a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a>
-      <button class="btn btn-primary" type="submit">Publish all vacancies</button>
-    </div>
-  </form>
-</div>
-
-<template id="vacancy-row-template">
-  <tr class="bulk-vacancy-row">
-    <td class="bulk-row-number"></td>
-    <td><input class="bulk-cell-input" name="title" required placeholder="Python Developer"></td>
-    <td>
-      <select class="bulk-cell-input" name="vacancy_type" required>
-        <option>Internship</option>
-        <option>Entry-level Job</option>
-      </select>
-    </td>
-    <td><input class="bulk-cell-input" name="location" required placeholder="Pune / Remote"></td>
-    <td><input class="bulk-cell-input" name="salary" placeholder="₹25k / ₹6 LPA"></td>
-    <td><input class="bulk-cell-input" type="date" name="deadline"></td>
-    <td><textarea class="bulk-cell-input bulk-cell-textarea" name="skills" rows="1" placeholder="Python, SQL"></textarea></td>
-    <td><textarea class="bulk-cell-input bulk-cell-textarea" name="eligibility" rows="1" placeholder="B.Tech / Freshers"></textarea></td>
-    <td><textarea class="bulk-cell-input bulk-description" name="description" rows="1" required placeholder="Responsibilities and expectations..."></textarea></td>
-    <td><button type="button" class="bulk-remove" aria-label="Remove vacancy">×</button></td>
-  </tr>
-</template>
-
-<script>
+  <template id="vacancy-row-template">
+    <tr class="bulk-vacancy-row">
+      <td class="bulk-row-number"></td>
+      <td>
+        <input class="bulk-cell-input"
+               name="title"
+               required
+               placeholder="Python Developer">
+      </td>
+      <td>
+        <select class="bulk-cell-input" name="vacancy_type" required>
+          <option>Internship</option>
+          <option>Entry-level Job</option>
+        </select>
+      </td>
+      <td>
+        <input class="bulk-cell-input"
+               name="location"
+               required
+               placeholder="Pune / Remote">
+      </td>
+      <td>
+        <input class="bulk-cell-input" name="salary" placeholder="₹25k / ₹6 LPA">
+      </td>
+      <td>
+        <input class="bulk-cell-input" type="date" name="deadline">
+      </td>
+      <td>
+        <textarea class="bulk-cell-input bulk-cell-textarea"
+                  name="skills"
+                  rows="1"
+                  placeholder="Python, SQL"></textarea>
+      </td>
+      <td>
+        <textarea class="bulk-cell-input bulk-cell-textarea"
+                  name="eligibility"
+                  rows="1"
+                  placeholder="B.Tech / Freshers"></textarea>
+      </td>
+      <td>
+        <textarea class="bulk-cell-input bulk-description"
+                  name="description"
+                  rows="1"
+                  required
+                  placeholder="Responsibilities and expectations..."></textarea>
+      </td>
+      <td>
+        <button type="button" class="bulk-remove" aria-label="Remove vacancy">×</button>
+      </td>
+    </tr>
+  </template>
+  <script>
 (() => {
   const body = document.getElementById('vacancy-rows');
   const template = document.getElementById('vacancy-row-template');
@@ -97,5 +124,5 @@
   addButton.addEventListener('click', addRow);
   addRow();
 })();
-</script>
+  </script>
 {% endblock %}

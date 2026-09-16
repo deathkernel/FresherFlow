@@ -1,4 +1,5 @@
 """Remove demo-seeded vacancies while preserving external API jobs."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -18,12 +19,10 @@ def main() -> int:
     before = db.execute("SELECT COUNT(*) FROM vacancies").fetchone()[0]
 
     # demo_seed.py creates employers with this unique email prefix.
-    cursor = db.execute(
-        """DELETE FROM vacancies
+    cursor = db.execute("""DELETE FROM vacancies
            WHERE employer_id IN (
                SELECT id FROM users WHERE email LIKE 'demo.employer%@fresherflow.local'
-           )"""
-    )
+           )""")
     deleted = cursor.rowcount
     db.commit()
 

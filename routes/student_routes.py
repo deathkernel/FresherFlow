@@ -57,7 +57,9 @@ def dashboard():
         "FROM external_jobs WHERE active=1 ORDER BY COALESCE(posted_at,created_at) DESC LIMIT 6",
         (uid,),
     ).fetchall()
-    return render_template("student/dashboard.html", stats=stats, jobs=jobs, external_jobs=external_jobs)
+    return render_template(
+        "student/dashboard.html", stats=stats, jobs=jobs, external_jobs=external_jobs
+    )
 
 
 @student_bp.route("/profile", methods=["GET", "POST"])
@@ -69,8 +71,14 @@ def profile():
         fields = [
             request.form.get(key, "").strip()
             for key in (
-                "phone", "education", "college", "graduation_year", "skills",
-                "certifications", "preferred_job_type", "preferred_location",
+                "phone",
+                "education",
+                "college",
+                "graduation_year",
+                "skills",
+                "certifications",
+                "preferred_job_type",
+                "preferred_location",
             )
         ]
         resume = request.files.get("resume")
@@ -81,7 +89,9 @@ def profile():
 
         if resume and resume.filename:
             if not valid_resume_upload(resume):
-                flash("Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error")
+                flash(
+                    "Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error"
+                )
                 return redirect(url_for("student.profile"))
             resume_filename = f"{uid}_{secure_filename(resume.filename)}"
             upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
@@ -110,14 +120,20 @@ def profile():
 @student_bp.get("/resume")
 @role_required("student")
 def resume():
-    profile = get_db().execute(
-        "SELECT resume_filename FROM student_profiles WHERE user_id=?",
-        (session["user_id"],),
-    ).fetchone()
+    profile = (
+        get_db()
+        .execute(
+            "SELECT resume_filename FROM student_profiles WHERE user_id=?",
+            (session["user_id"],),
+        )
+        .fetchone()
+    )
     if not profile or not profile["resume_filename"]:
         return render_template("404.html"), 404
     return send_from_directory(
-        current_app.config["UPLOAD_FOLDER"], profile["resume_filename"], as_attachment=False
+        current_app.config["UPLOAD_FOLDER"],
+        profile["resume_filename"],
+        as_attachment=False,
     )
 
 
@@ -162,7 +178,9 @@ def jobs():
     external = db.execute(
         external_sql + " ORDER BY COALESCE(posted_at,created_at) DESC", external_args
     ).fetchall()
-    return render_template("student/jobs.html", jobs=[*internal, *external], q=q, typ=typ)
+    return render_template(
+        "student/jobs.html", jobs=[*internal, *external], q=q, typ=typ
+    )
 
 
 @student_bp.get("/public-jobs/<int:job_id>")
@@ -178,7 +196,9 @@ def public_job_details(job_id):
     ).fetchone()
     if not job:
         return render_template("404.html"), 404
-    return render_template("student/public-job-details.html", job=job, applied=bool(job["applied"]))
+    return render_template(
+        "student/public-job-details.html", job=job, applied=bool(job["applied"])
+    )
 
 
 @student_bp.post("/public-jobs/<int:job_id>/apply")
@@ -223,12 +243,16 @@ def job_details(vacancy_id):
     if not job:
         return render_template("404.html"), 404
     applied = db.execute(
-        "SELECT 1 FROM applications WHERE vacancy_id=? AND student_id=?", (vacancy_id, uid)
+        "SELECT 1 FROM applications WHERE vacancy_id=? AND student_id=?",
+        (vacancy_id, uid),
     ).fetchone()
     saved = db.execute(
-        "SELECT 1 FROM saved_jobs WHERE vacancy_id=? AND student_id=?", (vacancy_id, uid)
+        "SELECT 1 FROM saved_jobs WHERE vacancy_id=? AND student_id=?",
+        (vacancy_id, uid),
     ).fetchone()
-    return render_template("student/job-details.html", job=job, applied=bool(applied), saved=bool(saved))
+    return render_template(
+        "student/job-details.html", job=job, applied=bool(applied), saved=bool(saved)
+    )
 
 
 @student_bp.post("/jobs/<int:vacancy_id>/apply")
@@ -247,7 +271,8 @@ def apply(vacancy_id):
         return redirect(url_for("student.jobs"))
     try:
         db.execute(
-            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, uid),
         )
         db.commit()
         flash("Application submitted. Status: Applied.", "success")
@@ -263,14 +288,16 @@ def save(vacancy_id):
     db = get_db()
     uid = session["user_id"]
     exists = db.execute(
-        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?", (vacancy_id, uid)
+        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?",
+        (vacancy_id, uid),
     ).fetchone()
     if exists:
         db.execute("DELETE FROM saved_jobs WHERE id=?", (exists["id"],))
         flash("Removed from saved jobs.", "success")
     else:
         db.execute(
-            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
+            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, uid),
         )
         flash("Saved for later.", "success")
     db.commit()
