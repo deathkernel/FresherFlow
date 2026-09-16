@@ -15,8 +15,9 @@ def valid_resume(filename):return "." in filename and filename.rsplit(".",1)[1].
 def dashboard():
     db=get_db();uid=session["user_id"]
     stats={"applications":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=?",(uid,)).fetchone()["c"],"shortlisted":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",(uid,)).fetchone()["c"],"selected":db.execute("SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Selected'",(uid,)).fetchone()["c"],"saved":db.execute("SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?",(uid,)).fetchone()["c"]}
-    jobs=db.execute("""SELECT v.*,ep.organization_name FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6""").fetchall()
-    return render_template("student/dashboard.html",stats=stats,jobs=jobs)
+    jobs=db.execute("""SELECT v.*,ep.organization_name,0 is_external,NULL apply_url FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6""").fetchall()
+    external_jobs=db.execute("""SELECT id,title,company,location,job_type,description,skills,salary,apply_url,source,source_url,posted_at FROM external_jobs WHERE active=1 ORDER BY COALESCE(posted_at,created_at) DESC LIMIT 6""").fetchall()
+    return render_template("student/dashboard.html",stats=stats,jobs=jobs,external_jobs=external_jobs)
 
 @student_bp.route("/profile",methods=["GET","POST"])
 @role_required("student")
@@ -40,10 +41,16 @@ def resume():
 @student_bp.get("/jobs")
 @role_required("student")
 def jobs():
-    db=get_db();q=request.args.get("q","").strip();typ=request.args.get("type","").strip();sql="""SELECT v.*,ep.organization_name,EXISTS(SELECT 1 FROM saved_jobs s WHERE s.vacancy_id=v.id AND s.student_id=?) saved,EXISTS(SELECT 1 FROM applications a WHERE a.vacancy_id=v.id AND a.student_id=?) applied FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active'""";args=[session["user_id"],session["user_id"]]
+    db=get_db();q=request.args.get("q","").strip();typ=request.args.get("type","").strip();uid=session["user_id"]
+    sql="""SELECT v.id,v.title,v.vacancy_type,v.description,v.location,v.salary,v.skills,ep.organization_name,EXISTS(SELECT 1 FROM saved_jobs s WHERE s.vacancy_id=v.id AND s.student_id=?) saved,EXISTS(SELECT 1 FROM applications a WHERE a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND ep.account_status='active'""";args=[uid,uid]
     if q:sql+=" AND (v.title LIKE ? OR ep.organization_name LIKE ? OR v.skills LIKE ?)";args += [f"%{q}%"]*3
     if typ:sql+=" AND v.vacancy_type=?";args.append(typ)
-    rows=db.execute(sql+" ORDER BY v.id DESC",args).fetchall();return render_template("student/jobs.html",jobs=rows,q=q,typ=typ)
+    internal=db.execute(sql,args).fetchall()
+    external_sql="""SELECT id,title,job_type vacancy_type,description,location,salary,skills,company organization_name,0 saved,0 applied,1 is_external,apply_url,source,source_url FROM external_jobs WHERE active=1""";external_args=[]
+    if q:external_sql+=" AND (title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)";external_args += [f"%{q}%"]*4
+    if typ:external_sql+=" AND job_type=?";external_args.append(typ)
+    external=db.execute(external_sql+" ORDER BY COALESCE(posted_at,created_at) DESC",external_args).fetchall()
+    return render_template("student/jobs.html",jobs=[*internal,*external],q=q,typ=typ)
 
 @student_bp.get("/jobs/<int:vacancy_id>")
 @role_required("student")
