@@ -1,6 +1,6 @@
 # FresherFlow
 
-FresherFlow is a Flask-based fresher recruitment platform with separate student, employer and admin workflows, SQLite persistence, resume uploads, vacancy moderation and public-job synchronization.
+FresherFlow is a Flask-based fresher recruitment platform with separate student, employer and admin workflows, SQLite persistence, resume uploads and vacancy moderation.
 
 ## Stack
 
@@ -51,7 +51,6 @@ The application creates its SQLite database under `instance/` on first start. Ru
 - Sessions use HttpOnly and SameSite cookie settings; enable `SESSION_COOKIE_SECURE=1` behind HTTPS.
 - Resume uploads are limited to 5 MB and checked by file signature as well as extension.
 - Admin authentication requires an explicitly configured password hash; there is no default admin password.
-- Public-job synchronization uses a dedicated token.
 - Do not commit `.env`, `instance/`, database files or uploaded resumes.
 
 ## Tests and security checks
@@ -63,7 +62,3 @@ pytest -q
 ```
 
 GitHub Actions also runs tests, CodeQL, dependency auditing and dependency review for pull requests.
-
-## Public job sync
-
-The scheduled workflow can call the deployed endpoint with `PUBLIC_JOB_SYNC_TOKEN`. If deployment secrets are not configured, the workflow runs the local sync script as a smoke test instead.
