@@ -55,7 +55,9 @@ def logout():
 def dashboard():
     db = get_db()
     stats = {
-        "companies": db.execute("SELECT COUNT(*) c FROM employer_profiles").fetchone()["c"],
+        "companies": db.execute("SELECT COUNT(*) c FROM employer_profiles").fetchone()[
+            "c"
+        ],
         "active_companies": db.execute(
             "SELECT COUNT(*) c FROM employer_profiles WHERE account_status='active'"
         ).fetchone()["c"],
@@ -94,7 +96,9 @@ def dashboard():
            FROM vacancies v
            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
            LEFT JOIN users u ON u.id=v.employer_id
-           WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC LIMIT 100",
+           WHERE """
+        + " AND ".join(job_clauses)
+        + " ORDER BY v.id DESC LIMIT 100",
         job_args,
     ).fetchall()
 
@@ -119,8 +123,9 @@ def dashboard():
            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
            JOIN users u ON u.id=a.student_id
            LEFT JOIN student_profiles sp ON sp.user_id=u.id
-           WHERE """ + " AND ".join(application_clauses) +
-        " ORDER BY a.applied_at DESC, a.id DESC LIMIT 500",
+           WHERE """
+        + " AND ".join(application_clauses)
+        + " ORDER BY a.applied_at DESC, a.id DESC LIMIT 500",
         application_args,
     ).fetchall()
 
@@ -137,8 +142,9 @@ def dashboard():
 
     companies = db.execute(
         "SELECT ep.*,u.name contact_name,u.email FROM employer_profiles ep "
-        "JOIN users u ON u.id=ep.user_id WHERE " + " AND ".join(company_clauses) +
-        " ORDER BY ep.id DESC LIMIT 100",
+        "JOIN users u ON u.id=ep.user_id WHERE "
+        + " AND ".join(company_clauses)
+        + " ORDER BY ep.id DESC LIMIT 100",
         company_args,
     ).fetchall()
 

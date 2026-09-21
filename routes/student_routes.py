@@ -60,8 +60,14 @@ def profile():
         fields = [
             request.form.get(key, "").strip()
             for key in (
-                "phone", "education", "college", "graduation_year",
-                "skills", "certifications", "preferred_job_type", "preferred_location",
+                "phone",
+                "education",
+                "college",
+                "graduation_year",
+                "skills",
+                "certifications",
+                "preferred_job_type",
+                "preferred_location",
             )
         ]
         resume = request.files.get("resume")
@@ -72,7 +78,9 @@ def profile():
 
         if resume and resume.filename:
             if not valid_resume_upload(resume):
-                flash("Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error")
+                flash(
+                    "Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error"
+                )
                 return redirect(url_for("student.profile"))
             resume_filename = f"{uid}_{secure_filename(resume.filename)}"
             upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
@@ -102,10 +110,12 @@ def profile():
 @role_required("student")
 def resume():
     profile = (
-        get_db().execute(
+        get_db()
+        .execute(
             "SELECT resume_filename FROM student_profiles WHERE user_id=?",
             (session["user_id"],),
-        ).fetchone()
+        )
+        .fetchone()
     )
     if not profile or not profile["resume_filename"]:
         return render_template("404.html"), 404
@@ -186,7 +196,8 @@ def apply(vacancy_id):
         return redirect(url_for("student.jobs"))
     try:
         db.execute(
-            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, uid),
         )
         db.commit()
         flash("Application submitted. Status: Applied.", "success")
@@ -202,14 +213,16 @@ def save(vacancy_id):
     db = get_db()
     uid = session["user_id"]
     exists = db.execute(
-        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?", (vacancy_id, uid)
+        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?",
+        (vacancy_id, uid),
     ).fetchone()
     if exists:
         db.execute("DELETE FROM saved_jobs WHERE id=?", (exists["id"],))
         flash("Removed from saved jobs.", "success")
     else:
         db.execute(
-            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
+            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, uid),
         )
         flash("Saved for later.", "success")
     db.commit()
