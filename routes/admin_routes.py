@@ -86,6 +86,7 @@ def dashboard():
     if moderation in {"pending", "approved", "rejected"}:
         job_clauses.append("v.moderation_status=?")
         job_args.append(moderation)
+
     jobs = db.execute(
         """SELECT v.*, COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
            COALESCE(u.email, '—') AS employer_email,
@@ -101,10 +102,11 @@ def dashboard():
     application_args = []
     if q:
         application_clauses.append(
-            "(title LIKE ? OR organization_name LIKE ? OR student_name LIKE ? OR student_email LIKE ?)"
+            "(v.title LIKE ? OR ep.organization_name LIKE ? OR u.name LIKE ? OR u.email LIKE ?)"
         )
         term = f"%{q}%"
         application_args += [term] * 4
+
     applications = db.execute(
         """SELECT a.id, a.status, a.applied_at,
                   v.id AS vacancy_id, v.title, v.vacancy_type,
@@ -132,6 +134,7 @@ def dashboard():
     if account in {"active", "suspended"}:
         company_clauses.append("ep.account_status=?")
         company_args.append(account)
+
     companies = db.execute(
         "SELECT ep.*,u.name contact_name,u.email FROM employer_profiles ep "
         "JOIN users u ON u.id=ep.user_id WHERE " + " AND ".join(company_clauses) +
@@ -140,8 +143,14 @@ def dashboard():
     ).fetchall()
 
     return render_template(
-        "admin/dashboard.html", stats=stats, jobs=jobs, applications=applications,
-        companies=companies, q=q, moderation=moderation, account=account,
+        "admin/dashboard.html",
+        stats=stats,
+        jobs=jobs,
+        applications=applications,
+        companies=companies,
+        q=q,
+        moderation=moderation,
+        account=account,
     )
 
 
@@ -155,15 +164,24 @@ def student_profile(student_id):
     ).fetchone()
     if not user:
         return render_template("404.html"), 404
+
     profile = db.execute(
         "SELECT * FROM student_profiles WHERE user_id=?", (student_id,)
     ).fetchone()
     if not profile:
         profile = {
-            "profile_strength": 0, "phone": None, "education": None, "college": None,
-            "graduation_year": None, "skills": None, "certifications": None,
-            "preferred_job_type": None, "preferred_location": None, "resume_filename": None,
+            "profile_strength": 0,
+            "phone": None,
+            "education": None,
+            "college": None,
+            "graduation_year": None,
+            "skills": None,
+            "certifications": None,
+            "preferred_job_type": None,
+            "preferred_location": None,
+            "resume_filename": None,
         }
+
     applications = db.execute(
         """SELECT a.id, a.status, a.applied_at,
                   v.id AS vacancy_id, v.title, v.vacancy_type,
@@ -176,8 +194,12 @@ def student_profile(student_id):
            ORDER BY applied_at DESC, id DESC""",
         (student_id,),
     ).fetchall()
+
     return render_template(
-        "admin/student-profile.html", user=user, profile=profile, applications=applications
+        "admin/student-profile.html",
+        user=user,
+        profile=profile,
+        applications=applications,
     )
 
 
@@ -206,7 +228,8 @@ def company_status(user_id):
         return redirect(url_for("admin.dashboard"))
     db = get_db()
     db.execute(
-        "UPDATE employer_profiles SET account_status=? WHERE user_id=?", (status, user_id)
+        "UPDATE employer_profiles SET account_status=? WHERE user_id=?",
+        (status, user_id),
     )
     db.commit()
     flash(f"Company account marked {status}.", "success")
