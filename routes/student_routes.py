@@ -28,9 +28,7 @@ def dashboard():
     uid = session["user_id"]
     stats = {
         "applications": db.execute(
-            "SELECT (SELECT COUNT(*) FROM applications WHERE student_id=?) + "
-            "(SELECT COUNT(*) FROM external_applications WHERE student_id=?) c",
-            (uid, uid),
+            "SELECT COUNT(*) c FROM applications WHERE student_id=?", (uid,)
         ).fetchone()["c"],
         "shortlisted": db.execute(
             "SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",
@@ -50,16 +48,7 @@ def dashboard():
         "WHERE v.status='active' AND v.moderation_status='approved' "
         "AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
-    external_jobs = db.execute(
-        "SELECT id,title,company,location,job_type,description,skills,salary,apply_url,"
-        "source,source_url,posted_at,EXISTS(SELECT 1 FROM external_applications ea "
-        "WHERE ea.external_job_id=external_jobs.id AND ea.student_id=?) applied "
-        "FROM external_jobs WHERE active=1 ORDER BY COALESCE(posted_at,created_at) DESC LIMIT 6",
-        (uid,),
-    ).fetchall()
-    return render_template(
-        "student/dashboard.html", stats=stats, jobs=jobs, external_jobs=external_jobs
-    )
+    return render_template("student/dashboard.html", stats=stats, jobs=jobs)
 
 
 @student_bp.route("/profile", methods=["GET", "POST"])
@@ -71,14 +60,8 @@ def profile():
         fields = [
             request.form.get(key, "").strip()
             for key in (
-                "phone",
-                "education",
-                "college",
-                "graduation_year",
-                "skills",
-                "certifications",
-                "preferred_job_type",
-                "preferred_location",
+                "phone", "education", "college", "graduation_year",
+                "skills", "certifications", "preferred_job_type", "preferred_location",
             )
         ]
         resume = request.files.get("resume")
@@ -89,9 +72,7 @@ def profile():
 
         if resume and resume.filename:
             if not valid_resume_upload(resume):
-                flash(
-                    "Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error"
-                )
+                flash("Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error")
                 return redirect(url_for("student.profile"))
             resume_filename = f"{uid}_{secure_filename(resume.filename)}"
             upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
@@ -121,12 +102,10 @@ def profile():
 @role_required("student")
 def resume():
     profile = (
-        get_db()
-        .execute(
+        get_db().execute(
             "SELECT resume_filename FROM student_profiles WHERE user_id=?",
             (session["user_id"],),
-        )
-        .fetchone()
+        ).fetchone()
     )
     if not profile or not profile["resume_filename"]:
         return render_template("404.html"), 404
@@ -160,72 +139,8 @@ def jobs():
     if typ:
         sql += " AND v.vacancy_type=?"
         args.append(typ)
-    internal = db.execute(sql, args).fetchall()
-
-    external_sql = (
-        "SELECT id,title,job_type vacancy_type,description,location,salary,skills,"
-        "company organization_name,0 saved,EXISTS(SELECT 1 FROM external_applications ea "
-        "WHERE ea.external_job_id=external_jobs.id AND ea.student_id=?) applied,1 is_external,"
-        "apply_url,source,source_url FROM external_jobs WHERE active=1"
-    )
-    external_args = [uid]
-    if q:
-        external_sql += " AND (title LIKE ? OR company LIKE ? OR skills LIKE ? OR description LIKE ?)"
-        external_args += [f"%{q}%"] * 4
-    if typ:
-        external_sql += " AND job_type=?"
-        external_args.append(typ)
-    external = db.execute(
-        external_sql + " ORDER BY COALESCE(posted_at,created_at) DESC", external_args
-    ).fetchall()
-    return render_template(
-        "student/jobs.html", jobs=[*internal, *external], q=q, typ=typ
-    )
-
-
-@student_bp.get("/public-jobs/<int:job_id>")
-@role_required("student")
-def public_job_details(job_id):
-    db = get_db()
-    uid = session["user_id"]
-    job = db.execute(
-        "SELECT e.*,EXISTS(SELECT 1 FROM external_applications ea WHERE "
-        "ea.external_job_id=e.id AND ea.student_id=?) applied FROM external_jobs e "
-        "WHERE e.id=? AND e.active=1",
-        (uid, job_id),
-    ).fetchone()
-    if not job:
-        return render_template("404.html"), 404
-    return render_template(
-        "student/public-job-details.html", job=job, applied=bool(job["applied"])
-    )
-
-
-@student_bp.post("/public-jobs/<int:job_id>/apply")
-@role_required("student")
-def apply_public_job(job_id):
-    db = get_db()
-    uid = session["user_id"]
-    job = db.execute(
-        "SELECT id FROM external_jobs WHERE id=? AND active=1", (job_id,)
-    ).fetchone()
-    if not job:
-        flash("This public job is no longer available.", "error")
-        return redirect(url_for("student.jobs"))
-    try:
-        db.execute(
-            "INSERT INTO external_applications(external_job_id,student_id) VALUES(?,?)",
-            (job_id, uid),
-        )
-        db.commit()
-        flash(
-            "Application recorded in FresherFlow. The external employer has not been contacted automatically.",
-            "success",
-        )
-    except sqlite3.IntegrityError:
-        db.rollback()
-        flash("You have already applied to this public job.", "error")
-    return redirect(url_for("student.public_job_details", job_id=job_id))
+    jobs = db.execute(sql + " ORDER BY v.id DESC", args).fetchall()
+    return render_template("student/jobs.html", jobs=jobs, q=q, typ=typ)
 
 
 @student_bp.get("/jobs/<int:vacancy_id>")
@@ -271,8 +186,7 @@ def apply(vacancy_id):
         return redirect(url_for("student.jobs"))
     try:
         db.execute(
-            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
-            (vacancy_id, uid),
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
         )
         db.commit()
         flash("Application submitted. Status: Applied.", "success")
@@ -288,16 +202,14 @@ def save(vacancy_id):
     db = get_db()
     uid = session["user_id"]
     exists = db.execute(
-        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?",
-        (vacancy_id, uid),
+        "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?", (vacancy_id, uid)
     ).fetchone()
     if exists:
         db.execute("DELETE FROM saved_jobs WHERE id=?", (exists["id"],))
         flash("Removed from saved jobs.", "success")
     else:
         db.execute(
-            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)",
-            (vacancy_id, uid),
+            "INSERT INTO saved_jobs(vacancy_id,student_id) VALUES(?,?)", (vacancy_id, uid)
         )
         flash("Saved for later.", "success")
     db.commit()
@@ -313,9 +225,7 @@ def applications():
         "SELECT a.id,a.title,a.vacancy_type,a.location,a.organization_name,a.applied_at,a.status,a.is_external "
         "FROM (SELECT a.id,v.title,v.vacancy_type,v.location,ep.organization_name,a.applied_at,a.status,0 is_external "
         "FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE a.student_id=? UNION ALL SELECT ea.id,ej.title,ej.job_type,ej.location,ej.company,ea.applied_at,ea.status,1 "
-        "FROM external_applications ea JOIN external_jobs ej ON ej.id=ea.external_job_id WHERE ea.student_id=?) a "
-        "ORDER BY a.applied_at DESC",
-        (uid, uid),
+        "WHERE a.student_id=?) a ORDER BY a.applied_at DESC",
+        (uid,),
     ).fetchall()
     return render_template("student/applications.html", applications=rows)
