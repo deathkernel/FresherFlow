@@ -3,19 +3,15 @@
   <div class="section-head">
     <div>
       <h2>Find Opportunities</h2>
-      <p>Search recruiter vacancies and live jobs imported from public APIs.</p>
+      <p>Search jobs posted by FresherFlow employers.</p>
     </div>
   </div>
   <form class="filter-bar" method="get">
-    <input class="form-control"
-           name="q"
-           value="{{ q }}"
-           placeholder="Search title, company or skill">
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company or skill">
     <select class="form-select" name="type">
       <option value="">All types</option>
       <option value="Internship" {% if typ == 'Internship' %}selected{% endif %}>Internship</option>
-      <option value="Entry-level Job"
-              {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option>
+      <option value="Entry-level Job" {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option>
     </select>
     <button class="btn btn-primary">Search</button>
   </form>
@@ -29,24 +25,17 @@
         <div class="tags">{% for skill in (job.skills or '').split(',')[:5] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
         <div class="job-bottom">
           <span>{{ job.salary or 'Compensation not specified' }}</span>
-          {% if job.is_external %}
-            <div><span class="badge bg-light text-dark">{{ job.source|capitalize }}</span><a class="btn btn-sm btn-primary"
-   href="{{ url_for('student.public_job_details', job_id=job.id) }}">View details</a></div>
-          {% else %}
-            <div>
-              <form class="d-inline"
-                    method="post"
-                    action="{{ url_for('student.save', vacancy_id=job.id) }}">
-                <input type="hidden"
-                       name="csrf_token"
-                       value="{{ csrf_token() }}"><button class="btn btn-sm btn-light">{{ 'Saved' if job.saved else 'Save' }}</button>
-              </form>
-              <a class="btn btn-sm btn-primary"
-                 href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role</a>
-            </div>
-          {% endif %}
+          <div>
+            <form class="d-inline" method="post" action="{{ url_for('student.save', vacancy_id=job.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-light">{{ 'Saved' if job.saved else 'Save' }}</button>
+            </form>
+            <a class="btn btn-sm btn-primary" href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role</a>
+          </div>
         </div>
       </article>
-{% else %}<div class="empty-state">No roles match your search.</div>{% endfor %}
+    {% else %}
+      <div class="empty-state">No roles match your search.</div>
+    {% endfor %}
   </div>
 {% endblock %}
