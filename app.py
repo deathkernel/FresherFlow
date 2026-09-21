@@ -7,12 +7,8 @@ from database.database import close_db, init_db
 from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
-from routes.public_jobs_routes import public_jobs_bp
-from routes.public_jobs_sync_routes import public_jobs_sync_bp
 from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf
-
-SYNC_PATH = "/api/internal/public-jobs/sync"
 
 
 def create_app():
@@ -25,7 +21,7 @@ def create_app():
 
     @app.before_request
     def protect_forms():
-        if request.method == "POST" and request.path != SYNC_PATH:
+        if request.method == "POST":
             validate_csrf(request.form.get("csrf_token"))
 
     @app.after_request
@@ -51,8 +47,6 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
-    app.register_blueprint(public_jobs_bp)
-    app.register_blueprint(public_jobs_sync_bp)
     app.register_blueprint(admin_bp)
 
     @app.get("/")
