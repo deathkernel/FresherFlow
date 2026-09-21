@@ -9,7 +9,7 @@
   <div class="section-head">
     <div>
       <h2>Latest opportunities</h2>
-      <p>Recruiter vacancies and jobs imported from public APIs.</p>
+      <p>Recruiter vacancies from FresherFlow employers.</p>
     </div>
     <a href="{{ url_for('student.jobs') }}">View all →</a>
   </div>
@@ -23,18 +23,8 @@
         <div class="tags">{% for skill in (job.skills or '').split(',')[:4] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
         <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role →</a></div>
       </article>
+    {% else %}
+      <div class="empty-state">No opportunities available right now.</div>
     {% endfor %}
-    {% for job in external_jobs %}
-      <article class="job-card reveal">
-        <div class="job-top"><span class="type-pill">{{ job.job_type or 'Job' }}</span><span>{{ job.location or 'Remote' }}</span></div>
-        <h3>{{ job.title }}</h3>
-        <b>{{ job.company or 'Company not specified' }}</b>
-        <p>{{ (job.description or '')|striptags|truncate(220) }}</p>
-        <div class="tags">{% for skill in (job.skills or '').split(',')[:4] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
-        <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a class="btn btn-sm btn-primary"
-   href="{{ url_for('student.public_job_details', job_id=job.id) }}">View details</a></div>
-      </article>
-    {% endfor %}
-    {% if not jobs and not external_jobs %}<div class="empty-state">No opportunities available right now.</div>{% endif %}
   </div>
 {% endblock %}
