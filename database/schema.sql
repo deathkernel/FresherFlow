@@ -77,38 +77,3 @@ CREATE TABLE IF NOT EXISTS saved_jobs (
     FOREIGN KEY(vacancy_id) REFERENCES vacancies(id) ON DELETE CASCADE,
     FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS external_jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source TEXT NOT NULL,
-    source_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    company TEXT NOT NULL DEFAULT '',
-    location TEXT NOT NULL DEFAULT 'Remote',
-    job_type TEXT NOT NULL DEFAULT 'Entry-level Job',
-    description TEXT NOT NULL DEFAULT '',
-    skills TEXT NOT NULL DEFAULT '',
-    salary TEXT,
-    apply_url TEXT NOT NULL,
-    posted_at TEXT,
-    source_url TEXT NOT NULL,
-    active INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(source, source_id)
-);
-
-CREATE TABLE IF NOT EXISTS external_applications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    external_job_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'Applied' CHECK(status IN ('Applied','Withdrawn')),
-    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(external_job_id, student_id),
-    FOREIGN KEY(external_job_id) REFERENCES external_jobs(id) ON DELETE CASCADE,
-    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_external_jobs_active ON external_jobs(active, posted_at);
-CREATE INDEX IF NOT EXISTS idx_external_jobs_source ON external_jobs(source);
-CREATE INDEX IF NOT EXISTS idx_external_applications_student ON external_applications(student_id, applied_at);
