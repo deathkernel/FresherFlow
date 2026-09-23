@@ -1,66 +1,25 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="content-card reveal">
-    <div class="section-head">
+  <div class="content-card reveal form-page">
+    <div class="section-head page-toolbar">
       <div>
+        <span class="eyebrow">HIRING</span>
         <h2>Post a New Vacancy</h2>
-        <p>Create a role and publish it directly to the student opportunity feed.</p>
-        <p class="form-note">FresherFlow is for freshers: <strong>Entry-level Jobs cannot require prior work experience.</strong> Roles requiring prior professional experience must be posted as Internships.</p>
+        <p>Create a clear role and publish it directly to the student opportunity feed.</p>
       </div>
     </div>
+    <div class="form-note info-note"><strong>Freshers first:</strong> Entry-level Jobs cannot require prior work experience. Roles requiring prior professional experience must be posted as Internships.</div>
     <form method="post" class="form-grid">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="full">
-        <label>Job / internship title</label>
-        <input class="form-control"
-               name="title"
-               required
-               placeholder="e.g. Python Developer Intern">
-      </div>
-      <div>
-        <label>Type</label>
-        <select class="form-select" name="vacancy_type" required>
-          <option>Internship</option>
-          <option>Entry-level Job</option>
-        </select>
-      </div>
-      <div>
-        <label>Location</label>
-        <input class="form-control"
-               name="location"
-               required
-               placeholder="Pune / Remote">
-      </div>
-      <div>
-        <label>Salary / stipend</label>
-        <input class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA">
-      </div>
-      <div>
-        <label>Application deadline</label>
-        <input class="form-control" type="date" name="deadline">
-      </div>
-      <div class="full">
-        <label>Skills</label>
-        <input class="form-control" name="skills" placeholder="Python, Flask, SQL">
-      </div>
-      <div class="full">
-        <label>Eligibility</label>
-        <input class="form-control"
-               name="eligibility"
-               placeholder="Freshers / 0–1 years / B.Tech...">
-      </div>
-      <div class="full">
-        <label>Role description</label>
-        <textarea class="form-control"
-                  name="description"
-                  rows="6"
-                  required
-                  placeholder="Describe responsibilities, team and expectations..."></textarea>
-      </div>
-      <div class="full form-actions">
-        <button class="btn btn-light" name="publish" value="0">Save draft</button>
-        <button class="btn btn-primary" name="publish" value="1">Publish vacancy</button>
-      </div>
+      <div class="full"><label for="title">Job / internship title</label><input id="title" class="form-control" name="title" required placeholder="e.g. Python Developer Intern"></div>
+      <div><label for="vacancy_type">Type</label><select id="vacancy_type" class="form-select" name="vacancy_type" required><option>Internship</option><option>Entry-level Job</option></select></div>
+      <div><label for="location">Location</label><input id="location" class="form-control" name="location" required placeholder="Pune / Remote"></div>
+      <div><label for="salary">Salary / stipend</label><input id="salary" class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA"></div>
+      <div><label for="deadline">Application deadline</label><input id="deadline" class="form-control" type="date" name="deadline"></div>
+      <div class="full"><label for="skills">Skills</label><input id="skills" class="form-control" name="skills" placeholder="Python, Flask, SQL"></div>
+      <div class="full"><label for="eligibility">Eligibility</label><input id="eligibility" class="form-control" name="eligibility" placeholder="Freshers / 0–1 years / B.Tech..."></div>
+      <div class="full"><label for="description">Role description</label><textarea id="description" class="form-control" name="description" rows="7" required placeholder="Describe responsibilities, team and expectations..."></textarea></div>
+      <div class="full form-actions"><button class="btn btn-light" name="publish" value="0" type="submit">Save draft</button><button class="btn btn-primary" name="publish" value="1" type="submit">Publish vacancy</button></div>
     </form>
   </div>
 {% endblock %}
