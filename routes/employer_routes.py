@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from database.database import get_db
 from routes.decorators import role_required
@@ -37,12 +38,22 @@ def experience_requirement_invalid(vacancy_type, eligibility):
     return any(term in text for term in terms)
 
 
+def deadline_invalid(deadline):
+    if not deadline:
+        return False
+    try:
+        return date.fromisoformat(deadline) < date.today()
+    except ValueError:
+        return True
+
+
 def vacancy_form(form):
     title = form.get("title", "").strip()
     vacancy_type = form.get("vacancy_type", "").strip()
     location = form.get("location", "").strip()
     description = form.get("description", "").strip()
     eligibility = form.get("eligibility", "").strip()
+    deadline = form.get("deadline") or None
     if not title or not location or not description:
         return None, "Title, location and description are required."
     if vacancy_type not in VACANCY_TYPES:
@@ -52,6 +63,8 @@ def vacancy_form(form):
             None,
             "Entry-level Jobs cannot require prior work experience. For roles requiring experience, publish an Internship instead.",
         )
+    if deadline_invalid(deadline):
+        return None, "Application deadline must be today or a future date."
     return {
         "title": title,
         "vacancy_type": vacancy_type,
@@ -60,7 +73,7 @@ def vacancy_form(form):
         "salary": form.get("salary", "").strip(),
         "skills": form.get("skills", "").strip(),
         "eligibility": eligibility,
-        "deadline": form.get("deadline") or None,
+        "deadline": deadline,
     }, None
 
 
@@ -102,6 +115,8 @@ def bulk_vacancy_forms(form):
                 None,
                 f"Vacancy {i+1}: Entry-level Jobs cannot require prior work experience.",
             )
+        if deadline_invalid(data["deadline"]):
+            return None, f"Vacancy {i+1}: application deadline must be today or a future date."
         vacancies.append(data)
     return vacancies, None
 
@@ -318,7 +333,7 @@ def vacancy_status(vacancy_id):
         return redirect(url_for("employer.vacancies"))
     db = get_db()
     job = db.execute(
-        "SELECT vacancy_type,eligibility,moderation_status FROM vacancies WHERE id=? AND employer_id=?",
+        "SELECT vacancy_type,eligibility,deadline,moderation_status FROM vacancies WHERE id=? AND employer_id=?",
         (vacancy_id, session["user_id"]),
     ).fetchone()
     if not job:
@@ -327,6 +342,9 @@ def vacancy_status(vacancy_id):
         flash(
             "A developer must approve this vacancy before it can be published.", "error"
         )
+        return redirect(url_for("employer.vacancies"))
+    if status == "active" and deadline_invalid(job["deadline"]):
+        flash("The application deadline has passed or is invalid.", "error")
         return redirect(url_for("employer.vacancies"))
     if status == "active" and experience_requirement_invalid(
         job["vacancy_type"], job["eligibility"]
