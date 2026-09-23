@@ -8,6 +8,9 @@ INSTANCE_DIR = BASE_DIR / "instance"
 INSTANCE_DIR.mkdir(exist_ok=True)
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
 
+DEFAULT_ADMIN_EMAIL = "admin@123"
+DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$fresherflow$3B6BgnhYPwjlDy87Yq/x1vzwL8LNIgws2L3EigRKMgk="
+
 
 def local_secret():
     if SECRET_FILE.exists():
@@ -15,6 +18,15 @@ def local_secret():
     value = secrets.token_hex(32)
     SECRET_FILE.write_text(value, encoding="utf-8")
     return value
+
+
+def get_admin_credentials():
+    """Return environment credentials when fully configured, otherwise local defaults."""
+    email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    if email and password_hash:
+        return email, password_hash
+    return DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD_HASH
 
 
 class Config:
