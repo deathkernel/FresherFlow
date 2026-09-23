@@ -4,14 +4,17 @@
   <div class="app-shell employer-theme">
     <aside class="sidebar">
       <div class="brand">Fresher<span>Flow</span></div>
-      <div class="side-label">RECRUITER WORKSPACE</div>
+      <div class="side-label">EMPLOYER WORKSPACE</div>
       <nav>
-        <a class="active" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('employer.profile') }}">Organization Profile</a>
-        <a href="{{ url_for('employer.new_vacancy') }}">Post Vacancy</a>
-        <a href="{{ url_for('employer.bulk_new_vacancies') }}">Bulk Publish</a>
-        <a href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
-        <a href="{{ url_for('employer.applications') }}">Applications</a>
+        <a class="{% if request.endpoint == 'employer.dashboard' %}active{% endif %}" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
+        <div class="side-nav-label">HIRING</div>
+        <a class="{% if request.endpoint == 'employer.vacancies' or request.endpoint == 'employer.edit_vacancy' or request.endpoint == 'employer.vacancy_status' %}active{% endif %}" href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
+        <a class="{% if request.endpoint == 'employer.new_vacancy' %}active{% endif %}" href="{{ url_for('employer.new_vacancy') }}">Post Vacancy</a>
+        <a class="{% if request.endpoint == 'employer.bulk_new_vacancies' %}active{% endif %}" href="{{ url_for('employer.bulk_new_vacancies') }}">Bulk Publish</a>
+        <div class="side-nav-label">CANDIDATES</div>
+        <a class="{% if request.endpoint == 'employer.applications' or request.endpoint == 'employer.application_status' %}active{% endif %}" href="{{ url_for('employer.applications') }}">Applications</a>
+        <div class="side-nav-label">ORGANIZATION</div>
+        <a class="{% if request.endpoint == 'employer.profile' %}active{% endif %}" href="{{ url_for('employer.profile') }}">Organization Profile</a>
       </nav>
       <div class="side-bottom">
         <div class="user-chip">
@@ -34,10 +37,12 @@
           <h1>Manage your hiring.</h1>
           <p>Post openings, check applications and keep your vacancies up to date.</p>
         </div>
-        <div class="workspace-head-actions">
-          <a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a>
-          <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
-        </div>
+        {% if request.endpoint != 'employer.new_vacancy' and request.endpoint != 'employer.bulk_new_vacancies' %}
+          <div class="workspace-head-actions">
+            <a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a>
+            <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a>
+          </div>
+        {% endif %}
       </header>
       {% block employer_content %}{% endblock %}
     </section>
