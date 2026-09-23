@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 from flask import (
@@ -19,6 +20,15 @@ from routes.decorators import role_required
 from security import valid_resume_upload
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
+
+
+def deadline_passed(deadline):
+    if not deadline:
+        return False
+    try:
+        return date.fromisoformat(deadline) < date.today()
+    except ValueError:
+        return True
 
 
 @student_bp.get("/dashboard")
@@ -46,7 +56,8 @@ def dashboard():
         "SELECT v.*,ep.organization_name,0 is_external,NULL apply_url "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' ORDER BY v.id DESC LIMIT 6"
+        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now')) "
+        "ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
     return render_template("student/dashboard.html", stats=stats, jobs=jobs)
 
@@ -140,7 +151,7 @@ def jobs():
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
         "ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active'"
+        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
     )
     args = [uid, uid]
     if q:
@@ -185,15 +196,18 @@ def job_details(vacancy_id):
 def apply(vacancy_id):
     db = get_db()
     uid = session["user_id"]
-    exists = db.execute(
-        "SELECT 1 FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+    vacancy = db.execute(
+        "SELECT v.deadline FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' "
         "AND ep.account_status='active'",
         (vacancy_id,),
     ).fetchone()
-    if not exists:
+    if not vacancy:
         flash("This opportunity is no longer active.", "error")
         return redirect(url_for("student.jobs"))
+    if deadline_passed(vacancy["deadline"]):
+        flash("Applications for this opportunity are closed.", "error")
+        return redirect(request.referrer or url_for("student.jobs"))
     try:
         db.execute(
             "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
