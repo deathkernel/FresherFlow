@@ -2,9 +2,8 @@ import os
 
 
 # Simple local admin credentials for the college project.
-# Environment variables can still override these values.
-DEFAULT_ADMIN_EMAIL = "admin@fresherflow.local"
-DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$44cb4d5236eb290a$6w1jNTj2Rg1GKUuR0wPSY9zzLq9Fr2rpujyFSZKrH4w="
+DEFAULT_ADMIN_EMAIL = "admin.com"
+DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$fresherflow$3B6BgnhYPwjlDy87Yq/x1vzwL8LNIgws2L3EigRKMgk="
 
 
 def get_admin_credentials():
