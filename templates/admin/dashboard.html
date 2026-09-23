@@ -4,9 +4,10 @@
   <div class="app-shell" style="min-height:100vh;">
     <aside class="sidebar">
       <div class="brand">Fresher<span>Flow</span></div>
-      <div class="side-label">DEVELOPER CONSOLE</div>
+      <div class="side-label">ADMIN WORKSPACE</div>
       <nav>
         <a class="active" href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <div class="side-nav-label">MANAGEMENT</div>
         <a href="#applications">Applications</a>
         <a href="#companies">Companies</a>
       </nav>
@@ -35,114 +36,51 @@
         <div class="dash-stat"><span>Applications</span><strong>{{ stats.applications }}</strong><small>All student applications</small></div>
       </div>
       <form class="filter-bar mt-4" method="get">
-        <input class="form-control"
-               name="q"
-               value="{{ q }}"
-               placeholder="Search student, email, company or job title">
+        <input class="form-control" name="q" value="{{ q }}" placeholder="Search student, email, company or job title">
         <button class="btn btn-primary">Search</button>
       </form>
       <div id="applications" class="section-head mt-5">
-        <div>
-          <h2>Student Applications</h2>
-          <p>Applications submitted by students to employer-posted jobs.</p>
-        </div>
+        <div><h2>Student Applications</h2><p>Applications submitted by students to employer-posted jobs.</p></div>
       </div>
       <div class="table-responsive">
         <table class="table align-middle">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Job</th>
-              <th>Company</th>
-              <th>Applied</th>
-              <th>Status</th>
-              <th>Profile</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Student</th><th>Job</th><th>Company</th><th>Applied</th><th>Status</th><th>Profile</th></tr></thead>
           <tbody>
             {% for application in applications %}
               <tr>
-                <td>
-                  <strong>{{ application.student_name }}</strong>
-                  <br>
-                  <small>{{ application.student_email }}</small>
-                </td>
-                <td>
-                  <strong>{{ application.title }}</strong>
-                  <br>
-                  <small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small>
-                </td>
+                <td><strong>{{ application.student_name }}</strong><br><small>{{ application.student_email }}</small></td>
+                <td><strong>{{ application.title }}</strong><br><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td>
                 <td>{{ application.organization_name }}</td>
                 <td>{{ application.applied_at }}</td>
                 <td><span class="badge {% if application.status=='Selected' %}bg-success{% elif application.status=='Rejected' %}bg-danger{% elif application.status=='Shortlisted' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ application.status }}</span></td>
-                <td class="text-nowrap">
-                  <a class="btn btn-sm btn-outline-primary"
-                     href="{{ url_for('admin.student_profile', student_id=application.student_id) }}">Review</a>
-                  <br>
-                  <small>{{ application.college or 'College not provided' }}</small>
-                  <br>
-                  <small>{{ application.education or 'Education not provided' }}</small>
-                </td>
+                <td class="text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.student_profile', student_id=application.student_id) }}">Review</a><br><small>{{ application.college or 'College not provided' }}</small><br><small>{{ application.education or 'Education not provided' }}</small></td>
               </tr>
-            {% else %}
-              <tr>
-                <td colspan="6" class="text-center py-5">No student applications found.</td>
-              </tr>
-            {% endfor %}
+            {% else %}<tr><td colspan="6" class="text-center py-5">No student applications found.</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
       <div id="companies" class="section-head mt-5">
-        <div>
-          <h2>Companies</h2>
-          <p>Inspect employer profiles and control account access.</p>
-        </div>
+        <div><h2>Companies</h2><p>Inspect employer profiles and control account access.</p></div>
       </div>
       <div class="table-responsive">
         <table class="table align-middle">
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Contact</th>
-              <th>Location</th>
-              <th>Account</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Company</th><th>Contact</th><th>Location</th><th>Account</th><th>Action</th></tr></thead>
           <tbody>
             {% for company in companies %}
               <tr>
-                <td>
-                  <strong>{{ company.organization_name }}</strong>
-                  <br>
-                  <small>{{ company.organization_type or 'Organization' }}</small>
-                </td>
-                <td>
-                  {{ company.contact_name }}
-                  <br>
-                  <small>{{ company.email }}</small>
-                </td>
+                <td><strong>{{ company.organization_name }}</strong><br><small>{{ company.organization_type or 'Organization' }}</small></td>
+                <td>{{ company.contact_name }}<br><small>{{ company.email }}</small></td>
                 <td>{{ company.location or '—' }}</td>
                 <td><span class="badge {{ 'bg-success' if company.account_status=='active' else 'bg-secondary' }}">{{ company.account_status|capitalize }}</span></td>
-                <td>
-                  <a class="btn btn-sm btn-outline-primary"
-                     href="{{ url_for('admin.company_detail', user_id=company.user_id) }}">Details</a>
-                  <form class="d-inline"
-                        method="post"
-                        action="{{ url_for('admin.company_status', user_id=company.user_id) }}">
+                <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.company_detail', user_id=company.user_id) }}">Details</a>
+                  <form class="d-inline" method="post" action="{{ url_for('admin.company_status', user_id=company.user_id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden"
-                           name="status"
-                           value="{{ 'suspended' if company.account_status=='active' else 'active' }}">
+                    <input type="hidden" name="status" value="{{ 'suspended' if company.account_status=='active' else 'active' }}">
                     <button class="btn btn-sm btn-light">{{ 'Suspend' if company.account_status=='active' else 'Activate' }}</button>
                   </form>
                 </td>
               </tr>
-            {% else %}
-              <tr>
-                <td colspan="5" class="text-center py-5">No companies found.</td>
-              </tr>
-            {% endfor %}
+            {% else %}<tr><td colspan="5" class="text-center py-5">No companies found.</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
