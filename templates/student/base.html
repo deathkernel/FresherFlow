@@ -6,10 +6,12 @@
       <div class="brand">Fresher<span>Flow</span></div>
       <div class="side-label">STUDENT WORKSPACE</div>
       <nav>
-        <a class="active" href="{{ url_for('student.dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('student.profile') }}">My Profile</a>
-        <a href="{{ url_for('student.jobs') }}">Find Opportunities</a>
-        <a href="{{ url_for('student.applications') }}">My Applications</a>
+        <a class="{% if request.endpoint == 'student.dashboard' %}active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a>
+        <div class="side-nav-label">OPPORTUNITIES</div>
+        <a class="{% if request.endpoint == 'student.jobs' or request.endpoint == 'student.job_details' %}active{% endif %}" href="{{ url_for('student.jobs') }}">Find Opportunities</a>
+        <a class="{% if request.endpoint == 'student.applications' %}active{% endif %}" href="{{ url_for('student.applications') }}">My Applications</a>
+        <div class="side-nav-label">ACCOUNT</div>
+        <a class="{% if request.endpoint == 'student.profile' or request.endpoint == 'student.resume' %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
       </nav>
       <div class="side-bottom">
         <div class="user-chip">
@@ -32,7 +34,9 @@
           <h1>Good to see you, {{ session.name.split()[0] }}.</h1>
           <p>Keep your profile updated and check new opportunities when you can.</p>
         </div>
-        <a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>
+        {% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}
+          <a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>
+        {% endif %}
       </header>
       {% block student_content %}{% endblock %}
     </section>
