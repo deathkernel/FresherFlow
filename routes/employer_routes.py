@@ -1,6 +1,10 @@
+import io
 import sqlite3
-from datetime import date
+from datetime import date, datetime
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from openpyxl import load_workbook
+
 from database.database import get_db
 from routes.decorators import role_required
 
@@ -8,6 +12,22 @@ employer_bp = Blueprint("employer", __name__, url_prefix="/employer")
 VACANCY_TYPES = {"Internship", "Entry-level Job"}
 VACANCY_STATUSES = {"draft", "active", "closed"}
 APPLICATION_STATUSES = {"Applied", "Shortlisted", "Selected", "Rejected"}
+EXCEL_HEADERS = {
+    "title": "title",
+    "type": "vacancy_type",
+    "vacancy type": "vacancy_type",
+    "vacancy_type": "vacancy_type",
+    "location": "location",
+    "salary": "salary",
+    "salary / stipend": "salary",
+    "salary/stipend": "salary",
+    "stipend": "salary",
+    "deadline": "deadline",
+    "skills": "skills",
+    "eligibility": "eligibility",
+    "description": "description",
+    "role description": "description",
+}
 
 
 def experience_requirement_invalid(vacancy_type, eligibility):
@@ -77,6 +97,20 @@ def vacancy_form(form):
     }, None
 
 
+def normalize_excel_header(value):
+    return " ".join(str(value or "").strip().lower().replace("_", " ").split())
+
+
+def excel_cell_text(value):
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value).strip()
+
+
 def bulk_vacancy_forms(form):
     titles = form.getlist("title")
     types = form.getlist("vacancy_type")
@@ -119,6 +153,62 @@ def bulk_vacancy_forms(form):
             return None, f"Vacancy {i+1}: application deadline must be today or a future date."
         vacancies.append(data)
     return vacancies, None
+
+
+def excel_vacancy_forms(file_storage):
+    filename = (file_storage.filename or "").strip().lower()
+    if not filename.endswith(".xlsx"):
+        return None, "Please upload an Excel .xlsx file."
+    try:
+        workbook = load_workbook(
+            filename=io.BytesIO(file_storage.read()), read_only=True, data_only=True
+        )
+    except Exception:
+        return None, "The Excel file could not be read. Please upload a valid .xlsx file."
+
+    try:
+        sheet = workbook.active
+        rows = sheet.iter_rows(values_only=True)
+        try:
+            header_row = next(rows)
+        except StopIteration:
+            return None, "The Excel file is empty."
+
+        headers = {}
+        for index, value in enumerate(header_row):
+            normalized = normalize_excel_header(value)
+            if normalized in EXCEL_HEADERS:
+                headers[EXCEL_HEADERS[normalized]] = index
+
+        required = {"title", "vacancy_type", "location", "description"}
+        missing = required - set(headers)
+        if missing:
+            return None, "Missing required Excel columns: " + ", ".join(sorted(missing)) + "."
+
+        vacancies = []
+        for row_number, row in enumerate(rows, start=2):
+            if not any(value not in (None, "") for value in row):
+                continue
+            data = {}
+            for field in EXCEL_HEADERS.values():
+                index = headers.get(field)
+                data[field] = excel_cell_text(row[index]) if index is not None and index < len(row) else ""
+            data["deadline"] = data["deadline"] or None
+            if not data["title"] or not data["location"] or not data["description"]:
+                return None, f"Excel row {row_number}: title, location and description are required."
+            if data["vacancy_type"] not in VACANCY_TYPES:
+                return None, f"Excel row {row_number}: type must be Internship or Entry-level Job."
+            if experience_requirement_invalid(data["vacancy_type"], data["eligibility"]):
+                return None, f"Excel row {row_number}: Entry-level Jobs cannot require prior work experience."
+            if deadline_invalid(data["deadline"]):
+                return None, f"Excel row {row_number}: application deadline must be today or a future date."
+            vacancies.append(data)
+
+        if not vacancies:
+            return None, "No vacancy rows were found in the Excel file."
+        return vacancies, None
+    finally:
+        workbook.close()
 
 
 @employer_bp.get("/dashboard")
@@ -234,10 +324,22 @@ def new_vacancy():
 def bulk_new_vacancies():
     if request.method == "GET":
         return render_template("employer/bulk-vacancies.html")
-    vacancies, error = bulk_vacancy_forms(request.form)
-    if error:
-        flash(error, "error")
-        return render_template("employer/bulk-vacancies.html"), 400
+
+    if request.form.get("import_excel") == "1":
+        excel_file = request.files.get("excel_file")
+        if not excel_file or not excel_file.filename:
+            flash("Choose an Excel .xlsx file first.", "error")
+            return render_template("employer/bulk-vacancies.html"), 400
+        vacancies, error = excel_vacancy_forms(excel_file)
+        if error:
+            flash(error, "error")
+            return render_template("employer/bulk-vacancies.html"), 400
+    else:
+        vacancies, error = bulk_vacancy_forms(request.form)
+        if error:
+            flash(error, "error")
+            return render_template("employer/bulk-vacancies.html"), 400
+
     db = get_db()
     uid = session["user_id"]
     try:
@@ -262,11 +364,11 @@ def bulk_new_vacancies():
     except sqlite3.IntegrityError:
         db.rollback()
         flash(
-            "None of the vacancies were published because one or more entries were invalid.",
+            "None of the vacancies were imported because one or more entries were invalid.",
             "error",
         )
         return render_template("employer/bulk-vacancies.html"), 400
-    flash(f"{len(vacancies)} vacancies submitted for developer review.", "success")
+    flash(f"{len(vacancies)} vacancies imported and submitted for developer review.", "success")
     return redirect(url_for("employer.vacancies"))
 
 
