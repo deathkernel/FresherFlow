@@ -51,12 +51,14 @@ def dashboard():
         "saved": db.execute(
             "SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?", (uid,)
         ).fetchone()["c"],
+        "available_jobs": db.execute(
+            "SELECT COUNT(*) c FROM vacancies WHERE status='active' AND (deadline IS NULL OR deadline>=date('now'))"
+        ).fetchone()["c"],
     }
     jobs = db.execute(
         "SELECT v.*,ep.organization_name,0 is_external,NULL apply_url "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.status='active' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now')) "
+        "WHERE v.status='active' AND (v.deadline IS NULL OR v.deadline>=date('now')) "
         "ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
     return render_template("student/dashboard.html", stats=stats, jobs=jobs)
@@ -151,7 +153,7 @@ def jobs():
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
         "ON ep.user_id=v.employer_id WHERE v.status='active' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
+        "AND (v.deadline IS NULL OR v.deadline>=date('now'))"
     )
     args = [uid, uid]
     if q:
@@ -172,8 +174,7 @@ def job_details(vacancy_id):
     job = db.execute(
         "SELECT v.*,ep.organization_name,ep.website,ep.location employer_location "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active' "
-        "AND ep.account_status='active'",
+        "WHERE v.id=? AND v.status='active'",
         (vacancy_id,),
     ).fetchone()
     if not job:
@@ -198,8 +199,7 @@ def apply(vacancy_id):
     uid = session["user_id"]
     vacancy = db.execute(
         "SELECT v.deadline FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active' "
-        "AND ep.account_status='active'",
+        "WHERE v.id=? AND v.status='active'",
         (vacancy_id,),
     ).fetchone()
     if not vacancy:
