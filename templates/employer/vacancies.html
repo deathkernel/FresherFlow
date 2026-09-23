@@ -1,9 +1,10 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
   <div class="section-head page-toolbar">
-    <div><span class="eyebrow">HIRING</span><h2>My Vacancies</h2><p>Publish, edit and close your opportunities.</p></div>
+    <div><span class="eyebrow">HIRING · STEP 2</span><h2>My Vacancies</h2><p>Manage drafts, published roles and closed opportunities from one place.</p></div>
     <div class="section-actions"><a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">+ New vacancy</a></div>
   </div>
+  <div class="flow-note"><strong>Next step:</strong> Publish a draft when the role is ready. After publishing, use Applications to review candidates.</div>
   <div class="vacancy-list">
     {% for v in vacancies %}
       <article class="vacancy-row reveal">
@@ -23,7 +24,7 @@
         </div>
       </article>
     {% else %}
-      <div class="empty-state"><strong>No vacancies yet.</strong><span>Publish your first role to start receiving applications.</span><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary btn-sm">Create vacancy</a></div>
+      <div class="empty-state"><strong>No vacancies yet.</strong><span>Start with one vacancy, review it, then publish.</span><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary btn-sm">Create vacancy</a></div>
     {% endfor %}
   </div>
 {% endblock %}
