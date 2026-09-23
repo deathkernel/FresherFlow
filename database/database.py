@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from pathlib import Path
 from flask import current_app, g
@@ -74,10 +73,5 @@ def init_db(database_path):
     db.executescript(schema)
     migrate_student_profile(db)
     migrate_employer_data(db)
-    from .demo_seed import seed_demo_data
-
-    password = os.environ.get("DEMO_EMPLOYER_PASSWORD")
-    if os.environ.get("FRESHERFLOW_DEMO") == "1" and password:
-        seed_demo_data(db, password)
     db.commit()
     db.close()
