@@ -1,5 +1,6 @@
 {% extends "student/base.html" %}
 {% block student_content %}
+  <div class="flow-note dashboard-next"><strong>Next step:</strong> Find an opportunity that matches your skills, open the role details, and apply when you're ready. <a href="{{ url_for('student.jobs') }}">Find opportunities →</a></div>
   <div class="stat-grid">
     <div class="dash-stat reveal"><span>Available jobs</span><strong>{{ stats.available_jobs }}</strong><small>Open opportunities</small></div>
     <div class="dash-stat reveal"><span>Applications</span><strong>{{ stats.applications }}</strong><small>Total submitted</small></div>
@@ -9,6 +10,7 @@
   </div>
   <div class="section-head">
     <div>
+      <span class="eyebrow">STEP 1 · DISCOVER</span>
       <h2>Latest opportunities</h2>
       <p>Recruiter vacancies from FresherFlow employers.</p>
     </div>
@@ -25,7 +27,7 @@
         <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><a href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role →</a></div>
       </article>
     {% else %}
-      <div class="empty-state">No opportunities available right now.</div>
+      <div class="empty-state"><strong>No opportunities available right now.</strong><span>Check again later or complete your profile while you wait.</span><a href="{{ url_for('student.profile') }}" class="btn btn-light btn-sm">Open profile</a></div>
     {% endfor %}
   </div>
 {% endblock %}
