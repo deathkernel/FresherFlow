@@ -1,6 +1,7 @@
 {% extends "student/base.html" %}
 {% block student_content %}
   <div class="stat-grid">
+    <div class="dash-stat reveal"><span>Available jobs</span><strong>{{ stats.available_jobs }}</strong><small>Open opportunities</small></div>
     <div class="dash-stat reveal"><span>Applications</span><strong>{{ stats.applications }}</strong><small>Total submitted</small></div>
     <div class="dash-stat reveal"><span>Shortlisted</span><strong>{{ stats.shortlisted }}</strong><small>In review</small></div>
     <div class="dash-stat reveal"><span>Selected</span><strong>{{ stats.selected }}</strong><small>Offers / selections</small></div>
