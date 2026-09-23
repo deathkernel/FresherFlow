@@ -1,0 +1,191 @@
+:root {
+  --ff-shadow-sm: 0 8px 24px rgba(16, 19, 34, .05);
+  --ff-shadow-md: 0 18px 48px rgba(16, 19, 34, .08);
+}
+
+/* Shared navigation polish */
+.side-nav-label {
+  margin: 17px 12px 5px;
+  color: #a0a5b1;
+  font-size: .61rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  min-height: 43px;
+}
+.sidebar nav a::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: #d9dce5;
+  transition: .2s ease;
+}
+.sidebar nav a.active::before,
+.sidebar nav a:hover::before { background: currentColor; }
+
+.workspace {
+  max-width: 1600px;
+}
+.workspace-head {
+  align-items: center;
+  margin-bottom: 30px;
+}
+.workspace-head h1 { margin-bottom: 8px; }
+.workspace-head p { margin-bottom: 0; }
+
+/* Consistent content surfaces */
+.content-card,
+.job-card,
+.candidate-card,
+.vacancy-row,
+.dash-stat {
+  border-color: #e8eaf0;
+  box-shadow: var(--ff-shadow-sm);
+}
+.content-card { border-radius: 18px; }
+.section-head { margin-top: 30px; }
+.section-head h2,
+.section-head h3 { letter-spacing: -.035em; }
+.section-head > a { white-space: nowrap; font-weight: 800; }
+
+.dash-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 20px;
+  background: #fff;
+}
+.dash-stat::after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  bottom: -30px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #625bf50b;
+}
+.dash-stat span { font-size: .72rem; font-weight: 700; color: #7c8391; }
+.dash-stat strong { font-size: 2rem; }
+
+/* Forms */
+.form-control,
+.form-select {
+  min-height: 44px;
+  border-radius: 10px;
+  border-color: #dfe2e9;
+  box-shadow: none;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: #625bf5;
+  box-shadow: 0 0 0 4px rgba(98,91,245,.10);
+}
+label { font-weight: 700; color: #424958; margin-bottom: 7px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.btn { min-height: 42px; border: 1px solid transparent; }
+.btn-light { border-color: #e1e4eb; background: #fff; color: #252a38; }
+.btn-light:hover { border-color: #cfd3dd; background: #f9fafb; }
+
+/* Tables and status */
+.table-wrap { border-radius: 14px; }
+.table { margin-bottom: 0; }
+.table thead th { color: #7a8190; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; border-bottom-width: 1px; }
+.table tbody td { padding-top: 15px; padding-bottom: 15px; border-color: #eef0f4; }
+.table tbody tr:hover { background: #fafaff; }
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: .67rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status.active, .status.selected, .status.approved { color: #087443; background: #ecfdf3; }
+.status.pending, .status.applied, .status.draft { color: #8a5b00; background: #fff8e6; }
+.status.closed, .status.rejected { color: #b42318; background: #fef3f2; }
+.status.shortlisted { color: #5149d5; background: #efeeff; }
+
+/* Job / candidate cards */
+.job-card,
+.candidate-card { border-radius: 18px; }
+.job-card h3,
+.candidate-card h3 { letter-spacing: -.025em; }
+.job-bottom { gap: 12px; }
+.job-bottom > div { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.candidate-actions form { display: flex; gap: 8px; align-items: center; }
+.candidate-actions .form-select { min-width: 150px; }
+
+/* Vacancy management */
+.vacancy-row { border-radius: 16px; padding: 20px 22px; }
+.vacancy-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Profile / upload */
+.profile-card .score {
+  display: inline-grid;
+  place-items: center;
+  min-width: 52px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #efeeff;
+  color: #5149d5;
+  font-weight: 800;
+}
+.upload-box { cursor: pointer; }
+
+/* Bulk publishing */
+.bulk-post-page > .content-card { box-shadow: none; border-color: #eceef3; }
+.bulk-post-head { padding-bottom: 4px; }
+.bulk-add-row { border-top: 1px solid #eef0f4; border-bottom: 1px solid #eef0f4; }
+.bulk-submit-row { padding-top: 4px; }
+
+/* Empty states */
+.empty-state,
+.empty-cell { color: #7b8290; }
+.empty-state { min-height: 130px; display: grid; place-items: center; padding: 28px; border: 1px dashed #dfe2e9; border-radius: 16px; background: #fff; }
+
+/* Responsive workspace */
+@media (max-width: 980px) {
+  .app-shell { grid-template-columns: 210px 1fr; }
+  .workspace { padding: 32px 28px 55px; }
+  .workspace-head { align-items: flex-start; }
+}
+@media (max-width: 760px) {
+  .app-shell { display: block; }
+  .sidebar { position: relative; width: 100%; height: auto; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .sidebar nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  .sidebar nav a { flex: 0 0 auto; }
+  .sidebar nav a::before,
+  .side-nav-label,
+  .side-label { display: none; }
+  .side-bottom { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .side-bottom form { margin-left: auto; }
+  .workspace { padding: 26px 16px 45px; }
+  .workspace-head { flex-direction: column; margin-bottom: 22px; }
+  .workspace-head-actions { width: 100%; }
+  .workspace-head-actions .btn { flex: 1; }
+  .section-head { align-items: flex-start; gap: 12px; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .job-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full { grid-column: auto; }
+  .candidate-actions form { align-items: stretch; flex-direction: column; }
+  .candidate-actions .form-select, .candidate-actions .btn { width: 100%; }
+}
+@media (max-width: 460px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .side-bottom .user-chip { min-width: 0; }
+  .side-bottom .user-chip div:last-child { display: none; }
+  .section-head { flex-direction: column; }
+  .section-actions, .form-actions { width: 100%; }
+  .section-actions .btn, .form-actions .btn { width: 100%; }
+}
