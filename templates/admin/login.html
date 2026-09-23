@@ -11,9 +11,9 @@
       <p>Manage imported public job listings and sync sources.</p>
       <form method="post" class="mt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label class="form-label">Admin email</label>
+        <label class="form-label">Admin ID</label>
         <input class="form-control mb-3"
-               type="email"
+               type="text"
                name="email"
                required
                autocomplete="username">
