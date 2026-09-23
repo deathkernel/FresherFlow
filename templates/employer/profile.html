@@ -1,47 +1,15 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="content-card reveal">
-    <div class="section-head">
-      <div>
-        <h2>Organization Profile</h2>
-        <p>Give candidates a clear picture of your organization.</p>
-      </div>
-    </div>
+  <div class="content-card reveal form-page">
+    <div class="section-head page-toolbar"><div><span class="eyebrow">ORGANIZATION</span><h2>Organization Profile</h2><p>Give candidates a clear picture of your organization.</p></div></div>
     <form method="post" class="form-grid">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div>
-        <label>Organization name</label>
-        <input class="form-control"
-               name="organization_name"
-               value="{{ profile.organization_name }}"
-               required>
-      </div>
-      <div>
-        <label>Organization type</label>
-        <input class="form-control"
-               name="organization_type"
-               value="{{ profile.organization_type or '' }}"
-               placeholder="Technology, Finance...">
-      </div>
-      <div>
-        <label>Website</label>
-        <input class="form-control"
-               name="website"
-               value="{{ profile.website or '' }}">
-      </div>
-      <div>
-        <label>Location</label>
-        <input class="form-control"
-               name="location"
-               value="{{ profile.location or '' }}">
-      </div>
-      <div class="full">
-        <label>Description</label>
-        <textarea class="form-control" name="description" rows="5">{{ profile.description or '' }}</textarea>
-      </div>
-      <div class="full">
-        <button class="btn btn-primary">Save organization</button>
-      </div>
+      <div><label for="organization-name">Organization name</label><input id="organization-name" class="form-control" name="organization_name" value="{{ profile.organization_name }}" required></div>
+      <div><label for="organization-type">Organization type</label><input id="organization-type" class="form-control" name="organization_type" value="{{ profile.organization_type or '' }}" placeholder="Technology, Finance..."></div>
+      <div><label for="website">Website</label><input id="website" class="form-control" type="url" name="website" value="{{ profile.website or '' }}" placeholder="https://example.com"></div>
+      <div><label for="location">Location</label><input id="location" class="form-control" name="location" value="{{ profile.location or '' }}" placeholder="Pune / Mumbai / Remote"></div>
+      <div class="full"><label for="description">Description</label><textarea id="description" class="form-control" name="description" rows="7" placeholder="Tell candidates about your organization, team and work.">{{ profile.description or '' }}</textarea></div>
+      <div class="full form-actions"><button class="btn btn-primary" type="submit">Save organization</button></div>
     </form>
   </div>
 {% endblock %}
