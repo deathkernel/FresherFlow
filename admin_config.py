@@ -2,7 +2,7 @@ import os
 
 
 # Simple local admin credentials for the college project.
-DEFAULT_ADMIN_EMAIL = "admin.com"
+DEFAULT_ADMIN_EMAIL = "admin@123"
 DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$fresherflow$3B6BgnhYPwjlDy87Yq/x1vzwL8LNIgws2L3EigRKMgk="
 
 
