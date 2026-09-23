@@ -3,23 +3,69 @@
   <div class="content-card reveal form-page">
     <div class="section-head page-toolbar">
       <div>
-        <span class="eyebrow">HIRING</span>
+        <span class="eyebrow">HIRING · STEP-BY-STEP</span>
         <h2>Post a New Vacancy</h2>
-        <p>Create a clear role and publish it directly to the student opportunity feed.</p>
+        <p>Create the role, review the details, then choose whether to save or publish.</p>
       </div>
     </div>
+
+    <div class="flow-stepper" aria-label="Vacancy creation steps">
+      <div class="flow-step active" data-step-indicator="1"><span>1</span><strong>Role</strong><small>Basic details</small></div>
+      <div class="flow-line"></div>
+      <div class="flow-step" data-step-indicator="2"><span>2</span><strong>Requirements</strong><small>Skills & eligibility</small></div>
+      <div class="flow-line"></div>
+      <div class="flow-step" data-step-indicator="3"><span>3</span><strong>Review</strong><small>Publish or save</small></div>
+    </div>
+
     <div class="form-note info-note"><strong>Freshers first:</strong> Entry-level Jobs cannot require prior work experience. Roles requiring prior professional experience must be posted as Internships.</div>
-    <form method="post" class="form-grid">
+
+    <form method="post" class="form-grid" id="vacancy-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="full"><label for="title">Job / internship title</label><input id="title" class="form-control" name="title" required placeholder="e.g. Python Developer Intern"></div>
-      <div><label for="vacancy_type">Type</label><select id="vacancy_type" class="form-select" name="vacancy_type" required><option>Internship</option><option>Entry-level Job</option></select></div>
-      <div><label for="location">Location</label><input id="location" class="form-control" name="location" required placeholder="Pune / Remote"></div>
-      <div><label for="salary">Salary / stipend</label><input id="salary" class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA"></div>
-      <div><label for="deadline">Application deadline</label><input id="deadline" class="form-control" type="date" name="deadline"></div>
-      <div class="full"><label for="skills">Skills</label><input id="skills" class="form-control" name="skills" placeholder="Python, Flask, SQL"></div>
-      <div class="full"><label for="eligibility">Eligibility</label><input id="eligibility" class="form-control" name="eligibility" placeholder="Freshers / 0–1 years / B.Tech..."></div>
-      <div class="full"><label for="description">Role description</label><textarea id="description" class="form-control" name="description" rows="7" required placeholder="Describe responsibilities, team and expectations..."></textarea></div>
-      <div class="full form-actions"><button class="btn btn-light" name="publish" value="0" type="submit">Save draft</button><button class="btn btn-primary" name="publish" value="1" type="submit">Publish vacancy</button></div>
+
+      <section class="flow-panel active" data-step="1">
+        <div class="flow-panel-head"><span class="eyebrow">STEP 1</span><h3>Define the role</h3><p>Start with the information students need to understand the opportunity.</p></div>
+        <div class="full"><label for="title">Job / internship title</label><input id="title" class="form-control" name="title" required placeholder="e.g. Python Developer Intern"></div>
+        <div><label for="vacancy_type">Type</label><select id="vacancy_type" class="form-select" name="vacancy_type" required><option>Internship</option><option>Entry-level Job</option></select></div>
+        <div><label for="location">Location</label><input id="location" class="form-control" name="location" required placeholder="Pune / Remote"></div>
+        <div><label for="salary">Salary / stipend</label><input id="salary" class="form-control" name="salary" placeholder="₹20,000/mo or ₹6 LPA"></div>
+        <div><label for="deadline">Application deadline</label><input id="deadline" class="form-control" type="date" name="deadline"></div>
+        <div class="full form-actions"><button class="btn btn-primary flow-next" type="button">Continue to requirements →</button></div>
+      </section>
+
+      <section class="flow-panel" data-step="2">
+        <div class="flow-panel-head"><span class="eyebrow">STEP 2</span><h3>Set requirements</h3><p>Keep requirements focused on the skills and eligibility that matter for the role.</p></div>
+        <div class="full"><label for="skills">Skills</label><input id="skills" class="form-control" name="skills" placeholder="Python, Flask, SQL"></div>
+        <div class="full"><label for="eligibility">Eligibility</label><input id="eligibility" class="form-control" name="eligibility" placeholder="Freshers / 0–1 years / B.Tech..."></div>
+        <div class="full form-actions"><button class="btn btn-light flow-back" type="button">← Back</button><button class="btn btn-primary flow-next" type="button">Continue to review →</button></div>
+      </section>
+
+      <section class="flow-panel" data-step="3">
+        <div class="flow-panel-head"><span class="eyebrow">STEP 3</span><h3>Review & publish</h3><p>Check the role description before making it available to students.</p></div>
+        <div class="full"><label for="description">Role description</label><textarea id="description" class="form-control" name="description" rows="7" required placeholder="Describe responsibilities, team and expectations..."></textarea></div>
+        <div class="review-note"><strong>Almost ready.</strong><span>Save as a draft if you want to finish later, or publish now to make the vacancy available.</span></div>
+        <div class="full form-actions"><button class="btn btn-light flow-back" type="button">← Back</button><button class="btn btn-light" name="publish" value="0" type="submit">Save draft</button><button class="btn btn-primary" name="publish" value="1" type="submit">Publish vacancy</button></div>
+      </section>
     </form>
   </div>
+
+  <script>
+    (() => {
+      const form = document.getElementById('vacancy-form');
+      const panels = [...form.querySelectorAll('.flow-panel')];
+      const indicators = [...document.querySelectorAll('[data-step-indicator]')];
+      let current = 1;
+      const showStep = (step) => {
+        current = step;
+        panels.forEach(panel => panel.classList.toggle('active', Number(panel.dataset.step) === step));
+        indicators.forEach(indicator => indicator.classList.toggle('active', Number(indicator.dataset.stepIndicator) <= step));
+        window.scrollTo({ top: form.closest('.content-card').offsetTop - 24, behavior: 'smooth' });
+      };
+      form.querySelectorAll('.flow-next').forEach(button => button.addEventListener('click', () => {
+        const fields = [...panels[current - 1].querySelectorAll('input, select, textarea')];
+        if (!fields.every(field => field.checkValidity())) { form.reportValidity(); return; }
+        showStep(Math.min(current + 1, panels.length));
+      }));
+      form.querySelectorAll('.flow-back').forEach(button => button.addEventListener('click', () => showStep(Math.max(current - 1, 1))));
+    })();
+  </script>
 {% endblock %}
