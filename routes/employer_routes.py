@@ -177,7 +177,7 @@ def edit_vacancy(vacancy_id):
             db.execute("UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,status='draft',moderation_status='pending',moderation_note=NULL,moderated_at=NULL WHERE id=? AND employer_id=?",(data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],vacancy_id,session["user_id"])); db.commit()
         except sqlite3.IntegrityError:
             db.rollback(); flash("The vacancy could not be updated.","error"); return render_template("employer/edit-vacancy.html",job=job)
-        flash("Vacancy updated and resubmitted for developer review.","success"); return redirect(url_for("employer.vacancies"))
+        flash("Vacancy updated and saved as a draft. Publish it from My Vacancies when ready.","success"); return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html",job=job)
 
 
@@ -186,11 +186,10 @@ def edit_vacancy(vacancy_id):
 def vacancy_status(vacancy_id):
     status=request.form.get("status")
     if status not in VACANCY_STATUSES: return redirect(url_for("employer.vacancies"))
-    db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline,moderation_status FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
+    db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
     if not job: return redirect(url_for("employer.vacancies"))
-    if status=="active" and job["moderation_status"]!="approved": flash("A developer must approve this vacancy before it can be published.","error"); return redirect(url_for("employer.vacancies"))
     if status=="active" and deadline_invalid(job["deadline"]): flash("The application deadline has passed or is invalid.","error"); return redirect(url_for("employer.vacancies"))
-    db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?",(status,vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
+    db.execute("UPDATE vacancies SET status=?, moderation_status=? WHERE id=? AND employer_id=?",(status,"approved" if status=="active" else "pending",vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
 
 
 @employer_bp.get("/applications")
