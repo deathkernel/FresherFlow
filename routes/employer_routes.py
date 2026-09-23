@@ -37,12 +37,11 @@ def experience_requirement_invalid(vacancy_type, eligibility):
     if not text:
         return False
     terms = (
-        "year experience", "years experience", "year of experience",
-        "years of experience", "yr experience", "yrs experience",
-        "yr of experience", "yrs of experience", "work experience",
-        "professional experience", "prior experience", "previous experience",
-        "relevant experience", "industry experience", "experience required",
-        "experience mandatory", "minimum experience",
+        "year experience", "years experience", "year of experience", "years of experience",
+        "yr experience", "yrs experience", "yr of experience", "yrs of experience",
+        "work experience", "professional experience", "prior experience", "previous experience",
+        "relevant experience", "industry experience", "experience required", "experience mandatory",
+        "minimum experience",
     )
     return any(term in text for term in terms)
 
@@ -74,8 +73,7 @@ def vacancy_form(form):
     return {
         "title": title, "vacancy_type": vacancy_type, "description": description,
         "location": location, "salary": form.get("salary", "").strip(),
-        "skills": form.get("skills", "").strip(), "eligibility": eligibility,
-        "deadline": deadline,
+        "skills": form.get("skills", "").strip(), "eligibility": eligibility, "deadline": deadline,
     }, None
 
 
@@ -108,9 +106,8 @@ def bulk_vacancy_forms(form):
     vacancies = []
     for i in range(count):
         data = {
-            "title": titles[i].strip(), "vacancy_type": types[i].strip(),
-            "location": locations[i].strip(), "description": descriptions[i].strip(),
-            "salary": salaries[i].strip() if i < len(salaries) else "",
+            "title": titles[i].strip(), "vacancy_type": types[i].strip(), "location": locations[i].strip(),
+            "description": descriptions[i].strip(), "salary": salaries[i].strip() if i < len(salaries) else "",
             "skills": skills[i].strip() if i < len(skills) else "",
             "eligibility": eligibilities[i].strip() if i < len(eligibilities) else "",
             "deadline": deadlines[i] if i < len(deadlines) else None,
@@ -187,8 +184,15 @@ def dashboard():
         "shortlisted": db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Shortlisted'", (uid,)).fetchone()["c"],
         "selected": db.execute("SELECT COUNT(*) c FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=? AND a.status='Selected'", (uid,)).fetchone()["c"],
     }
-    applications = db.execute("SELECT a.*,v.title,u.name,u.email FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id WHERE v.employer_id=? ORDER BY a.id DESC LIMIT 8", (uid,)).fetchall()
-    return render_template("employer/dashboard.html", stats=stats, applications=applications)
+    posted_vacancies = db.execute(
+        "SELECT id,title,vacancy_type,location,status,moderation_status,deadline FROM vacancies WHERE employer_id=? ORDER BY id DESC LIMIT 8",
+        (uid,),
+    ).fetchall()
+    applications = db.execute(
+        "SELECT a.*,v.title,u.name,u.email FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id WHERE v.employer_id=? ORDER BY a.id DESC LIMIT 8",
+        (uid,),
+    ).fetchall()
+    return render_template("employer/dashboard.html", stats=stats, posted_vacancies=posted_vacancies, applications=applications)
 
 
 @employer_bp.route("/profile", methods=["GET", "POST"])
@@ -213,8 +217,7 @@ def new_vacancy():
     if request.method == "POST":
         data, error = vacancy_form(request.form)
         if error:
-            flash(error, "error")
-            return render_template("employer/post-vacancy.html")
+            flash(error, "error"); return render_template("employer/post-vacancy.html")
         db = get_db()
         try:
             db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (session["user_id"], data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], "draft", "pending"))
@@ -235,36 +238,23 @@ def bulk_new_vacancies():
     if request.form.get("import_excel") == "1":
         excel_file = request.files.get("excel_file")
         if not excel_file or not excel_file.filename:
-            flash("Choose an Excel .xlsx file first.", "error")
-            return render_template("employer/bulk-vacancies.html"), 400
+            flash("Choose an Excel .xlsx file first.", "error"); return render_template("employer/bulk-vacancies.html"), 400
         vacancies, error = excel_vacancy_forms(excel_file)
         if error:
-            flash(error, "error")
-            return render_template("employer/bulk-vacancies.html"), 400
+            flash(error, "error"); return render_template("employer/bulk-vacancies.html"), 400
     else:
         vacancies, error = bulk_vacancy_forms(request.form)
         if error:
-            flash(error, "error")
-            return render_template("employer/bulk-vacancies.html"), 400
-
+            flash(error, "error"); return render_template("employer/bulk-vacancies.html"), 400
     db = get_db(); uid = session["user_id"]
-    is_excel_import = request.form.get("import_excel") == "1"
     try:
         for data in vacancies:
-            # Bulk Publish is an explicit employer publishing action. Excel rows are
-            # validated before insertion and become visible to students immediately.
-            status = "active" if is_excel_import else "draft"
-            moderation_status = "approved" if is_excel_import else "pending"
-            db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (uid, data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], status, moderation_status))
+            db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (uid, data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], "active", "approved"))
         db.commit()
     except sqlite3.IntegrityError:
-        db.rollback()
-        flash("None of the vacancies were imported because one or more entries were invalid.", "error")
+        db.rollback(); flash("None of the vacancies were imported because one or more entries were invalid.", "error")
         return render_template("employer/bulk-vacancies.html"), 400
-    if is_excel_import:
-        flash(f"{len(vacancies)} vacancies imported and published successfully.", "success")
-    else:
-        flash(f"{len(vacancies)} vacancies submitted for developer review.", "success")
+    flash(f"{len(vacancies)} vacancies imported successfully.", "success")
     return redirect(url_for("employer.vacancies"))
 
 
@@ -280,19 +270,16 @@ def vacancies():
 def edit_vacancy(vacancy_id):
     db = get_db()
     job = db.execute("SELECT * FROM vacancies WHERE id=? AND employer_id=?", (vacancy_id, session["user_id"])).fetchone()
-    if not job:
-        return render_template("404.html"), 404
+    if not job: return render_template("404.html"), 404
     if request.method == "POST":
         data, error = vacancy_form(request.form)
         if error:
-            flash(error, "error")
-            return render_template("employer/edit-vacancy.html", job=job)
+            flash(error, "error"); return render_template("employer/edit-vacancy.html", job=job)
         try:
             db.execute("UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,status='draft',moderation_status='pending',moderation_note=NULL,moderated_at=NULL WHERE id=? AND employer_id=?", (data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], vacancy_id, session["user_id"]))
             db.commit()
         except sqlite3.IntegrityError:
-            db.rollback(); flash("The vacancy could not be updated.", "error")
-            return render_template("employer/edit-vacancy.html", job=job)
+            db.rollback(); flash("The vacancy could not be updated.", "error"); return render_template("employer/edit-vacancy.html", job=job)
         flash("Vacancy updated and resubmitted for developer review.", "success")
         return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html", job=job)
@@ -302,24 +289,18 @@ def edit_vacancy(vacancy_id):
 @role_required("employer")
 def vacancy_status(vacancy_id):
     status = request.form.get("status")
-    if status not in VACANCY_STATUSES:
-        return redirect(url_for("employer.vacancies"))
+    if status not in VACANCY_STATUSES: return redirect(url_for("employer.vacancies"))
     db = get_db()
     job = db.execute("SELECT vacancy_type,eligibility,deadline,moderation_status FROM vacancies WHERE id=? AND employer_id=?", (vacancy_id, session["user_id"])).fetchone()
-    if not job:
-        return redirect(url_for("employer.vacancies"))
+    if not job: return redirect(url_for("employer.vacancies"))
     if status == "active" and job["moderation_status"] != "approved":
-        flash("A developer must approve this vacancy before it can be published.", "error")
-        return redirect(url_for("employer.vacancies"))
+        flash("A developer must approve this vacancy before it can be published.", "error"); return redirect(url_for("employer.vacancies"))
     if status == "active" and deadline_invalid(job["deadline"]):
-        flash("The application deadline has passed or is invalid.", "error")
-        return redirect(url_for("employer.vacancies"))
+        flash("The application deadline has passed or is invalid.", "error"); return redirect(url_for("employer.vacancies"))
     if status == "active" and experience_requirement_invalid(job["vacancy_type"], job["eligibility"]):
-        flash("Entry-level Jobs cannot require prior work experience.", "error")
-        return redirect(url_for("employer.vacancies"))
-    db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?", (status, vacancy_id, session["user_id"]))
-    db.commit(); flash(f"Vacancy marked {status}.", "success")
-    return redirect(url_for("employer.vacancies"))
+        flash("Entry-level Jobs cannot require prior work experience.", "error"); return redirect(url_for("employer.vacancies"))
+    db.execute("UPDATE vacancies SET status=? WHERE id=? AND employer_id=?", (status, vacancy_id, session["user_id"])); db.commit()
+    flash(f"Vacancy marked {status}.", "success"); return redirect(url_for("employer.vacancies"))
 
 
 @employer_bp.get("/applications")
@@ -333,9 +314,7 @@ def applications():
 @role_required("employer")
 def application_status(application_id):
     status = request.form.get("status")
-    if status not in APPLICATION_STATUSES:
-        return redirect(url_for("employer.applications"))
-    db = get_db()
-    db.execute("UPDATE applications SET status=? WHERE id=? AND vacancy_id IN (SELECT id FROM vacancies WHERE employer_id=?)", (status, application_id, session["user_id"]))
-    db.commit(); flash(f"Application marked {status}.", "success")
+    if status not in APPLICATION_STATUSES: return redirect(url_for("employer.applications"))
+    db = get_db(); db.execute("UPDATE applications SET status=? WHERE id=? AND vacancy_id IN (SELECT id FROM vacancies WHERE employer_id=?)", (status, application_id, session["user_id"])); db.commit()
+    flash(f"Application marked {status}.", "success")
     return redirect(request.referrer or url_for("employer.applications"))
