@@ -153,8 +153,8 @@ def jobs():
         "AND s.student_id=?) saved,EXISTS(SELECT 1 FROM applications a WHERE "
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
-        "ON ep.user_id=v.employer_id WHERE v.status='active' "
-        "AND (v.deadline IS NULL OR v.deadline>=date('now'))"
+        "ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' "
+        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
     )
     args = [uid, uid]
     if q:
@@ -200,7 +200,7 @@ def apply(vacancy_id):
     uid = session["user_id"]
     vacancy = db.execute(
         "SELECT v.deadline FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active'",
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active'",
         (vacancy_id,),
     ).fetchone()
     if not vacancy:
@@ -219,7 +219,7 @@ def apply(vacancy_id):
     except sqlite3.IntegrityError:
         db.rollback()
         flash("You have already applied to this vacancy.", "error")
-    return redirect(request.referrer or url_for("student.jobs"))
+    return redirect(url_for("student.jobs"))
 
 
 @student_bp.post("/jobs/<int:vacancy_id>/save")
