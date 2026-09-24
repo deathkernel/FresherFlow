@@ -227,6 +227,15 @@ def apply(vacancy_id):
 def save(vacancy_id):
     db = get_db()
     uid = session["user_id"]
+    job = db.execute(
+        "SELECT v.id FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' "
+        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))",
+        (vacancy_id,),
+    ).fetchone()
+    if not job:
+        flash("This opportunity is no longer available.", "error")
+        return redirect(url_for("student.jobs"))
     exists = db.execute(
         "SELECT id FROM saved_jobs WHERE vacancy_id=? AND student_id=?",
         (vacancy_id, uid),
