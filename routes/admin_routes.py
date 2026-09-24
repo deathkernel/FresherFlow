@@ -214,10 +214,17 @@ def company_status(user_id):
     if status not in {"active", "suspended"}:
         return redirect(url_for("admin.dashboard"))
     db = get_db()
+    company = db.execute(
+        "SELECT organization_name FROM employer_profiles ep JOIN users u ON u.id=ep.user_id WHERE ep.user_id=? AND u.role='employer'",
+        (user_id,),
+    ).fetchone()
+    if not company:
+        flash("Employer account not found.", "error")
+        return redirect(url_for("admin.dashboard"))
     db.execute("UPDATE employer_profiles SET account_status=? WHERE user_id=?", (status, user_id))
     db.commit()
     flash(f"Company account marked {status}.", "success")
-    return redirect(request.referrer or url_for("admin.dashboard"))
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.post("/vacancies/<int:vacancy_id>/moderate")
@@ -235,7 +242,7 @@ def moderate_vacancy(vacancy_id):
     db.execute("UPDATE vacancies SET moderation_status=?, moderation_note=?, moderated_at=CURRENT_TIMESTAMP, status=? WHERE id=?", (decision, note, status, vacancy_id))
     db.commit()
     flash(f"Job {decision}.", "success")
-    return redirect(request.referrer or url_for("admin.dashboard"))
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.get("/jobs/<int:job_id>")
