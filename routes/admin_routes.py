@@ -240,9 +240,18 @@ def moderate_vacancy(vacancy_id):
     if decision not in {"approved", "rejected"}:
         return redirect(url_for("admin.dashboard"))
     db = get_db()
-    job = db.execute("SELECT id FROM vacancies WHERE id=?", (vacancy_id,)).fetchone()
+    job = db.execute("SELECT id, deadline FROM vacancies WHERE id=?", (vacancy_id,)).fetchone()
     if not job:
         return render_template("404.html"), 404
+    if decision == "approved" and job["deadline"]:
+        try:
+            from datetime import date
+            if date.fromisoformat(job["deadline"]) < date.today():
+                flash("Expired vacancies cannot be approved.", "error")
+                return redirect(url_for("admin.dashboard"))
+        except ValueError:
+            flash("Vacancy has an invalid deadline and cannot be approved.", "error")
+            return redirect(url_for("admin.dashboard"))
     status = "active" if decision == "approved" else "closed"
     db.execute("UPDATE vacancies SET moderation_status=?, moderation_note=?, moderated_at=CURRENT_TIMESTAMP, status=? WHERE id=?", (decision, note, status, vacancy_id))
     db.commit()
