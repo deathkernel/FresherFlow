@@ -34,3 +34,17 @@ def test_student_deadline_check_handles_missing_and_past_dates():
     assert not deadline_passed(date.today().isoformat())
     assert deadline_passed((date.today() - timedelta(days=1)).isoformat())
     assert deadline_passed("invalid")
+
+
+def test_entry_level_rejects_numeric_experience_requirements():
+    from routes.employer_routes import experience_requirement_invalid
+
+    assert experience_requirement_invalid("Entry-level Job", "Minimum 2+ years of experience")
+    assert experience_requirement_invalid("Entry-level Job", "3 yrs experience required")
+
+
+def test_entry_level_allows_explicit_no_experience():
+    from routes.employer_routes import experience_requirement_invalid
+
+    assert not experience_requirement_invalid("Entry-level Job", "No prior experience required")
+    assert not experience_requirement_invalid("Entry-level Job", "Freshers welcome, no experience needed")
