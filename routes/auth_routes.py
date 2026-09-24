@@ -15,7 +15,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.database import get_db
-from security import valid_resume_upload
+from security import valid_resume_upload, valid_website_url
 
 auth_bp = Blueprint("auth", __name__)
 MIN_PASSWORD_LENGTH = 12
@@ -91,12 +91,14 @@ def register():
         password = form.get("password", "")
         confirm_password = form.get("confirm_password", "")
         role = form.get("role", "student")
+        website = form.get("website", "").strip()
         if (
             not name
             or not email
             or len(password) < MIN_PASSWORD_LENGTH
             or password != confirm_password
             or role not in {"student", "employer"}
+            or (role == "employer" and not valid_website_url(website))
         ):
             flash(
                 f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.",
@@ -155,7 +157,7 @@ def register():
                         user_id,
                         organization,
                         form.get("organization_type", "").strip(),
-                        form.get("website", "").strip(),
+                        website,
                         form.get("location", "").strip(),
                         form.get("description", "").strip(),
                         "active",
