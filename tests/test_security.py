@@ -35,3 +35,13 @@ def test_rejects_oversized_upload():
     assert not valid_resume_upload(
         upload("resume.pdf", b"%PDF-" + b"x" * (5 * 1024 * 1024))
     )
+
+
+def test_website_url_validation():
+    from security import valid_website_url
+
+    assert valid_website_url("https://example.com")
+    assert valid_website_url("http://example.com/path")
+    assert valid_website_url("")
+    assert not valid_website_url("javascript:alert(1)")
+    assert not valid_website_url("//evil.example")
