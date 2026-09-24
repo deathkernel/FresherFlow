@@ -21,11 +21,13 @@ def local_secret():
 
 
 def get_admin_credentials():
-    """Return environment credentials when fully configured, otherwise local defaults."""
-    email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
-    password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
-    if email and password_hash:
-        return email, password_hash
+    """Return deterministic local credentials in development and env credentials in production."""
+    if os.environ.get("FRESHERFLOW_ENV", "development").strip().lower() == "production":
+        email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+        password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+        if email and password_hash:
+            return email, password_hash
+        return "", ""
     return DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD_HASH
 
 
