@@ -1,4 +1,5 @@
 import io
+import re
 import sqlite3
 from datetime import date, datetime
 
@@ -21,11 +22,33 @@ EXCEL_HEADERS = {
 
 
 def experience_requirement_invalid(vacancy_type, eligibility):
-    if vacancy_type != "Entry-level Job": return False
+    if vacancy_type != "Entry-level Job":
+        return False
     text = (eligibility or "").strip().lower()
-    if not text: return False
-    terms = ("year experience", "years experience", "year of experience", "years of experience", "yr experience", "yrs experience", "yr of experience", "yrs of experience", "work experience", "professional experience", "prior experience", "previous experience", "relevant experience", "industry experience", "experience required", "experience mandatory", "minimum experience")
-    return any(term in text for term in terms)
+    if not text:
+        return False
+
+    terms = (
+        "work experience",
+        "professional experience",
+        "prior experience",
+        "previous experience",
+        "relevant experience",
+        "industry experience",
+        "experience required",
+        "experience mandatory",
+        "minimum experience",
+    )
+    if any(term in text for term in terms):
+        return True
+
+    experience_pattern = re.compile(
+        r"\b(?:minimum\s+)?\d+(?:\.\d+)?\s*\+?\s*(?:year|years|yr|yrs)\b(?:\s+of)?\s+experience\b"
+    )
+    reverse_pattern = re.compile(
+        r"\bexperience\b.{0,30}\b\d+(?:\.\d+)?\s*\+?\s*(?:year|years|yr|yrs)\b"
+    )
+    return bool(experience_pattern.search(text) or reverse_pattern.search(text))
 
 
 def deadline_invalid(deadline):
