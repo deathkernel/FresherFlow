@@ -135,7 +135,7 @@ def student_profile(student_id):
         """SELECT a.id, a.status, a.applied_at, v.id AS vacancy_id, v.title, v.vacancy_type,
                   COALESCE(ep.organization_name, 'Unknown company') AS organization_name, 'Company Job' AS application_source
            FROM applications a JOIN vacancies v ON v.id=a.vacancy_id LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
-           WHERE a.student_id=? ORDER BY applied_at DESC, id DESC""", (student_id,)
+           WHERE a.student_id=? ORDER BY a.applied_at DESC, a.id DESC""", (student_id,)
     ).fetchall()
     return render_template("admin/student-profile.html", user=user, profile=profile, applications=applications)
 
