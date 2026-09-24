@@ -52,13 +52,14 @@ def dashboard():
             "SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?", (uid,)
         ).fetchone()["c"],
         "available_jobs": db.execute(
-            "SELECT COUNT(*) c FROM vacancies WHERE status='active' AND (deadline IS NULL OR deadline>=date('now'))"
+            "SELECT COUNT(*) c FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
         ).fetchone()["c"],
     }
     jobs = db.execute(
         "SELECT v.*,ep.organization_name,0 is_external,NULL apply_url "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.status='active' AND (v.deadline IS NULL OR v.deadline>=date('now')) "
+        "WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now')) "
         "ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
     return render_template("student/dashboard.html", stats=stats, jobs=jobs)
@@ -174,7 +175,7 @@ def job_details(vacancy_id):
     job = db.execute(
         "SELECT v.*,ep.organization_name,ep.website,ep.location employer_location "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active'",
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active'",
         (vacancy_id,),
     ).fetchone()
     if not job:
@@ -207,7 +208,7 @@ def apply(vacancy_id):
         return redirect(url_for("student.jobs"))
     if deadline_passed(vacancy["deadline"]):
         flash("Applications for this opportunity are closed.", "error")
-        return redirect(request.referrer or url_for("student.jobs"))
+        return redirect(url_for("student.jobs"))
     try:
         db.execute(
             "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
