@@ -1,5 +1,6 @@
 import secrets
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import abort, session
 
@@ -47,3 +48,15 @@ def valid_resume_upload(file_storage):
         return header.startswith(b"PK\x03\x04")
 
     return header.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1")
+
+
+def valid_website_url(value):
+    """Allow only absolute HTTP(S) website URLs."""
+    value = (value or "").strip()
+    if not value:
+        return True
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        return False
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
