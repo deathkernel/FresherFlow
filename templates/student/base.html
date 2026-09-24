@@ -14,31 +14,20 @@
         <a class="{% if request.endpoint == 'student.profile' or request.endpoint == 'student.resume' %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
       </nav>
       <div class="side-bottom">
-        <div class="user-chip">
-          <div class="avatar">{{ session.name[:1]|upper }}</div>
-          <div>
-            <b>{{ session.name }}</b>
-            <small>Student / Fresher</small>
-          </div>
-        </div>
-        <form method="post" action="{{ url_for('auth.logout') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="logout">Log out</button>
-        </form>
+        <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Student / Fresher</small></div></div>
+        <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form>
       </div>
     </aside>
     <section class="workspace">
       <header class="workspace-head">
-        <div>
-          <span class="eyebrow">STUDENT PANEL</span>
-          <h1>Good to see you, {{ session.name.split()[0] }}.</h1>
-          <p>Keep your profile updated and check new opportunities when you can.</p>
-        </div>
-        {% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}
-          <a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>
-        {% endif %}
+        <div><span class="eyebrow">STUDENT PANEL</span><h1>Good to see you, {{ session.name.split()[0] }}.</h1><p>Keep your profile updated and check new opportunities when you can.</p></div>
+        {% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}<a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>{% endif %}
       </header>
       {% block student_content %}{% endblock %}
     </section>
   </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/student.js') }}"></script>
 {% endblock %}
