@@ -8,11 +8,11 @@ def test_admin_credentials_use_local_defaults(monkeypatch):
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
-    import admin_config
+    import config
 
-    importlib.reload(admin_config)
+    importlib.reload(config)
 
-    email, password_hash = admin_config.get_admin_credentials()
+    email, password_hash = config.get_admin_credentials()
     assert email == "admin@123"
     assert password_hash
 
@@ -22,11 +22,11 @@ def test_admin_credentials_load_hashed_password(monkeypatch):
     password_hash = generate_password_hash("a-strong-test-password")
     monkeypatch.setenv("ADMIN_PASSWORD_HASH", password_hash)
 
-    import admin_config
+    import config
 
-    importlib.reload(admin_config)
+    importlib.reload(config)
 
-    email, configured_hash = admin_config.get_admin_credentials()
+    email, configured_hash = config.get_admin_credentials()
     assert email == "admin@example.com"
     assert configured_hash == password_hash
 
