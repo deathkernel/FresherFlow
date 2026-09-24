@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 
 from database.database import get_db
 from routes.decorators import role_required
+from security import valid_website_url
 
 employer_bp = Blueprint("employer", __name__, url_prefix="/employer")
 VACANCY_TYPES = {"Internship", "Entry-level Job"}
@@ -144,7 +145,12 @@ def profile():
     db=get_db(); uid=session["user_id"]
     if request.method=="POST":
         data=[request.form.get(k,"").strip() for k in ("organization_name","organization_type","website","location","description")]
-        if not data[0]: flash("Organization name is required.","error"); return redirect(url_for("employer.profile"))
+        if not data[0]:
+            flash("Organization name is required.","error")
+            return redirect(url_for("employer.profile"))
+        if not valid_website_url(data[2]):
+            flash("Website must be a valid http:// or https:// URL.","error")
+            return redirect(url_for("employer.profile"))
         db.execute("UPDATE employer_profiles SET organization_name=?,organization_type=?,website=?,location=?,description=? WHERE user_id=?",(*data,uid)); db.commit(); flash("Organization profile updated.","success"); return redirect(url_for("employer.profile"))
     profile=db.execute("SELECT * FROM employer_profiles WHERE user_id=?",(uid,)).fetchone(); return render_template("employer/profile.html",profile=profile)
 
