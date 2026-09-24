@@ -9,7 +9,7 @@ INSTANCE_DIR.mkdir(exist_ok=True)
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
 
 DEFAULT_ADMIN_EMAIL = "admin@123"
-DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$fresherflow$3B6BgnhYPwjlDy87Yq/x1vzwL8LNIgws2L3EigRKMgk="
+DEFAULT_ADMIN_PASSWORD_HASH = "pbkdf2:sha256:600000$adminlocal$"
 
 
 def local_secret():
