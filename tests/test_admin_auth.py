@@ -1,6 +1,6 @@
 from werkzeug.security import generate_password_hash
 
-from admin_config import DEFAULT_ADMIN_EMAIL, get_admin_credentials
+from config import DEFAULT_ADMIN_EMAIL, get_admin_credentials
 from routes.admin_routes import admin_credentials_valid
 
 
