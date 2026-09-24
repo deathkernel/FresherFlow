@@ -20,8 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-step-form]").forEach((form) => {
     const steps = [...form.querySelectorAll("[data-step]")];
     const indicators = [...document.querySelectorAll(`[data-stepper="${form.id}"] [data-step-indicator]`)];
-    const back = form.querySelector("[data-step-back]");
-    const next = form.querySelector("[data-step-next]");
+    const backButtons = [...form.querySelectorAll("[data-step-back]")];
+    const nextButtons = [...form.querySelectorAll("[data-step-next]")];
     let current = 0;
 
     const showStep = (index) => {
@@ -32,8 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
         item.classList.toggle("complete", i < current);
         item.setAttribute("aria-current", i === current ? "step" : "false");
       });
-      if (back) back.hidden = current === 0;
-      if (next) next.hidden = current === steps.length - 1;
+      backButtons.forEach((button) => {
+        button.hidden = current === 0;
+      });
+      nextButtons.forEach((button) => {
+        button.hidden = current === steps.length - 1;
+      });
       const first = steps[current]?.querySelector("input, select, textarea");
       if (first) first.focus({ preventScroll: true });
     };
@@ -49,10 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return true;
     };
 
-    next?.addEventListener("click", () => {
-      if (validateStep()) showStep(current + 1);
+    nextButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (validateStep()) showStep(current + 1);
+      });
     });
-    back?.addEventListener("click", () => showStep(current - 1));
+    backButtons.forEach((button) => {
+      button.addEventListener("click", () => showStep(current - 1));
+    });
     indicators.forEach((item, index) => item.addEventListener("click", () => {
       if (index <= current || validateStep()) showStep(index);
     }));
