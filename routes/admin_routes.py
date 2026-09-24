@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from config import get_admin_credentials
 from database.database import get_db
 from routes.decorators import role_required
+from security import valid_website_url
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -153,6 +154,10 @@ def add_company():
 
     if not name or not email or not organization or len(password) < 12:
         flash("Name, email, organization and a password of at least 12 characters are required.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    if not valid_website_url(website):
+        flash("Website must be a valid http:// or https:// URL.", "error")
         return redirect(url_for("admin.dashboard"))
 
     db = get_db()
