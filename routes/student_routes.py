@@ -250,7 +250,7 @@ def save(vacancy_id):
         )
         flash("Saved for later.", "success")
     db.commit()
-    return redirect(request.referrer or url_for("student.jobs"))
+    return redirect(url_for("student.jobs"))
 
 
 @student_bp.get("/applications")
