@@ -1,6 +1,7 @@
 import os
+import sqlite3
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import get_admin_credentials
@@ -167,7 +168,7 @@ def add_company():
             (cur.lastrowid, organization, organization_type, website, location, description, "active", "verified"),
         )
         db.commit()
-    except Exception:
+    except sqlite3.IntegrityError:
         db.rollback()
         current_app.logger.exception("Admin employer creation failed")
         flash("Could not add employer. The email may already be registered.", "error")
