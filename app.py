@@ -8,7 +8,7 @@ from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.student_routes import student_bp
-from security import csrf_token, validate_csrf
+from security import csrf_token, validate_csrf, valid_website_url
 
 
 def create_app():
@@ -18,6 +18,7 @@ def create_app():
     init_db(app.config["DATABASE"])
     app.teardown_appcontext(close_db)
     app.jinja_env.globals["csrf_token"] = csrf_token
+    app.jinja_env.filters["safe_website"] = lambda value: value if valid_website_url(value) else ""
 
     @app.before_request
     def protect_forms():
