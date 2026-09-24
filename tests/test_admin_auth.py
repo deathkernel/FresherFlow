@@ -6,6 +6,7 @@ from routes.admin_routes import admin_credentials_valid
 
 def test_admin_auth_uses_hash(monkeypatch):
     password = "a-strong-test-password"
+    monkeypatch.setenv("FRESHERFLOW_ENV", "production")
     monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
     monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash(password))
 
