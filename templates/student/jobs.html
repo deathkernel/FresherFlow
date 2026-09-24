@@ -1,47 +1,24 @@
 {% extends "student/base.html" %}
 {% block student_content %}
-  <div class="section-head page-toolbar">
-    <div>
-      <span class="eyebrow">OPPORTUNITIES</span>
-      <h2>Find Opportunities</h2>
-      <p>Search jobs posted by FresherFlow employers.</p>
-    </div>
-  </div>
-  <form class="filter-bar opportunity-filter" method="get" role="search">
-    <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company or skill" aria-label="Search opportunities">
-    <select class="form-select" name="type" aria-label="Filter by opportunity type">
-      <option value="">All types</option>
-      <option value="Internship" {% if typ == 'Internship' %}selected{% endif %}>Internship</option>
-      <option value="Entry-level Job" {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option>
-    </select>
+  <div class="section-head page-toolbar"><div><span class="eyebrow">OPPORTUNITIES</span><h2>Find Opportunities</h2><p>Search and filter jobs instantly, then open the role when you are ready to apply.</p></div><span class="flow-note" data-opportunity-count>{{ jobs|length }} opportunities</span></div>
+  <form class="filter-bar opportunity-filter" method="get" role="search" data-client-validate>
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company or skill" aria-label="Search opportunities" data-student-search>
+    <select class="form-select" name="type" aria-label="Filter by opportunity type" data-student-type><option value="">All types</option><option value="Internship" {% if typ == 'Internship' %}selected{% endif %}>Internship</option><option value="Entry-level Job" {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select>
     <button class="btn btn-primary" type="submit">Search</button>
     {% if q or typ %}<a class="btn btn-light" href="{{ url_for('student.jobs') }}">Clear</a>{% endif %}
   </form>
   <div class="job-grid mt-4">
     {% for job in jobs %}
-      <article class="job-card reveal">
+      <article class="job-card reveal" data-opportunity-card data-type="{{ job.vacancy_type }}">
         <div class="job-top"><span class="type-pill">{{ job.vacancy_type }}</span><span>{{ job.location or 'Remote' }}</span></div>
-        <h3>{{ job.title }}</h3>
-        <b>{{ job.organization_name or 'Company not specified' }}</b>
+        <h3>{{ job.title }}</h3><b>{{ job.organization_name or 'Company not specified' }}</b>
         <p>{{ (job.description or '')|striptags|truncate(260) }}</p>
         <div class="tags">{% for skill in (job.skills or '').split(',')[:5] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
-        <div class="job-bottom">
-          <span>{{ job.salary or 'Compensation not specified' }}</span>
-          <div>
-            <form class="d-inline" method="post" action="{{ url_for('student.save', vacancy_id=job.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="btn btn-sm btn-light" type="submit">{{ 'Saved' if job.saved else 'Save' }}</button>
-            </form>
-            <a class="btn btn-sm btn-primary" href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role</a>
-          </div>
-        </div>
+        <div class="job-bottom"><span>{{ job.salary or 'Compensation not specified' }}</span><div>
+          <form class="d-inline" method="post" action="{{ url_for('student.save', vacancy_id=job.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Saved' if job.saved else 'Save' }}</button></form>
+          <a class="btn btn-sm btn-primary" href="{{ url_for('student.job_details', vacancy_id=job.id) }}">View role</a>
+        </div></div>
       </article>
-    {% else %}
-      <div class="empty-state">
-        <strong>No roles match your search.</strong>
-        <span>Try another title, skill, company or opportunity type.</span>
-        {% if q or typ %}<a href="{{ url_for('student.jobs') }}" class="btn btn-light btn-sm">Clear filters</a>{% endif %}
-      </div>
-    {% endfor %}
+    {% else %}<div class="empty-state"><strong>No roles match your search.</strong><span>Try another title, skill, company or opportunity type.</span>{% if q or typ %}<a href="{{ url_for('student.jobs') }}" class="btn btn-light btn-sm">Clear filters</a>{% endif %}</div>{% endfor %}
   </div>
 {% endblock %}
