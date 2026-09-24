@@ -1,7 +1,7 @@
 import os
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import get_admin_credentials
 from database.database import get_db
@@ -136,6 +136,63 @@ def student_profile(student_id):
            WHERE a.student_id=? ORDER BY applied_at DESC, id DESC""", (student_id,)
     ).fetchall()
     return render_template("admin/student-profile.html", user=user, profile=profile, applications=applications)
+
+
+@admin_bp.post("/companies/add")
+@admin_required
+def add_company():
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    organization = request.form.get("organization_name", "").strip() or name
+    organization_type = request.form.get("organization_type", "").strip()
+    location = request.form.get("location", "").strip()
+    website = request.form.get("website", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if not name or not email or not organization or len(password) < 12:
+        flash("Name, email, organization and a password of at least 12 characters are required.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    db = get_db()
+    try:
+        cur = db.execute(
+            "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
+            (name, email, generate_password_hash(password), "employer"),
+        )
+        db.execute(
+            """INSERT INTO employer_profiles
+            (user_id,organization_name,organization_type,website,location,description,account_status,verification_status,verified_at)
+            VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+            (cur.lastrowid, organization, organization_type, website, location, description, "active", "verified"),
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        current_app.logger.exception("Admin employer creation failed")
+        flash("Could not add employer. The email may already be registered.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    flash(f"Employer account for {organization} added successfully.", "success")
+    return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.post("/companies/<int:user_id>/delete")
+@admin_required
+def delete_company(user_id):
+    db = get_db()
+    company = db.execute(
+        "SELECT u.id, u.role, ep.organization_name FROM users u JOIN employer_profiles ep ON ep.user_id=u.id WHERE u.id=? AND u.role='employer'",
+        (user_id,),
+    ).fetchone()
+    if not company:
+        flash("Employer account not found.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    db.execute("DELETE FROM users WHERE id=? AND role='employer'", (user_id,))
+    db.commit()
+    flash(f"Employer account for {company['organization_name']} was removed.", "success")
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.get("/companies/<int:user_id>")
