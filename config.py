@@ -22,11 +22,13 @@ def local_secret():
 
 
 def get_admin_credentials():
-    """Return environment credentials when configured, otherwise local defaults."""
+    """Return configured admin credentials, with local defaults for development."""
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
     if email and password_hash:
         return email, password_hash
+    if Config.ENVIRONMENT == "production":
+        return "", ""
     return DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD_HASH
 
 
