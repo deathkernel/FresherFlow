@@ -28,6 +28,12 @@ def experience_requirement_invalid(vacancy_type, eligibility):
     if not text:
         return False
 
+    negative_experience = re.search(
+        r"\b(?:no|without|zero|0)\b.{0,20}\bexperience\b", text
+    )
+    if negative_experience:
+        return False
+
     terms = (
         "work experience",
         "professional experience",
