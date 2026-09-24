@@ -163,8 +163,8 @@ def new_vacancy():
         if error: flash(error,"error"); return render_template("employer/post-vacancy.html")
         db=get_db(); publish=request.form.get("publish")=="1"
         try:
-            status="active" if publish else "draft"
-            moderation_status="approved" if publish else "pending"
+            status="draft"
+            moderation_status="pending"
             db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(session["user_id"],data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],status,moderation_status)); db.commit()
         except sqlite3.IntegrityError:
             db.rollback(); flash("The vacancy could not be saved.","error"); return render_template("employer/post-vacancy.html")
@@ -187,7 +187,7 @@ def bulk_new_vacancies():
         if error: flash(error,"error"); return render_template("employer/bulk-vacancies.html"),400
     db=get_db(); uid=session["user_id"]
     try:
-        for data in vacancies: db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(uid,data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],"active","approved"))
+        for data in vacancies: db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(uid,data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],"draft","pending"))
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback(); flash("None of the vacancies were imported because one or more entries were invalid.","error"); return render_template("employer/bulk-vacancies.html"),400
@@ -224,7 +224,8 @@ def vacancy_status(vacancy_id):
     db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
     if not job: return redirect(url_for("employer.vacancies"))
     if status=="active" and deadline_invalid(job["deadline"]): flash("The application deadline has passed or is invalid.","error"); return redirect(url_for("employer.vacancies"))
-    db.execute("UPDATE vacancies SET status=?, moderation_status=? WHERE id=? AND employer_id=?",(status,"approved" if status=="active" else "pending",vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
+    moderation_status = "pending" if status == "active" else "pending"
+    db.execute("UPDATE vacancies SET status=?, moderation_status=? WHERE id=? AND employer_id=?",(status,moderation_status,vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
 
 
 @employer_bp.get("/applications")
