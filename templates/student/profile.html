@@ -1,22 +1,128 @@
 {% extends "student/base.html" %}
 {% block student_content %}
-  <div class="content-card profile-card reveal form-page">
-    <div class="section-head page-toolbar"><div><span class="eyebrow">ACCOUNT</span><h2>My Profile</h2><p>Add the information recruiters use to evaluate your profile.</p></div><span class="score">{{ profile.profile_strength }}%</span></div>
-    <div class="progress mb-4" aria-label="Profile strength"><i style="width:{{ profile.profile_strength }}%"></i></div>
-    <form method="post" enctype="multipart/form-data" class="form-grid">
+  <div class="profile-page reveal">
+    <section class="profile-hero">
+      <div class="profile-avatar" aria-hidden="true">{{ user.name[:1]|upper }}</div>
+      <div class="profile-hero-copy">
+        <span class="eyebrow">STUDENT PROFILE</span>
+        <h2>{{ user.name }}</h2>
+        <p>{{ profile.education or "Student / Fresher" }}{% if profile.college %} · {{ profile.college }}{% endif %}</p>
+        <div class="profile-meta">
+          {% if profile.preferred_job_type %}<span>{{ profile.preferred_job_type }}</span>{% endif %}
+          {% if profile.preferred_location %}<span>{{ profile.preferred_location }}</span>{% endif %}
+          <span>{{ "Resume added" if profile.resume_filename else "Resume missing" }}</span>
+        </div>
+      </div>
+      <div class="profile-strength">
+        <div class="profile-strength-top"><span>Profile strength</span><strong>{{ profile.profile_strength }}%</strong></div>
+        <div class="progress" aria-label="Profile strength"><i style="width:{{ profile.profile_strength }}%"></i></div>
+      </div>
+    </section>
+
+    <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div><label for="full-name">Full name</label><input id="full-name" class="form-control" value="{{ user.name }}" disabled></div>
-      <div><label for="email">Email</label><input id="email" class="form-control" value="{{ user.email }}" disabled></div>
-      <div><label for="phone">Mobile number</label><input id="phone" class="form-control" name="phone" value="{{ profile.phone or '' }}"></div>
-      <div><label for="education">Education / Qualification</label><input id="education" class="form-control" name="education" value="{{ profile.education or '' }}" placeholder="B.Voc / B.Tech / BCA"></div>
-      <div><label for="college">College / University</label><input id="college" class="form-control" name="college" value="{{ profile.college or '' }}"></div>
-      <div><label for="graduation-year">Graduation year</label><input id="graduation-year" class="form-control" name="graduation_year" value="{{ profile.graduation_year or '' }}"></div>
-      <div class="full"><label for="skills">Skills</label><textarea id="skills" class="form-control" name="skills" rows="3" placeholder="Python, SQL, HTML, CSS, JavaScript">{{ profile.skills or '' }}</textarea></div>
-      <div class="full"><label for="certifications">Certifications</label><textarea id="certifications" class="form-control" name="certifications" rows="3" placeholder="Certification name and issuing organization">{{ profile.certifications or '' }}</textarea></div>
-      <div><label for="preferred-job-type">Preferred opportunity</label><select id="preferred-job-type" class="form-select" name="preferred_job_type"><option {% if profile.preferred_job_type == 'Both' %}selected{% endif %}>Both</option><option {% if profile.preferred_job_type == 'Internship' %}selected{% endif %}>Internship</option><option {% if profile.preferred_job_type == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select></div>
-      <div><label for="preferred-location">Preferred location</label><input id="preferred-location" class="form-control" name="preferred_location" value="{{ profile.preferred_location or '' }}" placeholder="Pune / Mumbai / Remote"></div>
-      <div class="full"><label class="upload-box"><span>{{ 'Replace resume' if profile.resume_filename else 'Upload resume' }}</span><small>PDF, DOC or DOCX · maximum 5 MB</small><input type="file" name="resume" accept=".pdf,.doc,.docx"></label>{% if profile.resume_filename %}<div class="mt-2 small"><a href="{{ url_for('student.resume') }}">View current resume</a></div>{% endif %}</div>
-      <div class="full form-actions"><button class="btn btn-primary" type="submit">Save profile</button></div>
+
+      <div class="profile-sections">
+        <section class="profile-section">
+          <div class="profile-section-head">
+            <div><h3>Personal information</h3><p>Basic contact details shown on your profile.</p></div>
+          </div>
+          <div class="profile-fields">
+            <div class="profile-field identity">
+              <label for="full-name">Full name</label>
+              <div class="profile-readonly" id="full-name">{{ user.name }}</div>
+            </div>
+            <div class="profile-field identity">
+              <label for="email">Email address</label>
+              <div class="profile-readonly" id="email">{{ user.email }}</div>
+            </div>
+            <div class="profile-field">
+              <label for="phone">Mobile number</label>
+              <input id="phone" class="form-control" name="phone" value="{{ profile.phone or '' }}" placeholder="+91 98xxxxxx">
+            </div>
+            <div class="profile-field">
+              <label for="preferred-location">Preferred location</label>
+              <input id="preferred-location" class="form-control" name="preferred_location" value="{{ profile.preferred_location or '' }}" placeholder="Pune / Mumbai / Remote">
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-section">
+          <div class="profile-section-head">
+            <div><h3>Career preference</h3><p>What kind of opportunity are you looking for?</p></div>
+          </div>
+          <div class="profile-fields">
+            <div class="profile-field">
+              <label for="preferred-job-type">Opportunity type</label>
+              <select id="preferred-job-type" class="form-select" name="preferred_job_type">
+                <option {% if profile.preferred_job_type == 'Both' %}selected{% endif %}>Both</option>
+                <option {% if profile.preferred_job_type == 'Internship' %}selected{% endif %}>Internship</option>
+                <option {% if profile.preferred_job_type == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option>
+              </select>
+            </div>
+            <div class="profile-field">
+              <label for="graduation-year">Graduation year</label>
+              <input id="graduation-year" class="form-control" name="graduation_year" value="{{ profile.graduation_year or '' }}" placeholder="2027">
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-section">
+          <div class="profile-section-head">
+            <div><h3>Education</h3><p>Academic background recruiters can quickly review.</p></div>
+          </div>
+          <div class="profile-fields">
+            <div class="profile-field">
+              <label for="education">Education / Qualification</label>
+              <input id="education" class="form-control" name="education" value="{{ profile.education or '' }}" placeholder="B.Voc / B.Tech / BCA">
+            </div>
+            <div class="profile-field">
+              <label for="college">College / University</label>
+              <input id="college" class="form-control" name="college" value="{{ profile.college or '' }}" placeholder="College / University name">
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-section">
+          <div class="profile-section-head">
+            <div><h3>Skills & certifications</h3><p>Highlight what you already know and have completed.</p></div>
+          </div>
+          <div class="profile-fields">
+            <div class="profile-field full">
+              <label for="skills">Skills</label>
+              <div class="profile-skills-box"><textarea id="skills" class="form-control" name="skills" rows="3" placeholder="Python, SQL, HTML, CSS, JavaScript">{{ profile.skills or '' }}</textarea></div>
+            </div>
+            <div class="profile-field full">
+              <label for="certifications">Certifications</label>
+              <div class="profile-skills-box"><textarea id="certifications" class="form-control" name="certifications" rows="3" placeholder="Certification name and issuing organization">{{ profile.certifications or '' }}</textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-section full">
+          <div class="profile-section-head">
+            <div><h3>Resume</h3><p>Keep one current resume ready for applications.</p></div>
+          </div>
+          <div class="profile-resume">
+            <div class="profile-resume-icon">PDF</div>
+            <div>
+              <strong>{{ profile.resume_filename or "No resume uploaded" }}</strong>
+              <small>{{ "Current resume · PDF, DOC or DOCX" if profile.resume_filename else "Add a resume to complete your profile." }}</small>
+            </div>
+            {% if profile.resume_filename %}<a class="btn btn-sm btn-light" href="{{ url_for('student.resume') }}">View resume</a>{% endif %}
+          </div>
+          <label class="upload-box mt-3">
+            <span>{{ "Replace current resume" if profile.resume_filename else "Upload resume" }}</span>
+            <small>PDF, DOC or DOCX · maximum 5 MB</small>
+            <input type="file" name="resume" accept=".pdf,.doc,.docx">
+          </label>
+        </section>
+      </div>
+
+      <div class="profile-actions mt-3">
+        <span class="profile-actions-note">Changes are saved to your student profile.</span>
+        <button class="btn btn-primary" type="submit">Save profile changes</button>
+      </div>
     </form>
   </div>
 {% endblock %}
