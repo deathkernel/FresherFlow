@@ -1226,3 +1226,17 @@ a {
     transition: none !important;
   }
 }
+
+.admin-company-id {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid #dedcff;
+  border-radius: 7px;
+  background: #f3f1ff;
+  color: #554ddd;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
