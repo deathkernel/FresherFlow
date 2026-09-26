@@ -1,8 +1,164 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="section-head page-toolbar"><div><span class="eyebrow">CANDIDATES</span><h2>Applications</h2><p>Search candidates and update their pipeline status.</p></div><input class="form-control" style="max-width:280px" placeholder="Search candidate, email or role" aria-label="Search candidates" data-candidate-search></div>
+  <div class="section-head page-toolbar">
+    <div>
+      <span class="eyebrow">CANDIDATES</span>
+      <h2>Applications</h2>
+      <p>Search candidates, view their profiles and update their pipeline status.</p>
+    </div>
+    <input class="form-control" style="max-width:280px" placeholder="Search candidate, email or role" aria-label="Search candidates" data-candidate-search>
+  </div>
+
   <div class="candidate-grid">
-    {% for a in applications %}<article class="candidate-card reveal" data-candidate-card><div class="candidate-head"><div class="avatar">{{ a.name[:1]|upper }}</div><div><h3>{{ a.name }}</h3><p>{{ a.email }}</p></div><span class="status {{ a.status|lower }}">{{ a.status }}</span></div><div class="candidate-role"><b>{{ a.title }}</b><span>{{ a.education or 'Education not added' }}</span></div><div class="tags">{% for skill in (a.skills or '').split(',')[:5] if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div><div class="candidate-actions"><form method="post" action="{{ url_for('employer.application_status', application_id=a.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select class="form-select form-select-sm" name="status" aria-label="Application status"><option {% if a.status == 'Applied' %}selected{% endif %}>Applied</option><option {% if a.status == 'Shortlisted' %}selected{% endif %}>Shortlisted</option><option {% if a.status == 'Selected' %}selected{% endif %}>Selected</option><option {% if a.status == 'Rejected' %}selected{% endif %}>Rejected</option></select><button class="btn btn-sm btn-primary" type="submit">Update status</button></form></div></article>
-    {% else %}<div class="empty-state"><strong>No applications received yet.</strong><span>Applications will appear here when students apply.</span></div>{% endfor %}
+    {% for a in applications %}
+      <article class="candidate-card reveal" data-candidate-card>
+        <div class="candidate-head">
+          <div class="avatar">{{ a.name[:1]|upper }}</div>
+          <div>
+            <h3>{{ a.name }}</h3>
+            <p>{{ a.email }}</p>
+          </div>
+          <span class="status {{ a.status|lower }}">{{ a.status }}</span>
+        </div>
+
+        <div class="candidate-role">
+          <b>{{ a.title }}</b>
+          <span>{{ a.education or 'Education not added' }}</span>
+        </div>
+
+        <div class="tags">
+          {% for skill in (a.skills or '').split(',')[:5] if skill.strip() %}
+            <span>{{ skill.strip() }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="candidate-actions">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary candidate-profile-btn"
+            data-bs-toggle="modal"
+            data-bs-target="#candidateProfileModal"
+            data-candidate-profile-trigger
+          >
+            View profile
+          </button>
+
+          <form method="post" action="{{ url_for('employer.application_status', application_id=a.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select class="form-select form-select-sm" name="status" aria-label="Application status">
+              <option {% if a.status == 'Applied' %}selected{% endif %}>Applied</option>
+              <option {% if a.status == 'Shortlisted' %}selected{% endif %}>Shortlisted</option>
+              <option {% if a.status == 'Selected' %}selected{% endif %}>Selected</option>
+              <option {% if a.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+            <button class="btn btn-sm btn-primary" type="submit">Update status</button>
+          </form>
+        </div>
+
+        <div class="candidate-profile-data" hidden aria-hidden="true">
+          <span data-profile-name>{{ a.name }}</span>
+          <span data-profile-email>{{ a.email }}</span>
+          <span data-profile-phone>{{ a.phone or 'Not added' }}</span>
+          <span data-profile-education>{{ a.education or 'Not added' }}</span>
+          <span data-profile-college>{{ a.college or 'Not added' }}</span>
+          <span data-profile-graduation>{{ a.graduation_year or 'Not added' }}</span>
+          <span data-profile-job-type>{{ a.preferred_job_type or 'Not added' }}</span>
+          <span data-profile-location>{{ a.preferred_location or 'Not added' }}</span>
+          <span data-profile-strength>{{ a.profile_strength or 20 }}</span>
+          <span data-profile-skills>{{ a.skills or 'No skills added' }}</span>
+          <span data-profile-certifications>{{ a.certifications or 'No certifications added' }}</span>
+          <span data-profile-resume>{{ a.resume_filename or 'No resume uploaded' }}</span>
+          <span data-profile-role>{{ a.title }}</span>
+        </div>
+      </article>
+    {% else %}
+      <div class="empty-state">
+        <strong>No applications received yet.</strong>
+        <span>Applications will appear here when students apply.</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="modal fade candidate-profile-modal" id="candidateProfileModal" tabindex="-1" aria-labelledby="candidateProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="candidate-modal-heading">
+            <div class="avatar" id="candidateModalAvatar">S</div>
+            <div>
+              <span class="eyebrow">CANDIDATE PROFILE</span>
+              <h2 id="candidateProfileModalLabel">Candidate</h2>
+              <p id="candidateModalRole">Applied candidate</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="candidate-profile-summary">
+            <div class="candidate-strength">
+              <div>
+                <span>Profile strength</span>
+                <strong><span id="candidateModalStrength">20</span>%</strong>
+              </div>
+              <div class="profile-strength-track"><span id="candidateModalStrengthBar"></span></div>
+            </div>
+          </div>
+
+          <div class="candidate-profile-sections">
+            <section class="candidate-profile-section">
+              <div class="candidate-profile-section-title">Contact</div>
+              <div class="candidate-detail-grid">
+                <div><span>Email</span><strong id="candidateModalEmail">—</strong></div>
+                <div><span>Phone</span><strong id="candidateModalPhone">—</strong></div>
+              </div>
+            </section>
+
+            <section class="candidate-profile-section">
+              <div class="candidate-profile-section-title">Education</div>
+              <div class="candidate-detail-grid">
+                <div><span>Education</span><strong id="candidateModalEducation">—</strong></div>
+                <div><span>College / University</span><strong id="candidateModalCollege">—</strong></div>
+                <div><span>Graduation year</span><strong id="candidateModalGraduation">—</strong></div>
+              </div>
+            </section>
+
+            <section class="candidate-profile-section">
+              <div class="candidate-profile-section-title">Career preference</div>
+              <div class="candidate-detail-grid">
+                <div><span>Preferred job type</span><strong id="candidateModalJobType">—</strong></div>
+                <div><span>Preferred location</span><strong id="candidateModalLocation">—</strong></div>
+              </div>
+            </section>
+
+            <section class="candidate-profile-section">
+              <div class="candidate-profile-section-title">Skills & certifications</div>
+              <div class="candidate-text-block">
+                <span>Skills</span>
+                <p id="candidateModalSkills">—</p>
+              </div>
+              <div class="candidate-text-block">
+                <span>Certifications</span>
+                <p id="candidateModalCertifications">—</p>
+              </div>
+            </section>
+
+            <section class="candidate-profile-section">
+              <div class="candidate-profile-section-title">Resume</div>
+              <div class="candidate-resume-card">
+                <div>
+                  <span>Resume file</span>
+                  <strong id="candidateModalResume">No resume uploaded</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock %}
