@@ -14,7 +14,7 @@
         </div>
       </div>
       <div class="profile-hero-actions">
-        <button class="btn btn-primary btn-sm" type="button" data-profile-edit>Edit Profile</button>
+        {% if request.args.get('edit') != '1' %}<a class="btn btn-primary btn-sm" href="{{ url_for('student.profile', edit=1) }}">Edit Profile</a>{% endif %}
         <div class="profile-strength">
           <div class="profile-strength-top"><span>Profile strength</span><strong>{{ profile.profile_strength }}%</strong></div>
           <div class="progress" aria-label="Profile strength"><i style="width:{{ profile.profile_strength }}%"></i></div>
@@ -25,7 +25,7 @@
     <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-      <fieldset class="profile-editor" id="profile-editor" disabled>
+      <fieldset class="profile-editor" id="profile-editor" {% if request.args.get('edit') != '1' %}disabled{% endif %}>
         <div class="profile-sections">
         <section class="profile-section">
           <div class="profile-section-head">
