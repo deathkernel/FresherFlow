@@ -1,18 +1,47 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="content-card reveal form-page">
-    <div class="section-head page-toolbar"><div><span class="eyebrow">HIRING</span><h2>Edit Vacancy</h2><p>Keep the role details accurate and useful for candidates.</p></div></div>
-    <form method="post" class="form-grid">
+  <div class="employer-edit-page reveal">
+    <section class="employer-edit-hero">
+      <div>
+        <span class="eyebrow">HIRING · EDIT</span>
+        <h2>Update vacancy</h2>
+        <p>Keep the opportunity accurate before students see it.</p>
+      </div>
+      <div class="employer-edit-hero-meta">
+        <span class="employer-edit-id">Vacancy #{{ job.id }}</span>
+        <span class="status {{ job.status|lower }}">{{ job.status|capitalize }}</span>
+      </div>
+    </section>
+
+    <form method="post" class="employer-edit-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="full"><label for="title">Title</label><input id="title" class="form-control" name="title" value="{{ job.title }}" required></div>
-      <div><label for="type">Type</label><select id="type" class="form-select" name="vacancy_type"><option {% if job.vacancy_type == 'Internship' %}selected{% endif %}>Internship</option><option {% if job.vacancy_type == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select></div>
-      <div><label for="location">Location</label><input id="location" class="form-control" name="location" value="{{ job.location }}" required></div>
-      <div><label for="salary">Salary / stipend</label><input id="salary" class="form-control" name="salary" value="{{ job.salary or '' }}"></div>
-      <div><label for="deadline">Deadline</label><input id="deadline" class="form-control" type="date" name="deadline" value="{{ job.deadline or '' }}"></div>
-      <div class="full"><label for="skills">Skills</label><input id="skills" class="form-control" name="skills" value="{{ job.skills or '' }}"></div>
-      <div class="full"><label for="eligibility">Eligibility</label><input id="eligibility" class="form-control" name="eligibility" value="{{ job.eligibility or '' }}"></div>
-      <div class="full"><label for="description">Description</label><textarea id="description" class="form-control" name="description" rows="7" required>{{ job.description }}</textarea></div>
-      <div class="full form-actions"><a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a><button class="btn btn-primary" type="submit">Update vacancy</button></div>
+
+      <div class="employer-edit-grid">
+        <section class="employer-form-card employer-form-wide">
+          <div class="employer-form-card-head"><div><span>01</span><h3>Role basics</h3><p>The information students see first.</p></div></div>
+          <div class="employer-form-grid">
+            <div class="profile-form-field employer-wide"><label for="title">Job / internship title</label><input id="title" class="form-control" name="title" value="{{ job.title }}" required></div>
+            <div class="profile-form-field"><label for="type">Opportunity type</label><select id="type" class="form-select" name="vacancy_type"><option {% if job.vacancy_type == 'Internship' %}selected{% endif %}>Internship</option><option {% if job.vacancy_type == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select></div>
+            <div class="profile-form-field"><label for="location">Location</label><input id="location" class="form-control" name="location" value="{{ job.location }}" required></div>
+            <div class="profile-form-field"><label for="salary">Salary / stipend</label><input id="salary" class="form-control" name="salary" value="{{ job.salary or '' }}" placeholder="₹10,000/month or ₹4 LPA"></div>
+            <div class="profile-form-field"><label for="deadline">Application deadline</label><input id="deadline" class="form-control" type="date" name="deadline" value="{{ job.deadline or '' }}"></div>
+          </div>
+        </section>
+
+        <section class="employer-form-card employer-form-wide">
+          <div class="employer-form-card-head"><div><span>02</span><h3>Requirements</h3><p>Make the opportunity easy to understand.</p></div></div>
+          <div class="employer-form-grid">
+            <div class="profile-form-field employer-wide"><label for="skills">Skills</label><input id="skills" class="form-control" name="skills" value="{{ job.skills or '' }}" placeholder="Python, SQL, Git"></div>
+            <div class="profile-form-field employer-wide"><label for="eligibility">Eligibility</label><textarea id="eligibility" class="form-control" name="eligibility" rows="4" placeholder="BCA / BSc CS / BVoc students; basic Python; no prior work experience required.">{{ job.eligibility or '' }}</textarea></div>
+            <div class="profile-form-field employer-wide"><label for="description">Role description</label><textarea id="description" class="form-control" name="description" rows="8" required placeholder="Describe responsibilities, team and expectations...">{{ job.description }}</textarea></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="employer-edit-savebar">
+        <div><strong>Ready to save changes?</strong><span>Review the vacancy details, then update it.</span></div>
+        <div><a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a><button class="btn btn-primary" type="submit">Update vacancy</button></div>
+      </div>
     </form>
   </div>
 {% endblock %}
