@@ -259,6 +259,68 @@ def moderate_vacancy(vacancy_id):
     return redirect(url_for("admin.dashboard"))
 
 
+@admin_bp.post("/vacancies/bulk-moderate")
+@admin_required
+def bulk_moderate_vacancies():
+    decision = request.form.get("decision", "").strip().lower()
+    note = request.form.get("note", "").strip() or None
+    selected_ids = []
+    for raw_id in request.form.getlist("vacancy_ids"):
+        try:
+            vacancy_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if vacancy_id > 0 and vacancy_id not in selected_ids:
+            selected_ids.append(vacancy_id)
+
+    if decision not in {"approved", "rejected"}:
+        flash("Choose Approve or Reject for the selected jobs.", "error")
+        return redirect(url_for("admin.dashboard") + "#jobs")
+
+    if not selected_ids:
+        flash("Select at least one job first.", "error")
+        return redirect(url_for("admin.dashboard") + "#jobs")
+
+    db = get_db()
+    placeholders = ",".join("?" for _ in selected_ids)
+    jobs = db.execute(
+        f"SELECT id, deadline, moderation_status FROM vacancies WHERE id IN ({placeholders})",
+        selected_ids,
+    ).fetchall()
+
+    if len(jobs) != len(selected_ids):
+        flash("One or more selected jobs could not be found.", "error")
+        return redirect(url_for("admin.dashboard") + "#jobs")
+
+    if decision == "approved":
+        expired = []
+        for job in jobs:
+            if job["deadline"]:
+                try:
+                    from datetime import date
+                    if date.fromisoformat(job["deadline"]) < date.today():
+                        expired.append(job["id"])
+                except ValueError:
+                    expired.append(job["id"])
+        if expired:
+            flash(
+                f"{len(expired)} selected job(s) have an expired or invalid deadline. Nothing was approved.",
+                "error",
+            )
+            return redirect(url_for("admin.dashboard") + "#jobs")
+
+    status = "active" if decision == "approved" else "closed"
+    db.execute(
+        f"""UPDATE vacancies
+            SET moderation_status=?, moderation_note=?, moderated_at=CURRENT_TIMESTAMP, status=?
+            WHERE id IN ({placeholders})""",
+        [decision, note, status, *selected_ids],
+    )
+    db.commit()
+    flash(f"{len(selected_ids)} job(s) {decision} successfully.", "success")
+    return redirect(url_for("admin.dashboard") + "#jobs")
+
+
 @admin_bp.get("/jobs/<int:job_id>")
 @admin_required
 def job_detail(job_id):
