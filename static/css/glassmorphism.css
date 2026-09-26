@@ -1,0 +1,449 @@
+/* FresherFlow Glassmorphism Theme
+   Visual-only layer. Remove this stylesheet from templates/base.html to restore the previous UI.
+*/
+:root {
+  --glass-bg: rgba(255,255,255,.62);
+  --glass-bg-strong: rgba(255,255,255,.78);
+  --glass-border: rgba(255,255,255,.72);
+  --glass-line: rgba(86,94,126,.14);
+  --glass-shadow: 0 24px 70px rgba(38,45,78,.10);
+  --glass-shadow-sm: 0 12px 34px rgba(38,45,78,.07);
+  --glass-blur: 22px;
+  --glass-brand: #625bf5;
+  --glass-brand-2: #9a67f6;
+  --glass-ink: #131728;
+  --glass-muted: #6d7486;
+}
+
+html {
+  background: #eef1ff;
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 10%, rgba(107,94,255,.16), transparent 28%),
+    radial-gradient(circle at 92% 16%, rgba(154,103,246,.13), transparent 25%),
+    radial-gradient(circle at 78% 88%, rgba(75,211,179,.10), transparent 24%),
+    linear-gradient(135deg, #f5f7ff 0%, #eef2ff 46%, #f8f6ff 100%);
+  background-attachment: fixed;
+  color: var(--glass-ink);
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(2px);
+}
+
+body::before {
+  width: 300px;
+  height: 300px;
+  left: -110px;
+  top: 22%;
+  background: rgba(108,97,255,.09);
+}
+
+body::after {
+  width: 360px;
+  height: 360px;
+  right: -130px;
+  bottom: 8%;
+  background: rgba(108,220,192,.08);
+}
+
+.app-shell {
+  background: transparent;
+}
+
+.sidebar {
+  background: rgba(255,255,255,.52);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 12px 0 40px rgba(38,45,78,.05);
+}
+
+.sidebar .brand {
+  text-shadow: 0 4px 16px rgba(98,91,245,.10);
+}
+
+.sidebar nav a {
+  border: 1px solid transparent;
+  background: rgba(255,255,255,.16);
+}
+
+.sidebar nav a:hover {
+  background: rgba(255,255,255,.55);
+  border-color: rgba(255,255,255,.72);
+  box-shadow: 0 8px 24px rgba(38,45,78,.06);
+}
+
+.sidebar nav a.active {
+  background: linear-gradient(135deg, rgba(24,28,46,.94), rgba(43,46,72,.92));
+  border-color: rgba(255,255,255,.13);
+  box-shadow: 0 12px 30px rgba(20,24,43,.16);
+}
+
+.side-nav-label,
+.side-label {
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+.workspace {
+  position: relative;
+}
+
+.workspace-head {
+  padding: 22px 24px;
+  margin: -4px 0 28px;
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  background: rgba(255,255,255,.42);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.workspace-head h1,
+.workspace-head h2,
+.section-head h2,
+.detail-card h1 {
+  text-shadow: 0 8px 26px rgba(27,31,52,.08);
+}
+
+.workspace-head-actions,
+.section-actions {
+  align-items: center;
+}
+
+.content-card,
+.job-card,
+.detail-card,
+.candidate-card,
+.vacancy-row,
+.dash-stat,
+.process-card,
+.role-card,
+.auth-simple-card,
+.auth-shortcuts a {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(135%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(135%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.dash-stat,
+.job-card,
+.candidate-card,
+.vacancy-row,
+.process-card,
+.role-card {
+  transition:
+    transform .24s ease,
+    box-shadow .24s ease,
+    border-color .24s ease,
+    background .24s ease;
+}
+
+.dash-stat:hover,
+.job-card:hover,
+.candidate-card:hover,
+.vacancy-row:hover,
+.process-card:hover,
+.role-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255,255,255,.72);
+  border-color: rgba(255,255,255,.92);
+  box-shadow: var(--glass-shadow);
+}
+
+.dash-stat {
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-stat::before,
+.job-card::before,
+.vacancy-row::before,
+.detail-card::before,
+.content-card::before,
+.auth-simple-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.25), transparent 48%);
+}
+
+.dash-stat,
+.job-card,
+.vacancy-row,
+.detail-card,
+.content-card,
+.auth-simple-card {
+  position: relative;
+}
+
+.dash-stat strong {
+  text-shadow: 0 6px 18px rgba(98,91,245,.16);
+}
+
+.job-card,
+.candidate-card,
+.vacancy-row {
+  box-shadow: 0 16px 44px rgba(36,43,76,.07);
+}
+
+.type-pill,
+.pill {
+  border: 1px solid rgba(98,91,245,.12);
+  box-shadow: 0 7px 18px rgba(98,91,245,.10);
+  backdrop-filter: blur(8px);
+}
+
+.status {
+  border: 1px solid rgba(255,255,255,.60);
+  box-shadow: 0 6px 16px rgba(30,36,62,.05);
+  backdrop-filter: blur(8px);
+}
+
+.btn {
+  border-width: 1px;
+  border-color: rgba(255,255,255,.82);
+  box-shadow: 0 10px 24px rgba(37,43,72,.08);
+  backdrop-filter: blur(10px);
+}
+
+.btn:hover {
+  box-shadow: 0 14px 30px rgba(37,43,72,.12);
+}
+
+.btn-light,
+.btn-outline,
+.btn-outline-dark {
+  background: rgba(255,255,255,.58);
+  border-color: rgba(255,255,255,.86);
+  color: var(--glass-ink);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(98,91,245,.96), rgba(154,103,246,.96));
+  box-shadow: 0 14px 32px rgba(98,91,245,.24);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, rgba(89,82,234,1), rgba(143,88,245,1));
+  box-shadow: 0 18px 36px rgba(98,91,245,.30);
+}
+
+.form-control,
+.form-select {
+  background: rgba(255,255,255,.54);
+  border-color: rgba(255,255,255,.88);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 7px 20px rgba(30,36,62,.04);
+  backdrop-filter: blur(12px);
+}
+
+.form-control:hover,
+.form-select:hover {
+  background: rgba(255,255,255,.68);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background: rgba(255,255,255,.78);
+  border-color: rgba(98,91,245,.44);
+  box-shadow: 0 0 0 4px rgba(98,91,245,.10), 0 10px 24px rgba(30,36,62,.06);
+}
+
+.filter-bar {
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: rgba(255,255,255,.36);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+}
+
+.table-wrap {
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,.45);
+  border-radius: 18px;
+  padding: 4px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: rgba(255,255,255,.42);
+}
+
+.table thead th {
+  background: rgba(255,255,255,.34);
+}
+
+.table tbody tr {
+  transition: background .2s ease;
+}
+
+.table tbody tr:hover {
+  background: rgba(255,255,255,.55);
+}
+
+.upload-box {
+  background: rgba(255,255,255,.46);
+  border-color: rgba(255,255,255,.88);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 8px 22px rgba(30,36,62,.04);
+  backdrop-filter: blur(12px);
+}
+
+.upload-box:hover {
+  background: rgba(255,255,255,.66);
+}
+
+.auth-simple-shell {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(98,91,245,.17), transparent 30%),
+    radial-gradient(circle at 80% 75%, rgba(154,103,246,.14), transparent 28%),
+    linear-gradient(135deg, #f3f5ff, #eef1ff);
+}
+
+.auth-simple-card {
+  box-shadow: 0 28px 90px rgba(40,47,86,.14);
+}
+
+.role-switch {
+  background: rgba(255,255,255,.38);
+  border-color: rgba(255,255,255,.78);
+  backdrop-filter: blur(14px);
+}
+
+.role-choice.active {
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(255,255,255,.90);
+  box-shadow: 0 8px 22px rgba(30,36,62,.08);
+  backdrop-filter: blur(10px);
+}
+
+.auth-shortcuts a {
+  box-shadow: none;
+}
+
+.auth-shortcuts a:hover {
+  background: rgba(255,255,255,.72);
+  border-color: rgba(255,255,255,.92);
+}
+
+.toast-card {
+  background: rgba(17,24,39,.82);
+  border: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 42px rgba(18,24,46,.18);
+}
+
+.hero-wrap {
+  position: relative;
+  background:
+    radial-gradient(circle at 82% 24%, rgba(116,105,255,.18), transparent 30%),
+    radial-gradient(circle at 12% 78%, rgba(93,219,183,.11), transparent 28%),
+    linear-gradient(145deg, rgba(252,252,255,.78), rgba(239,242,255,.74));
+}
+
+.product-window,
+.role-card,
+.process-card {
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.product-window {
+  border-color: rgba(255,255,255,.78);
+  background: rgba(255,255,255,.54);
+  box-shadow: 0 42px 110px rgba(30,37,76,.16);
+}
+
+.window-bar,
+.mini-panel,
+.mini-stats > div {
+  background: rgba(255,255,255,.48);
+  border-color: rgba(255,255,255,.72);
+  backdrop-filter: blur(10px);
+}
+
+.role-card.dark {
+  background: linear-gradient(135deg, rgba(22,25,42,.90), rgba(41,43,69,.82));
+  border-color: rgba(255,255,255,.10);
+  box-shadow: 0 24px 70px rgba(17,20,38,.18);
+}
+
+.principle-grid > div {
+  background: rgba(255,255,255,.28);
+  border-top-color: rgba(255,255,255,.62);
+}
+
+.detail-meta > div {
+  background: rgba(255,255,255,.42);
+  border-color: rgba(255,255,255,.70);
+  backdrop-filter: blur(10px);
+}
+
+.info-note {
+  background: rgba(248,247,255,.50);
+  border-color: rgba(255,255,255,.72);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(38,45,78,.05);
+}
+
+.vacancy-bulk-action {
+  padding: 8px 10px 8px 14px;
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 16px;
+  background: rgba(255,255,255,.34);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(38,45,78,.05);
+}
+
+@media (max-width: 900px) {
+  .workspace-head {
+    border-radius: 20px;
+    padding: 18px;
+  }
+
+  .filter-bar {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspace-head {
+    padding: 16px;
+  }
+
+  .vacancy-bulk-action {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .vacancy-bulk-action .btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-stat,
+  .job-card,
+  .candidate-card,
+  .vacancy-row,
+  .process-card,
+  .role-card {
+    transition: none !important;
+  }
+}
