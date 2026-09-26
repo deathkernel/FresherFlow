@@ -1,15 +1,106 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="content-card reveal form-page">
-    <div class="section-head page-toolbar"><div><span class="eyebrow">ORGANIZATION</span><h2>Organization Profile</h2><p>Give candidates a clear picture of your organization.</p></div></div>
-    <form method="post" class="form-grid">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div><label for="organization-name">Organization name</label><input id="organization-name" class="form-control" name="organization_name" value="{{ profile.organization_name }}" required></div>
-      <div><label for="organization-type">Organization type</label><input id="organization-type" class="form-control" name="organization_type" value="{{ profile.organization_type or '' }}" placeholder="Technology, Finance..."></div>
-      <div><label for="website">Website</label><input id="website" class="form-control" type="url" name="website" value="{{ profile.website or '' }}" placeholder="https://example.com"></div>
-      <div><label for="location">Location</label><input id="location" class="form-control" name="location" value="{{ profile.location or '' }}" placeholder="Pune / Mumbai / Remote"></div>
-      <div class="full"><label for="description">Description</label><textarea id="description" class="form-control" name="description" rows="7" placeholder="Tell candidates about your organization, team and work.">{{ profile.description or '' }}</textarea></div>
-      <div class="full form-actions"><button class="btn btn-primary" type="submit">Save organization</button></div>
-    </form>
+  <div class="employer-profile-page reveal">
+    <section class="employer-profile-hero">
+      <div class="employer-profile-identity">
+        <div class="employer-profile-logo">{{ (profile.organization_name or 'C')[:1]|upper }}</div>
+        <div class="employer-profile-title">
+          <span class="eyebrow">COMPANY PROFILE</span>
+          <h2>{{ profile.organization_name }}</h2>
+          <p>{{ profile.organization_type or 'Organization' }}{% if profile.location %} · {{ profile.location }}{% endif %}</p>
+          <div class="employer-profile-badges">
+            <span class="profile-private-id">Company ID · {{ profile.company_id }}</span>
+            <span class="profile-state {{ profile.account_status }}">{{ profile.account_status|capitalize }}</span>
+            <span class="profile-state verified">{{ profile.verification_status|capitalize }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="employer-profile-stats">
+        <div><strong>{{ stats.jobs }}</strong><span>Total jobs</span></div>
+        <div><strong>{{ stats.active_jobs }}</strong><span>Active jobs</span></div>
+        <div><strong>{{ stats.applications }}</strong><span>Applications</span></div>
+      </div>
+    </section>
+
+    <div class="employer-profile-grid">
+      <section class="employer-info-card">
+        <div class="employer-info-head">
+          <div>
+            <span class="eyebrow">OVERVIEW</span>
+            <h3>Organization information</h3>
+          </div>
+        </div>
+
+        <div class="employer-info-list">
+          <div><span>Company ID</span><strong>{{ profile.company_id }}</strong></div>
+          <div><span>Organization type</span><strong>{{ profile.organization_type or 'Not added' }}</strong></div>
+          <div><span>Location</span><strong>{{ profile.location or 'Not added' }}</strong></div>
+          <div>
+            <span>Website</span>
+            {% set safe_website = profile.website|safe_website %}
+            {% if safe_website %}
+              <strong><a href="{{ safe_website }}" target="_blank" rel="noopener">{{ safe_website }}</a></strong>
+            {% else %}
+              <strong>Not added</strong>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="employer-about">
+          <span>About the company</span>
+          <p>{{ profile.description or 'Add a short description so candidates understand your organization, team and work.' }}</p>
+        </div>
+
+        <div class="employer-profile-note">
+          <span>Private company identifier</span>
+          <p>Your Company ID is visible only inside the employer panel and to the administrator.</p>
+        </div>
+      </section>
+
+      <section class="employer-edit-card">
+        <div class="employer-info-head">
+          <div>
+            <span class="eyebrow">EDIT</span>
+            <h3>Update organization</h3>
+            <p>Keep the company information shown to candidates current.</p>
+          </div>
+        </div>
+
+        <form method="post" class="employer-profile-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="profile-form-field">
+            <label for="organization-name">Organization name</label>
+            <input id="organization-name" class="form-control" name="organization_name" value="{{ profile.organization_name }}" required>
+          </div>
+
+          <div class="profile-form-row">
+            <div class="profile-form-field">
+              <label for="organization-type">Organization type</label>
+              <input id="organization-type" class="form-control" name="organization_type" value="{{ profile.organization_type or '' }}" placeholder="Technology, Finance...">
+            </div>
+            <div class="profile-form-field">
+              <label for="location">Location</label>
+              <input id="location" class="form-control" name="location" value="{{ profile.location or '' }}" placeholder="Pune / Mumbai / Remote">
+            </div>
+          </div>
+
+          <div class="profile-form-field">
+            <label for="website">Website</label>
+            <input id="website" class="form-control" type="url" name="website" value="{{ profile.website or '' }}" placeholder="https://example.com">
+          </div>
+
+          <div class="profile-form-field">
+            <label for="description">Company description</label>
+            <textarea id="description" class="form-control" name="description" rows="7" placeholder="Tell candidates about your organization, team and work.">{{ profile.description or '' }}</textarea>
+          </div>
+
+          <div class="employer-profile-form-footer">
+            <span>Company ID is assigned automatically and cannot be edited.</span>
+            <button class="btn btn-primary" type="submit">Save organization</button>
+          </div>
+        </form>
+      </section>
+    </div>
   </div>
 {% endblock %}
