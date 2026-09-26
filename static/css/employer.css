@@ -273,3 +273,200 @@
     width: 100%;
   }
 }
+
+.candidate-profile-btn {
+  white-space: nowrap;
+}
+
+.candidate-actions {
+  align-items: center;
+}
+
+.candidate-actions > form {
+  min-width: 0;
+  flex: 1;
+}
+
+.candidate-profile-modal .modal-content {
+  border: 0;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px #18223026;
+  overflow: hidden;
+}
+
+.candidate-profile-modal .modal-header {
+  padding: 22px 24px;
+  border-bottom: 1px solid #eaecf0;
+  background: linear-gradient(180deg, #fafbff 0%, #fff 100%);
+}
+
+.candidate-modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.candidate-modal-heading .avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #eef0ff;
+  color: #4f46e5;
+  font-weight: 800;
+}
+
+.candidate-modal-heading h2 {
+  margin: 2px 0 2px;
+  font-size: 1.35rem;
+}
+
+.candidate-modal-heading p {
+  margin: 0;
+  color: #667085;
+  font-size: 0.9rem;
+}
+
+.candidate-profile-summary {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+  background: #f8f9fc;
+}
+
+.candidate-strength > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.candidate-strength span {
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.candidate-strength strong {
+  color: #111827;
+  font-size: 1rem;
+}
+
+.profile-strength-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4e7ec;
+}
+
+.profile-strength-track span {
+  display: block;
+  width: 20%;
+  height: 100%;
+  border-radius: inherit;
+  background: #635bff;
+}
+
+.candidate-profile-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.candidate-profile-section {
+  padding: 16px 18px;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.candidate-profile-section-title {
+  margin-bottom: 13px;
+  color: #344054;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.candidate-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+}
+
+.candidate-detail-grid > div,
+.candidate-text-block {
+  min-width: 0;
+}
+
+.candidate-detail-grid span,
+.candidate-text-block > span,
+.candidate-resume-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #667085;
+  font-size: 0.76rem;
+}
+
+.candidate-detail-grid strong,
+.candidate-resume-card strong {
+  display: block;
+  color: #101828;
+  font-size: 0.93rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.candidate-text-block + .candidate-text-block {
+  margin-top: 14px;
+}
+
+.candidate-text-block p {
+  margin: 0;
+  color: #344054;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.candidate-resume-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8f9fc;
+}
+
+.candidate-profile-modal .modal-footer {
+  padding: 14px 24px 20px;
+  border-top: 1px solid #eaecf0;
+}
+
+@media (max-width: 640px) {
+  .candidate-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .candidate-actions > form {
+    width: 100%;
+  }
+
+  .candidate-profile-btn,
+  .candidate-actions > form {
+    width: 100%;
+  }
+
+  .candidate-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-profile-modal .modal-header,
+  .candidate-profile-modal .modal-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
