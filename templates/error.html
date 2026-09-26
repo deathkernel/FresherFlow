@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ status_code }} — {{ title }} — FresherFlow{% endblock %}
+{% block body %}
+  <main class="not-found-shell">
+    <section class="not-found-card reveal" role="alert">
+      <div class="not-found-code">{{ status_code }}</div>
+      <span class="eyebrow">FRESHERFLOW SYSTEM</span>
+      <h1>{{ title }}</h1>
+      <p>{{ message }}</p>
+      <div class="not-found-actions">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Back home</a>
+        <a href="{{ url_for('dashboard_redirect') }}" class="btn btn-light">Go to dashboard</a>
+      </div>
+    </section>
+  </main>
+{% endblock %}
