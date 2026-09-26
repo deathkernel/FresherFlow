@@ -58,3 +58,7 @@ pytest -q
 ```
 
 Runtime files such as the SQLite database, generated secret and uploaded resumes should not be committed to Git.
+
+## Production hardening
+
+Set `FRESHERFLOW_ENV=production` for deployment. Configure a strong `SECRET_KEY`, plus `ADMIN_EMAIL` and a Werkzeug password hash in `ADMIN_PASSWORD_HASH`. Never commit the runtime database, generated secret or uploaded resumes.
