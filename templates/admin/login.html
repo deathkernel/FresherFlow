@@ -1,30 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Admin Login — FresherFlow{% endblock %}
 {% block body %}
-  <div class="landing">
-    <main class="auth-shell"
-          style="max-width:460px;
-                 margin:12vh auto;
-                 padding:32px">
-      <div class="eyebrow">ADMIN CONSOLE</div>
-      <h1>FresherFlow Admin</h1>
-      <p>Manage imported public job listings and sync sources.</p>
-      <form method="post" class="mt-4">
+  <div class="auth-simple-shell admin-auth-shell">
+    <main class="auth-simple-card admin-auth-card reveal">
+      <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
+      <div class="admin-auth-badge">ADMIN CONSOLE</div>
+      <div class="auth-heading">
+        <div class="eyebrow">PLATFORM ADMINISTRATION</div>
+        <h1>Admin sign in</h1>
+        <p>Access moderation, companies and platform management.</p>
+      </div>
+      <div class="admin-auth-note"><strong>Restricted access</strong><span>This area is available to FresherFlow administrators.</span></div>
+      <form method="post" class="auth-compact-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label class="form-label">Admin ID</label>
-        <input class="form-control mb-3"
-               type="text"
-               name="email"
-               required
-               autocomplete="username">
-        <label class="form-label">Password</label>
-        <input class="form-control mb-3"
-               type="password"
-               name="password"
-               required
-               autocomplete="current-password">
-        <button class="btn btn-primary w-100" type="submit">Sign in</button>
+        <label for="admin-email">Admin ID</label>
+        <input id="admin-email" class="form-control" type="text" name="email" required autocomplete="username" autofocus>
+        <label for="admin-password">Password</label>
+        <input id="admin-password" class="form-control" type="password" name="password" required autocomplete="current-password">
+        <button class="btn btn-primary w-100" type="submit">Sign in to Admin</button>
       </form>
+      <p class="auth-foot"><a href="{{ url_for('index') }}">← Back to FresherFlow</a></p>
     </main>
+    <div class="auth-page-note">FresherFlow · Protected administration workspace</div>
   </div>
 {% endblock %}
