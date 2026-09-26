@@ -1,8 +1,53 @@
 {% extends "student/base.html" %}
 {% block student_content %}
-  <div class="section-head page-toolbar"><div><span class="eyebrow">APPLICATIONS</span><h2>My Applications</h2><p>Track your application pipeline and filter statuses without leaving the page.</p></div><select class="form-select" style="max-width:220px" data-application-status aria-label="Filter applications"><option value="">All statuses</option><option>Applied</option><option>Shortlisted</option><option>Selected</option><option>Rejected</option></select></div>
-  <div class="content-card reveal"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Role</th><th>Company</th><th>Type</th><th>Source</th><th>Applied</th><th>Status</th></tr></thead><tbody>
-    {% for a in applications %}<tr data-application-row data-status="{{ a.status|lower }}"><td><b>{{ a.title }}</b><small>{{ a.location }}</small></td><td>{{ a.organization_name }}</td><td>{{ a.vacancy_type }}</td><td><span class="source-badge">FresherFlow</span></td><td>{{ a.applied_at[:10] }}</td><td><span class="status {{ a.status|lower }}">{{ a.status }}</span></td></tr>
-    {% else %}<tr><td colspan="6" class="empty-cell"><div class="table-empty"><strong>No applications yet.</strong><span>Find an opportunity and apply to your first role.</span><a href="{{ url_for('student.jobs') }}" class="btn btn-primary btn-sm">Find opportunities</a></div></td></tr>{% endfor %}
-  </tbody></table></div></div>
+  <div class="student-applications-page reveal">
+    <div class="section-head page-toolbar">
+      <div>
+        <span class="eyebrow">APPLICATIONS</span>
+        <h2>My Applications</h2>
+        <p>Track every application and see where it stands at a glance.</p>
+      </div>
+      <div class="student-app-toolbar">
+        <div class="student-app-filter">
+          <span>Filter status</span>
+          <select class="form-select" data-application-status aria-label="Filter applications">
+            <option value="">All statuses</option><option>Applied</option><option>Shortlisted</option><option>Selected</option><option>Rejected</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <section class="student-app-overview">
+      <div class="student-app-overview-card"><span>Total applications</span><strong>{{ applications|length }}</strong><small>Submitted through FresherFlow</small></div>
+      <div class="student-app-overview-card"><span>In review</span><strong>{{ applications|selectattr('status','equalto','Applied')|list|length + applications|selectattr('status','equalto','Shortlisted')|list|length }}</strong><small>Applied or shortlisted</small></div>
+      <div class="student-app-overview-card"><span>Selected</span><strong>{{ applications|selectattr('status','equalto','Selected')|list|length }}</strong><small>Positive outcomes</small></div>
+      <div class="student-app-overview-card"><span>Rejected</span><strong>{{ applications|selectattr('status','equalto','Rejected')|list|length }}</strong><small>Closed applications</small></div>
+    </section>
+
+    <section class="student-applications-card">
+      <div class="student-applications-card-head">
+        <div><span class="eyebrow">APPLICATION PIPELINE</span><h3>Your submitted roles</h3></div>
+        <a class="btn btn-light btn-sm" href="{{ url_for('student.jobs') }}">Find more opportunities</a>
+      </div>
+
+      <div class="table-wrap student-app-table-wrap">
+        <table class="table align-middle student-app-table">
+          <thead><tr><th>Role</th><th>Company</th><th>Type</th><th>Applied</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for a in applications %}
+              <tr data-application-row data-status="{{ a.status|lower }}">
+                <td><div class="student-app-role"><strong>{{ a.title }}</strong><small>{{ a.location }}</small></div></td>
+                <td><strong>{{ a.organization_name }}</strong></td>
+                <td><span class="student-app-type">{{ a.vacancy_type }}</span></td>
+                <td>{{ a.applied_at[:10] }}</td>
+                <td><span class="status {{ a.status|lower }}">{{ a.status }}</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5"><div class="student-app-empty"><div class="student-app-empty-icon">↗</div><strong>No applications yet.</strong><span>Find an opportunity and apply to your first role.</span><a href="{{ url_for('student.jobs') }}" class="btn btn-primary btn-sm">Find opportunities</a></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 {% endblock %}
