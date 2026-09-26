@@ -162,13 +162,25 @@ def profile():
         db.execute("UPDATE employer_profiles SET organization_name=?,organization_type=?,website=?,location=?,description=? WHERE user_id=?",(*data,uid)); db.commit(); flash("Organization profile updated.","success"); return redirect(url_for("employer.profile"))
     profile=db.execute("SELECT * FROM employer_profiles WHERE user_id=?",(uid,)).fetchone()
     stats = {
-        "jobs": db.execute("SELECT COUNT(*) FROM vacancies WHERE employer_id=?", (uid,)).fetchone()[0],
-        "applications": db.execute(
-            "SELECT COUNT(*) FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
+        "jobs": db.execute(
+            "SELECT COUNT(*) FROM vacancies WHERE employer_id=?", (uid,)
+        ).fetchone()[0],
+        "live_jobs": db.execute(
+            "SELECT COUNT(*) FROM vacancies "
+            "WHERE employer_id=? AND status='active' AND moderation_status='approved' "
+            "AND (deadline IS NULL OR deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()[0],
-        "active_jobs": db.execute(
-            "SELECT COUNT(*) FROM vacancies WHERE employer_id=? AND status='active'",
+        "pending_jobs": db.execute(
+            "SELECT COUNT(*) FROM vacancies WHERE employer_id=? AND moderation_status='pending'",
+            (uid,),
+        ).fetchone()[0],
+        "draft_jobs": db.execute(
+            "SELECT COUNT(*) FROM vacancies WHERE employer_id=? AND status='draft'",
+            (uid,),
+        ).fetchone()[0],
+        "applications": db.execute(
+            "SELECT COUNT(*) FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
             (uid,),
         ).fetchone()[0],
     }
