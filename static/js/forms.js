@@ -4,7 +4,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!form.checkValidity()) { event.preventDefault(); form.reportValidity(); }
     });
   });
+  const localIsoDate = (date = new Date()) => {
+    const offset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - offset * 60 * 1000);
+    return local.toISOString().slice(0, 10);
+  };
+
   document.querySelectorAll('input[type="date"][data-min-today]').forEach((input) => {
-    input.min = new Date().toISOString().slice(0, 10);
+    input.min = localIsoDate();
   });
 });
