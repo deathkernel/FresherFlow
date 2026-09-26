@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}FresherFlow — Early career platform{% endblock %}
+{% block title %}FresherFlow — Launch your career{% endblock %}
 {% block body %}
 <nav class="topbar landing-nav">
   <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">Fresher<span>Flow</span></a>
   <div class="nav-actions">
+    <a href="#features" class="btn btn-ghost">Features</a>
     <a href="#how-it-works" class="btn btn-ghost">How it works</a>
     <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a>
     <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Get started</a>
@@ -11,35 +12,69 @@
 </nav>
 
 <main class="landing">
-  <section class="hero-wrap">
+  <section class="hero-wrap home-hero">
     <div class="hero-copy reveal">
-      <div class="eyebrow">EARLY CAREERS, SIMPLIFIED</div>
-      <h1>From <span>profile</span> to opportunity.</h1>
-      <p>FresherFlow connects students, employers and administrators in one focused platform built around internships and entry-level hiring.</p>
+      <div class="eyebrow"><span class="eyebrow-dot"></span> BUILT FOR FRESHERS & EARLY CAREERS</div>
+      <h1>Launch your career from <span>one place.</span></h1>
+      <p>Build your profile, discover internships and entry-level jobs, apply with confidence and keep every application in one focused workspace.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">I'm a student</a>
-        <a class="btn btn-outline btn-lg" href="{{ url_for('auth.register') }}?role=employer">I'm an employer</a>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">Find your next role <span aria-hidden="true">→</span></a>
+        <a class="btn btn-outline btn-lg" href="{{ url_for('auth.register') }}?role=employer">Hire fresh talent</a>
       </div>
       <div class="hero-trust">
-        <span><i></i> Separate workspaces for every role</span>
-        <span><i></i> Simple application and hiring workflow</span>
-        <span><i></i> Built for freshers and entry-level opportunities</span>
+        <span><i>✓</i> Student, Employer & Admin workspaces</span>
+        <span><i>✓</i> Profile → Apply → Track workflow</span>
+        <span><i>✓</i> Resume and vacancy management built in</span>
       </div>
     </div>
+
     <div class="hero-visual reveal" aria-hidden="true">
-      <div class="orb orb-one"></div><div class="orb orb-two"></div>
-      <div class="product-window">
-        <div class="window-bar"><span class="window-title">FresherFlow / Student workspace</span><span class="window-dots">•••</span></div>
+      <div class="hero-orbit orbit-a"></div>
+      <div class="hero-orbit orbit-b"></div>
+      <div class="floating-badge badge-top"><span class="badge-icon">✓</span><div><b>Profile ready</b><small>Strong candidate profile</small></div></div>
+      <div class="floating-badge badge-bottom"><span class="badge-icon purple">↗</span><div><b>Application tracked</b><small>Shortlisted • 2 min ago</small></div></div>
+
+      <div class="product-window home-product-window">
+        <div class="window-bar">
+          <span class="window-title"><span class="window-status"></span> FresherFlow / Student workspace</span>
+          <span class="window-dots">•••</span>
+        </div>
         <div class="window-body">
-          <aside class="mini-sidebar"><div class="mini-logo">F</div><span class="mini-active"></span><span></span><span></span><span></span></aside>
+          <aside class="mini-sidebar">
+            <div class="mini-logo">F</div>
+            <span class="mini-active"></span><span></span><span></span><span></span>
+          </aside>
           <div class="mini-content">
-            <div class="mini-row mini-row-top"><div><small>STUDENT DASHBOARD</small><b>Find your next opportunity</b></div><span class="mini-avatar">S</span></div>
-            <div class="mini-stats"><div><small>Open roles</small><strong>Jobs</strong></div><div><small>Your progress</small><strong>Apply</strong></div><div><small>Track results</small><strong>Status</strong></div></div>
+            <div class="mini-row mini-row-top">
+              <div><small>STUDENT DASHBOARD</small><b>Good morning, future builder 👋</b></div>
+              <span class="mini-avatar">S</span>
+            </div>
+
+            <div class="mini-stats home-mini-stats">
+              <div><small>Open opportunities</small><strong>24</strong><span class="stat-caption">roles to explore</span></div>
+              <div><small>Applications</small><strong>08</strong><span class="stat-caption">in progress</span></div>
+              <div><small>Profile strength</small><strong>86%</strong><span class="stat-caption">looking good</span></div>
+            </div>
+
             <div class="mini-panel">
-              <div class="mini-panel-head"><b>Your workflow</b><span>4 steps</span></div>
-              <div class="mini-job"><span class="company-mark">01</span><div><b>Find an opportunity</b><small>Browse active internships and jobs</small></div><span class="pill">Start</span></div>
-              <div class="mini-job"><span class="company-mark violet">02</span><div><b>Review the role</b><small>Check requirements and deadline</small></div><span class="pill neutral">Next</span></div>
-              <div class="mini-job"><span class="company-mark">03</span><div><b>Apply and track</b><small>Submit once and follow status</small></div><span class="pill neutral">Track</span></div>
+              <div class="mini-panel-head"><b>Your job-search flow</b><span>3 of 4 done</span></div>
+              <div class="progress-track"><span></span></div>
+
+              <div class="mini-job animated-list-item">
+                <span class="company-mark">01</span>
+                <div><b>Complete your profile</b><small>Education, skills & resume added</small></div>
+                <span class="pill done">Done</span>
+              </div>
+              <div class="mini-job animated-list-item delay-1">
+                <span class="company-mark violet">02</span>
+                <div><b>Explore opportunities</b><small>Match your skills to open roles</small></div>
+                <span class="pill">Start</span>
+              </div>
+              <div class="mini-job animated-list-item delay-2">
+                <span class="company-mark">03</span>
+                <div><b>Apply & track</b><small>Follow every application status</small></div>
+                <span class="pill neutral">Track</span>
+              </div>
             </div>
           </div>
         </div>
@@ -47,30 +82,132 @@
     </div>
   </section>
 
-  <section id="how-it-works" class="process-section">
+  <section class="home-proof-strip reveal">
+    <div><strong>One platform.</strong><span>Three focused workspaces.</span></div>
+    <div><span>Made for</span><strong>internships + entry-level hiring</strong></div>
+    <div><span>Workflow</span><strong>Discover → Apply → Track</strong></div>
+    <div><span>Built for</span><strong>college-ready demos & real workflows</strong></div>
+  </section>
+
+  <section id="features" class="home-features">
+    <div class="process-head reveal">
+      <span class="section-label">CORE FEATURES</span>
+      <h2>Everything a fresher needs to move from “looking” to “applied”.</h2>
+      <p>FresherFlow keeps the important parts of early-career hiring connected without burying the user in menus.</p>
+    </div>
+
+    <div class="feature-grid">
+      <article class="feature-card reveal">
+        <div class="feature-icon">◎</div>
+        <span class="feature-number">01</span>
+        <h3>Build a strong profile</h3>
+        <p>Store education, skills, resume and career preferences in one place.</p>
+        <div class="feature-line"></div>
+      </article>
+      <article class="feature-card reveal delay-1">
+        <div class="feature-icon">⌕</div>
+        <span class="feature-number">02</span>
+        <h3>Discover opportunities</h3>
+        <p>Browse active internships and entry-level vacancies with focused filters.</p>
+        <div class="feature-line"></div>
+      </article>
+      <article class="feature-card reveal delay-2">
+        <div class="feature-icon">↗</div>
+        <span class="feature-number">03</span>
+        <h3>Apply & stay organized</h3>
+        <p>Submit applications once and keep their status visible from your dashboard.</p>
+        <div class="feature-line"></div>
+      </article>
+      <article class="feature-card reveal">
+        <div class="feature-icon">▣</div>
+        <span class="feature-number">04</span>
+        <h3>Employer hiring workspace</h3>
+        <p>Create vacancies, publish drafts and review candidate applications.</p>
+        <div class="feature-line"></div>
+      </article>
+      <article class="feature-card reveal delay-1">
+        <div class="feature-icon">✓</div>
+        <span class="feature-number">05</span>
+        <h3>Admin moderation</h3>
+        <p>Review jobs, manage employers and keep platform activity organized.</p>
+        <div class="feature-line"></div>
+      </article>
+      <article class="feature-card feature-card-highlight reveal delay-2">
+        <div class="feature-icon">↺</div>
+        <span class="feature-number">06</span>
+        <h3>One connected workflow</h3>
+        <p>Students, employers and admins work in separate spaces that still connect through the same hiring flow.</p>
+        <div class="feature-line"></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="process-section home-process-section">
     <div class="process-head reveal">
       <span class="section-label">HOW IT WORKS</span>
-      <h2>Every action has a clear next step.</h2>
-      <p>No confusing menus. Each workspace is organized around what the user needs to do next.</p>
+      <h2>Every role gets a clear path.</h2>
+      <p>Less searching for the right button. More time spent on the next useful action.</p>
     </div>
+
     <div class="process-grid">
-      <article class="process-card reveal"><span>01</span><b>Student</b><h3>Discover → Apply → Track</h3><p>Find a role, open its details, apply and follow the application from your dashboard.</p><a href="{{ url_for('auth.register') }}?role=student">Create student account →</a></article>
-      <article class="process-card reveal"><span>02</span><b>Employer</b><h3>Create → Publish → Review</h3><p>Create a vacancy, save a draft or publish it, then manage applicants from one hiring workspace.</p><a href="{{ url_for('auth.register') }}?role=employer">Create employer account →</a></article>
-      <article class="process-card reveal"><span>03</span><b>Admin</b><h3>Monitor → Review → Control</h3><p>Review platform activity, inspect student applications and manage employer access.</p><a href="{{ url_for('admin_portal') }}">Open admin portal →</a></article>
+      <article class="process-card reveal">
+        <span>01</span><b>STUDENT</b><h3>Profile → Discover → Apply</h3>
+        <p>Build your profile, explore opportunities, submit applications and track progress.</p>
+        <a href="{{ url_for('auth.register') }}?role=student">Create student account →</a>
+      </article>
+      <article class="process-card reveal delay-1">
+        <span>02</span><b>EMPLOYER</b><h3>Create → Publish → Review</h3>
+        <p>Create vacancies, save drafts, publish approved roles and manage applicants.</p>
+        <a href="{{ url_for('auth.register') }}?role=employer">Create employer account →</a>
+      </article>
+      <article class="process-card reveal delay-2">
+        <span>03</span><b>ADMIN</b><h3>Monitor → Moderate → Manage</h3>
+        <p>Review vacancies, inspect applications and manage employer access from a dedicated admin area.</p>
+        <a href="{{ url_for('admin_portal') }}">Open admin portal →</a>
+      </article>
     </div>
   </section>
 
-  <section class="role-grid">
-    <article class="role-card reveal"><div class="role-kicker">FOR STUDENTS</div><h2>One place to manage your job search.</h2><p>Keep your profile ready, discover opportunities, submit applications and see what happens next.</p><a href="{{ url_for('student_portal') }}">Student Portal — Apply Jobs →</a></article>
-    <article class="role-card dark reveal"><div class="role-kicker">FOR EMPLOYERS</div><h2>A focused workspace for fresh talent.</h2><p>Create individual vacancies or use the spreadsheet workflow for multiple roles, then review applications.</p><a href="{{ url_for('employer_portal') }}">Employer Portal — Post Jobs →</a></article>
+  <section class="role-grid home-role-grid">
+    <article class="role-card reveal">
+      <div class="role-card-top"><div class="role-kicker">FOR STUDENTS</div><span>🎓</span></div>
+      <h2>Your career launchpad, without the clutter.</h2>
+      <p>Keep your resume ready, find relevant opportunities and know where every application stands.</p>
+      <div class="role-points"><span>✓ Profile & resume</span><span>✓ Search & save jobs</span><span>✓ Application tracking</span></div>
+      <a href="{{ url_for('student_portal') }}">Open Student Portal →</a>
+    </article>
+
+    <article class="role-card dark reveal delay-1">
+      <div class="role-card-top"><div class="role-kicker">FOR EMPLOYERS</div><span>🏢</span></div>
+      <h2>A focused workspace for fresh talent.</h2>
+      <p>Create roles, manage listings and review candidates through a simple hiring workflow.</p>
+      <div class="role-points"><span>✓ Vacancy management</span><span>✓ Bulk spreadsheet import</span><span>✓ Candidate review</span></div>
+      <a href="{{ url_for('employer_portal') }}">Open Employer Portal →</a>
+    </article>
   </section>
 
-  <section class="principles">
-    <div><span class="section-label">THE PLATFORM</span><h2>Three roles. Clear responsibilities.</h2></div>
+  <section class="principles home-principles">
+    <div class="principles-intro reveal">
+      <span class="section-label">WHY FRESHERFLOW</span>
+      <h2>Simple enough to understand. Complete enough to demonstrate.</h2>
+      <p>Designed around the actual flow of a fresher recruitment platform, from profile creation to hiring decisions.</p>
+    </div>
     <div class="principle-grid">
-      <div><strong>01</strong><b>Student Portal</b><p>Find opportunities, apply for roles and track applications.</p></div>
-      <div><strong>02</strong><b>Employer Portal</b><p>Post vacancies, manage listings and review candidates.</p></div>
-      <div><strong>03</strong><b>Admin Portal</b><p>Oversee students, employers and platform activity.</p></div>
+      <div class="reveal"><strong>01</strong><b>Role-based workspaces</b><p>Each user sees tools that match their responsibility.</p></div>
+      <div class="reveal delay-1"><strong>02</strong><b>Connected hiring flow</b><p>Student activity, employer vacancies and admin moderation fit together.</p></div>
+      <div class="reveal delay-2"><strong>03</strong><b>Clear next actions</b><p>Pages are organized around what the user should do next.</p></div>
+    </div>
+  </section>
+
+  <section class="home-cta reveal">
+    <div>
+      <span class="section-label">READY TO START?</span>
+      <h2>Turn a profile into an opportunity.</h2>
+      <p>Create a FresherFlow account and take the next step.</p>
+    </div>
+    <div class="home-cta-actions">
+      <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">Get started as a student →</a>
+      <a class="btn btn-cta-ghost btn-lg" href="{{ url_for('auth.register') }}?role=employer">Post your first role</a>
     </div>
   </section>
 </main>
