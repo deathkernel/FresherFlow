@@ -15,6 +15,8 @@
         <a class="{% if request.endpoint == 'employer.applications' or request.endpoint == 'employer.application_status' %}active{% endif %}" href="{{ url_for('employer.applications') }}">Applications</a>
         <div class="side-nav-label">ORGANIZATION</div>
         <a class="{% if request.endpoint == 'employer.profile' %}active{% endif %}" href="{{ url_for('employer.profile') }}">Organization Profile</a>
+        <div class="side-nav-label">SECURITY</div>
+        <a class="{% if request.endpoint == 'employer.change_password' %}active{% endif %}" href="{{ url_for('employer.change_password') }}">Change Password</a>
       </nav>
       <div class="side-bottom">
         <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Employer / Recruiter</small></div></div>
