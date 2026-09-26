@@ -272,7 +272,18 @@ def vacancy_status(vacancy_id):
 @employer_bp.get("/applications")
 @role_required("employer")
 def applications():
-    rows=get_db().execute("SELECT a.*,v.title,u.name,u.email FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN users u ON u.id=a.student_id WHERE v.employer_id=? ORDER BY a.id DESC",(session["user_id"],)).fetchall(); return render_template("employer/applications.html",applications=rows)
+    rows=get_db().execute("""
+        SELECT a.*, v.title, u.name, u.email,
+               sp.phone, sp.education, sp.college, sp.graduation_year,
+               sp.skills, sp.certifications, sp.preferred_job_type,
+               sp.preferred_location, sp.resume_filename, sp.profile_strength
+        FROM applications a
+        JOIN vacancies v ON v.id=a.vacancy_id
+        JOIN users u ON u.id=a.student_id
+        LEFT JOIN student_profiles sp ON sp.user_id=a.student_id
+        WHERE v.employer_id=?
+        ORDER BY a.id DESC
+    """, (session["user_id"],)).fetchall(); return render_template("employer/applications.html",applications=rows)
 
 
 @employer_bp.post("/applications/<int:application_id>/status")
