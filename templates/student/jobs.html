@@ -3,9 +3,20 @@
   <div class="section-head page-toolbar"><div><span class="eyebrow">OPPORTUNITIES</span><h2>Find Opportunities</h2><p>Search and filter jobs instantly, then open the role when you are ready to apply.</p></div><span class="flow-note" data-opportunity-count>{{ jobs|length }} opportunities</span></div>
   <form class="filter-bar opportunity-filter" method="get" role="search" data-client-validate>
     <input class="form-control" name="q" value="{{ q }}" placeholder="Search title, company or skill" aria-label="Search opportunities" data-student-search>
-    <select class="form-select" name="type" aria-label="Filter by opportunity type" data-student-type><option value="">All types</option><option value="Internship" {% if typ == 'Internship' %}selected{% endif %}>Internship</option><option value="Entry-level Job" {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option></select>
-    <button class="btn btn-primary" type="submit">Search</button>
-    {% if q or typ %}<a class="btn btn-light" href="{{ url_for('student.jobs') }}">Clear</a>{% endif %}
+    <select class="form-select" name="type" aria-label="Filter by opportunity type" data-student-type>
+      <option value="">All types</option>
+      <option value="Internship" {% if typ == 'Internship' %}selected{% endif %}>Internship</option>
+      <option value="Entry-level Job" {% if typ == 'Entry-level Job' %}selected{% endif %}>Entry-level Job</option>
+    </select>
+    <input class="form-control" name="location" value="{{ location }}" placeholder="Location (Pune, Remote...)" aria-label="Filter by location">
+    <input class="form-control" name="skill" value="{{ skill }}" placeholder="Skill (Python, SQL...)" aria-label="Filter by skill">
+    <select class="form-select" name="sort" aria-label="Sort opportunities">
+      <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+      <option value="deadline" {% if sort == 'deadline' %}selected{% endif %}>Deadline soonest</option>
+      <option value="title" {% if sort == 'title' %}selected{% endif %}>Title A–Z</option>
+    </select>
+    <button class="btn btn-primary" type="submit">Apply filters</button>
+    {% if q or typ or location or skill or sort != 'newest' %}<a class="btn btn-light" href="{{ url_for('student.jobs') }}">Clear</a>{% endif %}
   </form>
   <div class="job-grid mt-4">
     {% for job in jobs %}
