@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Add New Employer — FresherFlow{% endblock %}
+{% block body %}
+  <div class="app-shell admin-theme">
+    <aside class="sidebar">
+      <div class="brand">Fresher<span>Flow</span></div>
+      <div class="side-label">ADMIN WORKSPACE</div>
+      <nav>
+        <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <div class="side-nav-label">MANAGEMENT</div>
+        <a href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+        <a href="{{ url_for('admin.applications') }}">Applications</a>
+        <a class="active" href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+        <a href="{{ url_for('admin.companies') }}">Companies</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="user-chip"><div class="avatar">D</div><div><b>Developer</b><small>Platform control</small></div></div>
+        <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+      </div>
+    </aside>
+    <section class="workspace">
+      <header class="workspace-head">
+        <div><span class="eyebrow">EMPLOYER MANAGEMENT</span><h1>Add New Employer</h1><p>Create a company account directly from the Admin panel.</p></div>
+      </header>
+      <section class="admin-add-employer reveal">
+        <div class="admin-add-employer-head">
+          <div class="admin-add-employer-icon">+</div>
+          <div>
+            <span class="eyebrow">NEW COMPANY ACCOUNT</span>
+            <h3>Company setup</h3>
+            <p>Enter the employer's contact, company and login details. A unique Company ID will be assigned automatically.</p>
+          </div>
+        </div>
+        <div class="admin-add-employer-layout">
+          <div class="admin-add-employer-side">
+            <div class="admin-add-step"><span>01</span><div><strong>Contact</strong><small>Person who manages the account</small></div></div>
+            <div class="admin-add-step"><span>02</span><div><strong>Company</strong><small>Organization details shown to candidates</small></div></div>
+            <div class="admin-add-step"><span>03</span><div><strong>Access</strong><small>Temporary login credentials</small></div></div>
+            <div class="admin-add-note"><strong>Automatic Company ID</strong><span>The system generates the private Company ID after the account is created.</span></div>
+          </div>
+          <form method="post" action="{{ url_for('admin.add_company') }}" class="admin-employer-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="admin-form-group">
+              <div class="admin-form-group-head"><div><span>Contact details</span><small>Employer account information</small></div></div>
+              <div class="admin-form-grid">
+                <div class="admin-form-field"><label for="admin-employer-name">Contact name</label><input id="admin-employer-name" class="form-control" name="name" placeholder="e.g. Rahul Sharma" required></div>
+                <div class="admin-form-field"><label for="admin-employer-email">Email address</label><input id="admin-employer-email" class="form-control" type="email" name="email" placeholder="name@company.com" required></div>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <div class="admin-form-group-head"><div><span>Company details</span><small>Information used across the employer profile</small></div></div>
+              <div class="admin-form-grid">
+                <div class="admin-form-field admin-form-field-wide"><label for="admin-employer-org">Organization name</label><input id="admin-employer-org" class="form-control" name="organization_name" placeholder="e.g. Acme Technologies" required></div>
+                <div class="admin-form-field"><label for="admin-employer-type">Organization type</label><input id="admin-employer-type" class="form-control" name="organization_type" placeholder="Technology, Finance..."></div>
+                <div class="admin-form-field"><label for="admin-employer-location">Location</label><input id="admin-employer-location" class="form-control" name="location" placeholder="Pune / Mumbai / Remote"></div>
+                <div class="admin-form-field admin-form-field-wide"><label for="admin-employer-website">Website <span>optional</span></label><input id="admin-employer-website" class="form-control" type="url" name="website" placeholder="https://company.com"></div>
+                <div class="admin-form-field admin-form-field-wide"><label for="admin-employer-description">Company description <span>optional</span></label><textarea id="admin-employer-description" class="form-control" name="description" rows="4" placeholder="Briefly describe the organization, team or work."></textarea></div>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <div class="admin-form-group-head"><div><span>Account access</span><small>Set the temporary password for the employer</small></div></div>
+              <div class="admin-form-grid admin-form-grid-access">
+                <div class="admin-form-field"><label for="admin-employer-password">Temporary password</label><input id="admin-employer-password" class="form-control" type="password" name="password" minlength="12" placeholder="Minimum 12 characters" required></div>
+                <div class="admin-password-hint"><strong>Before sharing access</strong><span>Use a temporary password and ask the employer to change it after first login.</span></div>
+              </div>
+            </div>
+            <div class="admin-employer-form-footer"><span>Company ID is generated automatically after creation.</span><button class="btn btn-primary" type="submit">Create employer account →</button></div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </div>
+{% endblock %}
