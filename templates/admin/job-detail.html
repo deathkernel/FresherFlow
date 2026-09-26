@@ -1,170 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Review — {{ job.title }} — FresherFlow{% endblock %}
 {% block body %}
-  <div class="admin-review-page">
-    <main class="admin-review-shell">
-      <a class="admin-review-back" href="{{ url_for('admin.jobs') }}">← Back to Job Moderation</a>
-
-      <section class="admin-review-hero">
-        <div class="admin-review-hero-main">
-          <div class="admin-review-kicker">JOB REVIEW · #{{ job.id }}</div>
-          <h1>{{ job.title }}</h1>
-          <p class="admin-review-subtitle">{{ job.organization_name }} <span>•</span> {{ job.location }}</p>
-          <div class="admin-review-tags">
-            <span class="admin-review-pill">{{ job.vacancy_type }}</span>
-            <span class="admin-review-pill muted">Submitted vacancy</span>
-            <span class="admin-review-status {{ job.moderation_status }}">
-              <i></i>{{ job.moderation_status|capitalize }}
-            </span>
-          </div>
-        </div>
-
-        <div class="admin-review-hero-side">
-          <div class="admin-review-stat">
-            <strong>{{ job.application_count }}</strong>
-            <span>Applications</span>
-          </div>
-          <div class="admin-review-stat">
-            <strong>{{ job.deadline or "Open" }}</strong>
-            <span>Deadline</span>
-          </div>
-        </div>
-      </section>
-
-      <div class="admin-review-layout">
-        <section class="admin-review-main">
-          <article class="admin-review-card">
-            <div class="admin-review-card-head">
-              <div>
-                <span class="admin-review-card-kicker">ROLE OVERVIEW</span>
-                <h2>Full job description</h2>
-              </div>
-            </div>
-            <div class="admin-review-description">{{ job.description or "No description provided." }}</div>
-          </article>
-
-          <article class="admin-review-card">
-            <div class="admin-review-card-head">
-              <div>
-                <span class="admin-review-card-kicker">REQUIREMENTS</span>
-                <h2>Eligibility & skills</h2>
-              </div>
-            </div>
-
-            <div class="admin-review-requirement-block">
-              <div class="admin-review-requirement-title">
-                <span class="admin-review-icon">✓</span>
-                <div>
-                  <strong>Who can apply</strong>
-                  <small>Eligibility shared by the employer</small>
-                </div>
-              </div>
-              {% set eligibility_text = job.eligibility or "Not specified" %}
-              <div class="admin-review-item-list">
-                {% for item in eligibility_text.split(';') if item.strip() %}
-                  <div class="admin-review-item"><span>•</span><p>{{ item.strip() }}</p></div>
-                {% endfor %}
-              </div>
-            </div>
-
-            <div class="admin-review-requirement-block">
-              <div class="admin-review-requirement-title">
-                <span class="admin-review-icon purple">✦</span>
-                <div>
-                  <strong>Skills</strong>
-                  <small>Technical or professional skills listed</small>
-                </div>
-              </div>
-              {% set skill_text = job.skills or "Not specified" %}
-              <div class="admin-review-skill-list">
-                {% for skill in skill_text.split(',') if skill.strip() %}
-                  <span>{{ skill.strip() }}</span>
-                {% endfor %}
-              </div>
-            </div>
-          </article>
-
-          <article class="admin-review-card">
-            <div class="admin-review-card-head">
-              <div>
-                <span class="admin-review-card-kicker">MODERATION HISTORY</span>
-                <h2>Review note</h2>
-              </div>
-            </div>
-            <div class="admin-review-note {{ 'has-note' if job.moderation_note else '' }}">
-              <span class="admin-review-note-icon">i</span>
-              <div>
-                <strong>{{ "Latest moderation note" if job.moderation_note else "No moderation note yet" }}</strong>
-                <p>{{ job.moderation_note or "Add a note when rejecting or updating this vacancy so the decision is easy to understand later." }}</p>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <aside class="admin-review-side">
-          <article class="admin-review-card admin-review-info-card">
-            <div class="admin-review-card-head">
-              <div>
-                <span class="admin-review-card-kicker">VACANCY INFO</span>
-                <h2>At a glance</h2>
-              </div>
-            </div>
-            <dl class="admin-review-dl">
-              <div><dt>Company</dt><dd>{{ job.organization_name }}</dd></div>
-              <div><dt>Employer email</dt><dd>{{ job.employer_email }}</dd></div>
-              <div><dt>Type</dt><dd>{{ job.vacancy_type }}</dd></div>
-              <div><dt>Location</dt><dd>{{ job.location }}</dd></div>
-              <div><dt>Compensation</dt><dd>{{ job.salary or "Not specified" }}</dd></div>
-              <div><dt>Deadline</dt><dd>{{ job.deadline or "Not specified" }}</dd></div>
-              <div><dt>Created</dt><dd>{{ job.created_at }}</dd></div>
-              <div><dt>Applications</dt><dd>{{ job.application_count }}</dd></div>
-            </dl>
-          </article>
-
-          {% if internal %}
-            <article class="admin-review-card admin-review-decision-card">
-              <div class="admin-review-card-head">
-                <div>
-                  <span class="admin-review-card-kicker">ADMIN ACTION</span>
-                  <h2>Moderation decision</h2>
-                  <p>Choose what should happen to this vacancy.</p>
-                </div>
-              </div>
-
-              {% if job.moderation_status == "pending" %}
-                <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-action-form">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="decision" value="approved">
-                  <button class="admin-review-approve" type="submit">
-                    <span>✓</span>
-                    <div><strong>Approve & publish</strong><small>Make this vacancy visible to students.</small></div>
-                  </button>
-                </form>
-
-                <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-reject-form">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="decision" value="rejected">
-                  <label for="moderation-note">Rejection reason <span>optional</span></label>
-                  <textarea id="moderation-note" class="form-control" name="note" rows="4" placeholder="Explain what should be corrected..."></textarea>
-                  <button class="admin-review-reject" type="submit">Reject vacancy</button>
-                </form>
-              {% else %}
-                <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-action-form">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <label for="moderation-decision">Update status</label>
-                  <select id="moderation-decision" class="form-select" name="decision">
-                    <option value="approved" {% if job.moderation_status == "approved" %}selected{% endif %}>Approved</option>
-                    <option value="rejected" {% if job.moderation_status == "rejected" %}selected{% endif %}>Rejected</option>
-                  </select>
-                  <label for="moderation-update-note">Admin note <span>optional</span></label>
-                  <textarea id="moderation-update-note" class="form-control" name="note" rows="4" placeholder="Add a moderation note..."></textarea>
-                  <button class="btn btn-primary w-100" type="submit">Update moderation</button>
-                </form>
-              {% endif %}
-            </article>
-          {% endif %}
-        </aside>
+  <div class="app-shell admin-theme">
+    <aside class="sidebar">
+      <div class="brand">Fresher<span>Flow</span></div>
+      <div class="side-label">ADMIN WORKSPACE</div>
+      <nav>
+        <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <div class="side-nav-label">MANAGEMENT</div>
+        <a class="active" href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+        <a href="{{ url_for('admin.applications') }}">Applications</a>
+        <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+        <a href="{{ url_for('admin.companies') }}">Companies</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="user-chip"><div class="avatar">D</div><div><b>Developer</b><small>Platform control</small></div></div>
+        <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
-    </main>
+    </aside>
+
+    <section class="workspace">
+      <div class="admin-review-page">
+        <main class="admin-review-shell">
+          <a class="admin-review-back" href="{{ url_for('admin.jobs') }}">← Back to Job Moderation</a>
+          <section class="admin-review-hero">
+            <div class="admin-review-hero-main">
+              <div class="admin-review-kicker">JOB REVIEW · #{{ job.id }}</div>
+              <h1>{{ job.title }}</h1>
+              <p class="admin-review-subtitle">{{ job.organization_name }} <span>•</span> {{ job.location }}</p>
+              <div class="admin-review-tags">
+                <span class="admin-review-pill">{{ job.vacancy_type }}</span>
+                <span class="admin-review-pill muted">Submitted vacancy</span>
+                <span class="admin-review-status {{ job.moderation_status }}"><i></i>{{ job.moderation_status|capitalize }}</span>
+              </div>
+            </div>
+            <div class="admin-review-hero-side">
+              <div class="admin-review-stat"><strong>{{ job.application_count }}</strong><span>Applications</span></div>
+              <div class="admin-review-stat"><strong>{{ job.deadline or "Open" }}</strong><span>Deadline</span></div>
+            </div>
+          </section>
+
+          <div class="admin-review-layout">
+            <section class="admin-review-main">
+              <article class="admin-review-card">
+                <div class="admin-review-card-head"><div><span class="admin-review-card-kicker">ROLE OVERVIEW</span><h2>Full job description</h2></div></div>
+                <div class="admin-review-description">{{ job.description or "No description provided." }}</div>
+              </article>
+
+              <article class="admin-review-card">
+                <div class="admin-review-card-head"><div><span class="admin-review-card-kicker">REQUIREMENTS</span><h2>Eligibility & skills</h2></div></div>
+                <div class="admin-review-requirement-block">
+                  <div class="admin-review-requirement-title"><span class="admin-review-icon">✓</span><div><strong>Who can apply</strong><small>Eligibility shared by the employer</small></div></div>
+                  {% set eligibility_text = job.eligibility or "Not specified" %}
+                  <div class="admin-review-item-list">{% for item in eligibility_text.split(';') if item.strip() %}<div class="admin-review-item"><span>•</span><p>{{ item.strip() }}</p></div>{% endfor %}</div>
+                </div>
+                <div class="admin-review-requirement-block">
+                  <div class="admin-review-requirement-title"><span class="admin-review-icon purple">✦</span><div><strong>Skills</strong><small>Technical or professional skills listed</small></div></div>
+                  {% set skill_text = job.skills or "Not specified" %}
+                  <div class="admin-review-skill-list">{% for skill in skill_text.split(',') if skill.strip() %}<span>{{ skill.strip() }}</span>{% endfor %}</div>
+                </div>
+              </article>
+
+              <article class="admin-review-card">
+                <div class="admin-review-card-head"><div><span class="admin-review-card-kicker">MODERATION HISTORY</span><h2>Review note</h2></div></div>
+                <div class="admin-review-note {{ 'has-note' if job.moderation_note else '' }}"><span class="admin-review-note-icon">i</span><div><strong>{{ "Latest moderation note" if job.moderation_note else "No moderation note yet" }}</strong><p>{{ job.moderation_note or "Add a note when rejecting or updating this vacancy so the decision is easy to understand later." }}</p></div></div>
+              </article>
+            </section>
+
+            <aside class="admin-review-side">
+              <article class="admin-review-card admin-review-info-card">
+                <div class="admin-review-card-head"><div><span class="admin-review-card-kicker">VACANCY INFO</span><h2>At a glance</h2></div></div>
+                <dl class="admin-review-dl">
+                  <div><dt>Company</dt><dd>{{ job.organization_name }}</dd></div>
+                  <div><dt>Employer email</dt><dd>{{ job.employer_email }}</dd></div>
+                  <div><dt>Type</dt><dd>{{ job.vacancy_type }}</dd></div>
+                  <div><dt>Location</dt><dd>{{ job.location }}</dd></div>
+                  <div><dt>Compensation</dt><dd>{{ job.salary or "Not specified" }}</dd></div>
+                  <div><dt>Deadline</dt><dd>{{ job.deadline or "Not specified" }}</dd></div>
+                  <div><dt>Created</dt><dd>{{ job.created_at }}</dd></div>
+                  <div><dt>Applications</dt><dd>{{ job.application_count }}</dd></div>
+                </dl>
+              </article>
+
+              {% if internal %}
+                <article class="admin-review-card admin-review-decision-card">
+                  <div class="admin-review-card-head"><div><span class="admin-review-card-kicker">ADMIN ACTION</span><h2>Moderation decision</h2><p>Choose what should happen to this vacancy.</p></div></div>
+                  {% if job.moderation_status == "pending" %}
+                    <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-action-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="decision" value="approved">
+                      <button class="admin-review-approve" type="submit"><span>✓</span><div><strong>Approve & publish</strong><small>Make this vacancy visible to students.</small></div></button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-reject-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="decision" value="rejected">
+                      <label for="moderation-note">Rejection reason <span>optional</span></label>
+                      <textarea id="moderation-note" class="form-control" name="note" rows="4" placeholder="Explain what should be corrected..."></textarea>
+                      <button class="admin-review-reject" type="submit">Reject vacancy</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ url_for('admin.moderate_vacancy', vacancy_id=job.id) }}" class="admin-review-action-form">
+                      <label for="moderation-decision">Update status</label>
+                      <select id="moderation-decision" class="form-select" name="decision">
+                        <option value="approved" {% if job.moderation_status == "approved" %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if job.moderation_status == "rejected" %}selected{% endif %}>Rejected</option>
+                      </select>
+                      <label for="moderation-update-note">Admin note <span>optional</span></label>
+                      <textarea id="moderation-update-note" class="form-control" name="note" rows="4" placeholder="Add a moderation note..."></textarea>
+                      <button class="btn btn-primary w-100" type="submit">Update moderation</button>
+                    </form>
+                  {% endif %}
+                </article>
+              {% endif %}
+            </aside>
+          </div>
+        </main>
+      </div>
+    </section>
   </div>
 {% endblock %}
