@@ -1024,3 +1024,9 @@
 
 /* Opportunity filter grouping */
 .opportunity-filter{display:grid;grid-template-columns:minmax(220px,1.55fr) minmax(145px,.75fr) minmax(165px,.9fr) minmax(150px,.8fr) minmax(145px,.72fr) auto auto;gap:8px;align-items:center;padding:11px}.opportunity-filter .form-control,.opportunity-filter .form-select{min-height:42px;font-size:.69rem}.opportunity-filter .btn{min-height:42px;white-space:nowrap}@media(max-width:1100px){.opportunity-filter{grid-template-columns:1.2fr 1fr 1fr 1fr;}.opportunity-filter .btn,.opportunity-filter .btn-light{width:100%}}@media(max-width:700px){.opportunity-filter{grid-template-columns:1fr}.opportunity-filter .btn,.opportunity-filter .btn-light{width:100%}}
+
+/* Semantic profile progress */
+.profile-progress progress{display:block;width:100%;height:9px;border:0;border-radius:999px;background:#eceef4;appearance:none}
+.profile-progress progress::-webkit-progress-bar{border-radius:999px;background:#eceef4}
+.profile-progress progress::-webkit-progress-value{border-radius:999px;background:linear-gradient(90deg,#625bf5,#8a5cf6)}
+.profile-progress progress::-moz-progress-bar{border-radius:999px;background:linear-gradient(90deg,#625bf5,#8a5cf6)}
