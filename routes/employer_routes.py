@@ -326,3 +326,48 @@ def application_status(application_id):
     db=get_db(); row=db.execute("SELECT a.id FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE a.id=? AND v.employer_id=?",(application_id,session["user_id"])).fetchone()
     if not row: return redirect(url_for("employer.applications"))
     db.execute("UPDATE applications SET status=? WHERE id=?",(status,application_id)); db.commit(); return redirect(url_for("employer.applications"))
+
+@employer_bp.route("/password", methods=["GET", "POST"])
+@role_required("employer")
+def change_password():
+    db = get_db()
+    uid = session["user_id"]
+
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        row = db.execute(
+            "SELECT password_hash FROM users WHERE id=? AND role='employer'",
+            (uid,),
+        ).fetchone()
+
+        from werkzeug.security import check_password_hash, generate_password_hash
+
+        if not row or not check_password_hash(row["password_hash"], current_password):
+            flash("Current password is incorrect.", "error")
+            return render_template("employer/change-password.html")
+
+        if len(new_password) < 12:
+            flash("New password must be at least 12 characters.", "error")
+            return render_template("employer/change-password.html")
+
+        if new_password != confirm_password:
+            flash("New password and confirmation do not match.", "error")
+            return render_template("employer/change-password.html")
+
+        if new_password == current_password:
+            flash("Choose a new password different from the current password.", "error")
+            return render_template("employer/change-password.html")
+
+        db.execute(
+            "UPDATE users SET password_hash=? WHERE id=? AND role='employer'",
+            (generate_password_hash(new_password), uid),
+        )
+        db.commit()
+        flash("Password changed successfully.", "success")
+        return redirect(url_for("employer.profile"))
+
+    return render_template("employer/change-password.html")
+
