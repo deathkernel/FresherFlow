@@ -184,6 +184,9 @@ def jobs():
     db = get_db()
     q = request.args.get("q", "").strip()
     typ = request.args.get("type", "").strip()
+    location = request.args.get("location", "").strip()
+    skill = request.args.get("skill", "").strip()
+    sort = request.args.get("sort", "newest").strip()
     uid = session["user_id"]
     sql = (
         "SELECT v.id,v.title,v.vacancy_type,v.description,v.location,v.salary,v.skills,"
@@ -201,8 +204,29 @@ def jobs():
     if typ:
         sql += " AND v.vacancy_type=?"
         args.append(typ)
-    jobs = db.execute(sql + " ORDER BY v.id DESC", args).fetchall()
-    return render_template("student/jobs.html", jobs=jobs, q=q, typ=typ)
+    if location:
+        sql += " AND v.location LIKE ?"
+        args.append(f"%{location}%")
+    if skill:
+        sql += " AND v.skills LIKE ?"
+        args.append(f"%{skill}%")
+
+    order_by = "v.id DESC"
+    if sort == "deadline":
+        order_by = "CASE WHEN v.deadline IS NULL THEN 1 ELSE 0 END, v.deadline ASC, v.id DESC"
+    elif sort == "title":
+        order_by = "LOWER(v.title) ASC, v.id DESC"
+
+    jobs = db.execute(sql + " ORDER BY " + order_by, args).fetchall()
+    return render_template(
+        "student/jobs.html",
+        jobs=jobs,
+        q=q,
+        typ=typ,
+        location=location,
+        skill=skill,
+        sort=sort,
+    )
 
 
 @student_bp.get("/jobs/<int:vacancy_id>")
