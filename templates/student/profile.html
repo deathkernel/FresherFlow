@@ -185,7 +185,7 @@
             </div>
             <strong class="profile-score">{{ profile.profile_strength }}%</strong>
           </div>
-          <div class="profile-progress"><span style="width:{{ profile.profile_strength }}%"></span></div>
+          <div class="profile-progress"><progress max="100" value="{{ profile.profile_strength }}">{{ profile.profile_strength }}%</progress></div>
           <div class="profile-progress-meta">
             <span>{{ "Profile looks ready to use" if profile.profile_strength >= 80 else "A few details are still worth adding" }}</span>
             <a href="{{ url_for('student.profile', edit=1) }}">Improve profile →</a>
