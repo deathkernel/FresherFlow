@@ -103,6 +103,10 @@
   align-self: flex-end;
 }
 
+.profile-hero-actions .btn + .btn {
+  margin-top: -4px;
+}
+
 .profile-editor {
   border: 0;
   margin: 0;
