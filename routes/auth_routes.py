@@ -91,21 +91,20 @@ def register():
         password = form.get("password", "")
         confirm_password = form.get("confirm_password", "")
         role = form.get("role", "student")
-        website = form.get("website", "").strip()
+        if role != "student":
+            flash("Employer accounts can only be created by an administrator.", "error")
+            return render_template("register.html", selected_role="student")
         if (
             not name
             or not email
             or len(password) < MIN_PASSWORD_LENGTH
             or password != confirm_password
-            or role not in {"student", "employer"}
-            or (role == "employer" and not valid_website_url(website))
         ):
             flash(
                 f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.",
                 "error",
             )
-            selected_role = role if role in {"student", "employer"} else "student"
-            return render_template("register.html", selected_role=selected_role)
+            return render_template("register.html", selected_role="student")
         db = get_db()
         resume_path = None
         try:
@@ -148,23 +147,6 @@ def register():
                         100 if resume_filename else 80,
                     ),
                 )
-            else:
-                organization = form.get("organization_name", "").strip() or name
-                db.execute(
-                    """INSERT INTO employer_profiles(company_id,user_id,organization_name,organization_type,website,location,description,account_status,verification_status)
-                    VALUES(?,?,?,?,?,?,?,?,?)""",
-                    (
-                        f"FF-CMP-{user_id:06d}",
-                        user_id,
-                        organization,
-                        form.get("organization_type", "").strip(),
-                        website,
-                        form.get("location", "").strip(),
-                        form.get("description", "").strip(),
-                        "active",
-                        "verified",
-                    ),
-                )
             db.commit()
         except sqlite3.IntegrityError:
             db.rollback()
@@ -176,7 +158,7 @@ def register():
             )
             return render_template(
                 "register.html",
-                selected_role=role if role in {"student", "employer"} else "student",
+                selected_role="student",
             )
         except OSError:
             db.rollback()
@@ -187,10 +169,7 @@ def register():
             return render_template("register.html", selected_role="student")
         flash("Account created. Please sign in.", "success")
         return redirect(url_for("auth.login"))
-    selected_role = request.args.get("role", "student")
-    if selected_role not in {"student", "employer"}:
-        selected_role = "student"
-    return render_template("register.html", selected_role=selected_role)
+    return render_template("register.html", selected_role="student")
 
 
 @auth_bp.post("/logout")
