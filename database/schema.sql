@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
 CREATE TABLE IF NOT EXISTS employer_profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL UNIQUE,
+    company_id TEXT NOT NULL UNIQUE,
     organization_name TEXT NOT NULL,
     organization_type TEXT,
     website TEXT,
