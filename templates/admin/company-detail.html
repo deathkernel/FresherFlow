@@ -39,6 +39,7 @@
         <div>
           <h1>{{ company.organization_name }}</h1>
           <p class="company-meta">{{ company.organization_type or 'Organization' }}{% if company.location %} · {{ company.location }}{% endif %}</p>
+          <span class="company-id-badge">Company ID · {{ company.company_id }}</span>
         </div>
       </div>
       <span class="company-status {{ 'active' if company.account_status=='active' else 'suspended' }}"><i></i>{{ company.account_status|capitalize }}</span>
@@ -53,6 +54,7 @@
         </div>
         <div class="company-card-body">
           <div class="detail-list">
+            <div class="detail-row"><span class="detail-label">Company ID</span><span class="detail-value"><strong>{{ company.company_id }}</strong></span></div>
             <div class="detail-row"><span class="detail-label">Contact</span><span class="detail-value">{{ company.contact_name or 'Not provided' }}</span></div>
             <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value"><a href="mailto:{{ company.email }}">{{ company.email }}</a></span></div>
             <div class="detail-row"><span class="detail-label">Website</span><span class="detail-value">{% set safe_website = company.website|safe_website %}{% if safe_website %}<a href="{{ safe_website }}" target="_blank" rel="noopener">{{ safe_website }}</a>{% else %}Not specified{% endif %}</span></div>
