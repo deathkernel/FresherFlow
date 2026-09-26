@@ -168,9 +168,9 @@ def add_company():
         )
         db.execute(
             """INSERT INTO employer_profiles
-            (user_id,organization_name,organization_type,website,location,description,account_status,verification_status,verified_at)
-            VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
-            (cur.lastrowid, organization, organization_type, website, location, description, "active", "verified"),
+            (company_id,user_id,organization_name,organization_type,website,location,description,account_status,verification_status,verified_at)
+            VALUES(?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+            (f"FF-CMP-{cur.lastrowid:06d}", cur.lastrowid, organization, organization_type, website, location, description, "active", "verified"),
         )
         db.commit()
     except sqlite3.IntegrityError:
