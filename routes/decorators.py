@@ -9,7 +9,10 @@ def role_required(role):
         @wraps(view)
         def wrapped(*args, **kwargs):
             if not session.get("user_id"):
-                return redirect(url_for("auth.login"))
+                target = "admin.login" if role == "admin" else "auth.login"
+                if role != "admin":
+                    return redirect(url_for(target, role=role))
+                return redirect(url_for(target))
             if session.get("role") != role:
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
