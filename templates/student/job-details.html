@@ -20,11 +20,11 @@
         <span class="eligibility-badge">Fresher friendly</span>
       </div>
       <div class="eligibility-list">
-        {% set eligibility_items = (job.eligibility or 'As per recruiter requirements.')|replace('; ', '|')|replace(';', '|').split('|') %}
-        {% for item in eligibility_items if item.strip() %}
+        {% set eligibility_text = job.eligibility or 'As per recruiter requirements.' %}
+        {% for item in eligibility_text.split(';') if item.strip() %}
           <div class="eligibility-item">
             <span class="eligibility-icon">{{ loop.index }}</span>
-            <p>{{ item.strip()|replace('.', '') }}</p>
+            <p>{{ item.strip() }}</p>
           </div>
         {% endfor %}
       </div>
