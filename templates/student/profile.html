@@ -13,16 +13,20 @@
           <span>{{ "Resume added" if profile.resume_filename else "Resume missing" }}</span>
         </div>
       </div>
-      <div class="profile-strength">
-        <div class="profile-strength-top"><span>Profile strength</span><strong>{{ profile.profile_strength }}%</strong></div>
-        <div class="progress" aria-label="Profile strength"><i style="width:{{ profile.profile_strength }}%"></i></div>
+      <div class="profile-hero-actions">
+        <button class="btn btn-primary btn-sm" type="button" data-profile-edit>Edit Profile</button>
+        <div class="profile-strength">
+          <div class="profile-strength-top"><span>Profile strength</span><strong>{{ profile.profile_strength }}%</strong></div>
+          <div class="progress" aria-label="Profile strength"><i style="width:{{ profile.profile_strength }}%"></i></div>
+        </div>
       </div>
     </section>
 
     <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-      <div class="profile-sections">
+      <fieldset class="profile-editor" id="profile-editor" disabled>
+        <div class="profile-sections">
         <section class="profile-section">
           <div class="profile-section-head">
             <div><h3>Personal information</h3><p>Basic contact details shown on your profile.</p></div>
@@ -117,10 +121,12 @@
             <input type="file" name="resume" accept=".pdf,.doc,.docx">
           </label>
         </section>
-      </div>
+        </div>
+      </fieldset>
 
-      <div class="profile-actions mt-3">
+      <div class="profile-actions mt-3" hidden data-profile-actions">
         <span class="profile-actions-note">Changes are saved to your student profile.</span>
+        <button class="btn btn-light" type="button" data-profile-cancel>Cancel</button>
         <button class="btn btn-primary" type="submit">Save profile changes</button>
       </div>
     </form>
