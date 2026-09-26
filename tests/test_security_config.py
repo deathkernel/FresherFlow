@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash
 
 
 def test_admin_credentials_use_local_defaults(monkeypatch):
+    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
@@ -39,3 +40,15 @@ def test_production_requires_secret_key(monkeypatch):
 
     with pytest.raises(RuntimeError, match="SECRET_KEY must be configured"):
         importlib.reload(config)
+
+
+def test_admin_credentials_are_disabled_outside_development(monkeypatch):
+    monkeypatch.setenv("FRESHERFLOW_ENV", "staging")
+    monkeypatch.delenv("ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
+
+    import config
+
+    email, password_hash = config.get_admin_credentials()
+    assert email == ""
+    assert password_hash == ""
