@@ -30,12 +30,7 @@
                required>
         <button class="btn btn-primary w-100" type="submit">Sign in</button>
       </form>
-      {% if login_context != "employer" %}
-        <div class="auth-shortcuts">
-          <a href="{{ url_for('auth.login', role='employer') }}"><span>Employer</span><small>Recruiter sign in</small></a>
-        </div>
-      {% endif %}
-      <p class="auth-foot">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+      <p class="auth-foot">New here? <a href="{{ url_for('auth.register', role='student') }}">Create student account</a></p>
     </main>
     <div class="auth-page-note">FresherFlow · Secure workspace access</div>
   </div>
