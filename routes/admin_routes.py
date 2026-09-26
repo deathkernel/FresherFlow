@@ -60,9 +60,9 @@ def dashboard():
     stats = {
         "companies": db.execute("SELECT COUNT(*) c FROM employer_profiles").fetchone()["c"],
         "active_companies": db.execute("SELECT COUNT(*) c FROM employer_profiles WHERE account_status='active'").fetchone()["c"],
+        "jobs": db.execute("SELECT COUNT(*) c FROM vacancies").fetchone()["c"],
+        "live_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE status='active' AND moderation_status='approved'").fetchone()["c"],
         "pending_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='pending'").fetchone()["c"],
-        "approved_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='approved'").fetchone()["c"],
-        "rejected_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='rejected'").fetchone()["c"],
         "applications": db.execute("SELECT COUNT(*) FROM applications").fetchone()[0],
     }
     q = request.args.get("q", "").strip()
@@ -84,7 +84,7 @@ def dashboard():
            COALESCE(u.email, '—') AS employer_email,
            (SELECT COUNT(*) FROM applications a WHERE a.vacancy_id=v.id) AS application_count
            FROM vacancies v LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
-           LEFT JOIN users u ON u.id=v.employer_id WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC LIMIT 100",
+           LEFT JOIN users u ON u.id=v.employer_id WHERE """ + " AND ".join(job_clauses) + " ORDER BY v.id DESC",
         job_args,
     ).fetchall()
 
@@ -101,7 +101,7 @@ def dashboard():
                   sp.college, sp.education, sp.skills, sp.resume_filename, 'Company Job' AS application_source
            FROM applications a JOIN vacancies v ON v.id=a.vacancy_id
            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id JOIN users u ON u.id=a.student_id
-           LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE """ + " AND ".join(application_clauses) + " ORDER BY a.applied_at DESC, a.id DESC LIMIT 500",
+           LEFT JOIN student_profiles sp ON sp.user_id=u.id WHERE """ + " AND ".join(application_clauses) + " ORDER BY a.applied_at DESC, a.id DESC",
         application_args,
     ).fetchall()
 
@@ -115,7 +115,7 @@ def dashboard():
         company_args.append(account)
     companies = db.execute(
         "SELECT ep.*,u.name contact_name,u.email FROM employer_profiles ep JOIN users u ON u.id=ep.user_id WHERE "
-        + " AND ".join(company_clauses) + " ORDER BY ep.id DESC LIMIT 100",
+        + " AND ".join(company_clauses) + " ORDER BY ep.id DESC",
         company_args,
     ).fetchall()
     return render_template("admin/dashboard.html", stats=stats, jobs=jobs, applications=applications, companies=companies, q=q, moderation=moderation, account=account)
