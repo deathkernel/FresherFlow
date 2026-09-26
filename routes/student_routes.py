@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import date
 from pathlib import Path
+from uuid import uuid4
 
 from flask import (
     Blueprint,
@@ -88,7 +89,9 @@ def profile():
         existing = db.execute(
             "SELECT resume_filename FROM student_profiles WHERE user_id=?", (uid,)
         ).fetchone()
-        resume_filename = existing["resume_filename"] if existing else None
+        old_resume_filename = existing["resume_filename"] if existing else None
+        resume_filename = old_resume_filename
+        new_resume_path = None
 
         if resume and resume.filename:
             if not valid_resume_upload(resume):
@@ -96,20 +99,50 @@ def profile():
                     "Resume must be a valid PDF, DOC or DOCX file under 5 MB.", "error"
                 )
                 return redirect(url_for("student.profile"))
-            resume_filename = f"{uid}_{secure_filename(resume.filename)}"
+            safe_name = secure_filename(resume.filename) or "resume"
+            resume_filename = f"{uid}_{uuid4().hex}_{safe_name}"
             upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
             upload_dir.mkdir(parents=True, exist_ok=True)
-            resume.save(upload_dir / resume_filename)
+            new_resume_path = upload_dir / resume_filename
+            try:
+                resume.save(new_resume_path)
+            except OSError:
+                current_app.logger.exception("Resume upload failed during profile update")
+                flash("The resume could not be saved. Please try again.", "error")
+                return redirect(url_for("student.profile"))
 
         filled = sum(bool(value) for value in fields)
         strength = min(100, 20 + filled * 10 + (10 if resume_filename else 0))
-        db.execute(
-            "UPDATE student_profiles SET phone=?,education=?,college=?,graduation_year=?,"
-            "skills=?,certifications=?,preferred_job_type=?,preferred_location=?,"
-            "resume_filename=?,profile_strength=? WHERE user_id=?",
-            (*fields, resume_filename, strength, uid),
-        )
-        db.commit()
+        try:
+            db.execute(
+                "UPDATE student_profiles SET phone=?,education=?,college=?,graduation_year=?,"
+                "skills=?,certifications=?,preferred_job_type=?,preferred_location=?,"
+                "resume_filename=?,profile_strength=? WHERE user_id=?",
+                (*fields, resume_filename, strength, uid),
+            )
+            db.commit()
+        except sqlite3.DatabaseError:
+            db.rollback()
+            if new_resume_path:
+                new_resume_path.unlink(missing_ok=True)
+            current_app.logger.exception("Student profile update failed")
+            flash("The student profile could not be updated. Please try again.", "error")
+            return redirect(url_for("student.profile"))
+
+        if (
+            new_resume_path
+            and old_resume_filename
+            and old_resume_filename != resume_filename
+        ):
+            try:
+                (Path(current_app.config["UPLOAD_FOLDER"]) / old_resume_filename).unlink(
+                    missing_ok=True
+                )
+            except OSError:
+                current_app.logger.warning(
+                    "Could not remove previous resume %s", old_resume_filename
+                )
+
         flash("Student profile updated successfully.", "success")
         return redirect(url_for("student.profile"))
 
@@ -154,7 +187,7 @@ def jobs():
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
         "ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
+        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
     )
     args = [uid, uid]
     if q:
@@ -175,7 +208,8 @@ def job_details(vacancy_id):
     job = db.execute(
         "SELECT v.*,ep.organization_name,ep.website,ep.location employer_location "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active'",
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
         (vacancy_id,),
     ).fetchone()
     if not job:
