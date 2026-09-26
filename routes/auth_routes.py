@@ -151,9 +151,10 @@ def register():
             else:
                 organization = form.get("organization_name", "").strip() or name
                 db.execute(
-                    """INSERT INTO employer_profiles(user_id,organization_name,organization_type,website,location,description,account_status,verification_status)
-                    VALUES(?,?,?,?,?,?,?,?)""",
+                    """INSERT INTO employer_profiles(company_id,user_id,organization_name,organization_type,website,location,description,account_status,verification_status)
+                    VALUES(?,?,?,?,?,?,?,?,?)""",
                     (
+                        f"FF-CMP-{user_id:06d}",
                         user_id,
                         organization,
                         form.get("organization_type", "").strip(),
