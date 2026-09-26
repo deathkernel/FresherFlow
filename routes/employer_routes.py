@@ -211,7 +211,7 @@ def bulk_new_vacancies():
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback(); flash("None of the vacancies were imported because one or more entries were invalid.","error"); return render_template("employer/bulk-vacancies.html"),400
-    flash(f"{len(vacancies)} vacancies imported successfully.","success"); return redirect(url_for("employer.vacancies"))
+    flash(f"{len(vacancies)} vacancies submitted for admin approval.","success"); return redirect(url_for("employer.vacancies"))
 
 
 @employer_bp.get("/vacancies")
