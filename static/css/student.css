@@ -110,6 +110,18 @@
   min-width: 0;
 }
 
+.profile-editor:disabled .form-control,
+.profile-editor:disabled .form-select {
+  opacity: 1;
+  cursor: default;
+  background-color: #fff;
+  color: #343a46;
+}
+
+.profile-editor:disabled .profile-skills-box {
+  background: #fafbfe;
+}
+
 .profile-strength {
   min-width: 180px;
   padding: 15px 16px;
@@ -316,14 +328,6 @@
 
   .profile-hero-actions .btn {
     align-self: flex-start;
-  }
-
-  .profile-hero-actions {
-    width: 100%;
-  }
-
-  .profile-hero-actions .btn {
-    align-self: center;
   }
 
   .profile-strength {
