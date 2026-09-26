@@ -33,7 +33,7 @@
   @media(max-width:600px){.company-hero{flex-direction:column}.company-status{align-self:flex-start}.company-identity{align-items:flex-start}.company-logo{width:52px;height:52px;border-radius:13px;font-size:20px}.detail-row{grid-template-columns:1fr;gap:5px}}
   </style>
   <div class="company-page">
-    <a class="company-back" href="{{ url_for('admin.dashboard') }}">← Back to Developer Console</a>
+    <a class="company-back" href="{{ url_for('admin.companies') }}">← Back to Companies</a>
     <section class="company-hero">
       <div class="company-identity">
         <div class="company-logo">{{ (company.organization_name or 'C')[:1]|upper }}</div>
