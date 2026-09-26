@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import get_admin_credentials
@@ -380,6 +380,23 @@ def bulk_moderate_vacancies():
     flash(f"{len(selected_ids)} job(s) {decision} successfully.", "success")
     return redirect(url_for("admin.jobs"))
 
+
+
+
+@admin_bp.get("/students/<int:student_id>/resume")
+@admin_required
+def student_resume(student_id):
+    db = get_db()
+    profile = db.execute(
+        "SELECT resume_filename FROM student_profiles WHERE user_id=?", (student_id,)
+    ).fetchone()
+    if not profile or not profile["resume_filename"]:
+        return render_template("404.html"), 404
+    return send_from_directory(
+        current_app.config["UPLOAD_FOLDER"],
+        profile["resume_filename"],
+        as_attachment=False,
+    )
 
 @admin_bp.get("/jobs/<int:job_id>")
 @admin_required
