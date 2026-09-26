@@ -54,8 +54,8 @@ def login():
         password = request.form.get("password", "")
         db = get_db()
         user = db.execute(
-            "SELECT * FROM users WHERE email=? AND role IN ('student','employer')",
-            (email,),
+            "SELECT * FROM users WHERE email=? AND role=?",
+            (email, login_context),
         ).fetchone()
         if user and check_password_hash(user["password_hash"], password):
             if user["role"] == "employer":
