@@ -216,6 +216,39 @@ def edit_vacancy(vacancy_id):
     return render_template("employer/edit-vacancy.html",job=job)
 
 
+@employer_bp.post("/vacancies/publish-drafts")
+@role_required("employer")
+def publish_all_drafts():
+    db = get_db()
+    uid = session["user_id"]
+    drafts = db.execute(
+        "SELECT id, deadline FROM vacancies WHERE employer_id=? AND status='draft' ORDER BY id",
+        (uid,),
+    ).fetchall()
+    if not drafts:
+        flash("There are no draft vacancies to publish.", "error")
+        return redirect(url_for("employer.vacancies"))
+
+    invalid_deadlines = [row for row in drafts if deadline_invalid(row["deadline"])]
+    if invalid_deadlines:
+        flash(
+            f"{len(invalid_deadlines)} draft vacancy(s) have an expired or invalid deadline. Edit them before publishing all drafts.",
+            "error",
+        )
+        return redirect(url_for("employer.vacancies"))
+
+    db.execute(
+        "UPDATE vacancies SET status='active', moderation_status='pending', moderation_note=NULL, moderated_at=NULL WHERE employer_id=? AND status='draft'",
+        (uid,),
+    )
+    db.commit()
+    flash(
+        f"{len(drafts)} draft vacancy(s) submitted for publishing and admin approval.",
+        "success",
+    )
+    return redirect(url_for("employer.vacancies"))
+
+
 @employer_bp.post("/vacancies/<int:vacancy_id>/status")
 @role_required("employer")
 def vacancy_status(vacancy_id):
