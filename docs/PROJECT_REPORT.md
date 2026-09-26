@@ -224,7 +224,7 @@ The functional decomposition of FresherFlow is:
 FRESHERFLOW
 - Authentication
   - Student Registration / Login
-  - Employer Registration / Login
+  - Employer Account Provisioning / Login
 - Student Module
   - Dashboard
   - Profile / Resume
