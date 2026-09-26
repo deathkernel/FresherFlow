@@ -1274,3 +1274,75 @@ a {
     align-self: flex-start;
   }
 }
+
+.bulk-moderation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.bulk-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #475467;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bulk-select-all input,
+.bulk-select-col input {
+  width: 16px;
+  height: 16px;
+  accent-color: #635bff;
+}
+
+.bulk-moderation-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bulk-moderation-actions .form-select {
+  width: 170px;
+}
+
+.bulk-moderation-actions .form-control {
+  width: 250px;
+}
+
+.bulk-moderation-actions .btn {
+  white-space: nowrap;
+}
+
+.bulk-select-col {
+  width: 38px;
+  text-align: center !important;
+}
+
+@media (max-width: 900px) {
+  .bulk-moderation-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bulk-moderation-actions {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 700px) {
+  .bulk-moderation-actions .form-select,
+  .bulk-moderation-actions .form-control,
+  .bulk-moderation-actions .btn {
+    width: 100%;
+  }
+}
