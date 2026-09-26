@@ -38,6 +38,39 @@
   animation: landingFloat 17s ease-in-out infinite reverse;
 }
 
+
+.home-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.ambient-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(98, 91, 245, 0.30);
+  box-shadow: 0 0 0 6px rgba(98, 91, 245, 0.05), 0 0 22px rgba(98, 91, 245, 0.18);
+  animation: dotDrift 9s ease-in-out infinite;
+}
+
+.dot-1 { top: 13%; left: 39%; animation-delay: -1.2s; }
+.dot-2 { top: 29%; left: 73%; width: 5px; height: 5px; animation-delay: -3.7s; }
+.dot-3 { top: 57%; left: 18%; width: 6px; height: 6px; animation-delay: -5.2s; }
+.dot-4 { top: 71%; left: 78%; width: 4px; height: 4px; animation-delay: -7.1s; }
+.dot-5 { top: 86%; left: 51%; width: 5px; height: 5px; animation-delay: -2.6s; }
+
+@keyframes dotDrift {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.42; }
+  50% { transform: translate3d(0, -18px, 0); opacity: 0.95; }
+}
+
+@media (max-width: 760px) {
+  .home-ambient { display: none; }
+}
+
 .landing-progress {
   position: fixed;
   inset: 0 0 auto;
