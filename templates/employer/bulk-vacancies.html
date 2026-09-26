@@ -1,18 +1,54 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
-  <div class="content-card reveal bulk-post-page">
-    <div class="section-head bulk-post-head"><div><span class="eyebrow">BULK PUBLISH</span><h2>Publish multiple vacancies</h2><p>Fill vacancies like a spreadsheet and publish every completed row together.</p><p class="form-note">FresherFlow is for freshers: <strong>Entry-level Jobs cannot require prior work experience.</strong> Roles requiring prior professional experience must be posted as Internships.</p></div><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a></div>
-    <div class="content-card" style="margin-bottom: 1rem;">
-      <div class="section-head"><div><span class="eyebrow">EXCEL IMPORT</span><h3>Upload vacancies from Excel</h3><p>Upload one <strong>.xlsx</strong> file. The first row must contain column names.</p><p class="form-note"><strong>Required:</strong> Title, Type, Location, Description. Optional: Salary / Stipend, Deadline, Skills, Eligibility.</p></div></div>
-      <form method="post" enctype="multipart/form-data" class="form-grid" data-client-validate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="import_excel" value="1"><div class="full"><label for="excel_file">Excel file</label><input id="excel_file" type="file" name="excel_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required><small>Columns can be named: Title, Type, Location, Salary / Stipend, Deadline, Skills, Eligibility, Description.</small></div><div class="full form-actions"><button class="btn btn-primary" type="submit">Upload Excel</button></div></form>
+  <div class="bulk-publish-page reveal">
+    <section class="bulk-publish-hero">
+      <div>
+        <span class="eyebrow">HIRING · BULK PUBLISH</span>
+        <h2>Publish multiple vacancies</h2>
+        <p>Upload a spreadsheet or build several roles directly in FresherFlow.</p>
+      </div>
+      <a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-light">Single vacancy</a>
+    </section>
+
+    <div class="bulk-guidance">
+      <span class="bulk-guidance-icon">i</span>
+      <div><strong>Freshers first</strong><p>Entry-level Jobs cannot require prior work experience. Roles requiring prior professional experience should be posted as Internships.</p></div>
     </div>
-    <div class="section-head"><div><span class="eyebrow">MANUAL OPTION</span><h3>Or enter vacancies manually</h3></div></div>
-    <form method="post" id="bulk-vacancy-form" data-client-validate>
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="bulk-table-shell"><table class="bulk-vacancy-table"><thead><tr><th class="bulk-col-number">#</th><th>Job title *</th><th>Type *</th><th>Location *</th><th>Salary / stipend</th><th>Deadline</th><th>Skills</th><th>Eligibility</th><th>Role description *</th><th class="bulk-col-action"></th></tr></thead><tbody id="vacancy-rows"></tbody></table></div>
-      <div class="bulk-add-row"><button type="button" class="btn btn-light" id="add-vacancy">+ Add row</button><span><strong id="vacancy-count">0</strong> vacancies ready to publish</span></div>
-      <div class="full form-actions bulk-submit-row"><a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a><button class="btn btn-primary" type="submit">Publish all vacancies</button></div>
-    </form>
+
+    <section class="bulk-import-card">
+      <div class="bulk-card-head">
+        <div><span class="eyebrow">EXCEL IMPORT</span><h3>Upload vacancies from Excel</h3><p>The first row must contain column names. Use <strong>.xlsx</strong> format.</p></div>
+        <span class="bulk-file-badge">XLSX</span>
+      </div>
+      <div class="bulk-required-grid">
+        <div><span>Required</span><strong>Title · Type · Location · Description</strong></div>
+        <div><span>Optional</span><strong>Salary · Deadline · Skills · Eligibility</strong></div>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="bulk-upload-form" data-client-validate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="import_excel" value="1">
+        <label class="bulk-file-input">
+          <div class="bulk-upload-icon">↑</div>
+          <div><strong>Choose Excel file</strong><small>Columns: Title, Type, Location, Salary / Stipend, Deadline, Skills, Eligibility, Description.</small></div>
+          <span class="btn btn-light btn-sm">Browse files</span>
+          <input id="excel_file" type="file" name="excel_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+        </label>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Upload Excel</button></div>
+      </form>
+    </section>
+
+    <section class="bulk-manual-card">
+      <div class="bulk-card-head">
+        <div><span class="eyebrow">MANUAL OPTION</span><h3>Build vacancies in the table</h3><p>Add as many roles as you need, then submit them together.</p></div>
+        <span class="bulk-row-counter"><strong id="vacancy-count">0</strong> vacancies</span>
+      </div>
+      <form method="post" id="bulk-vacancy-form" data-client-validate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="bulk-table-shell"><table class="bulk-vacancy-table"><thead><tr><th class="bulk-col-number">#</th><th>Job title *</th><th>Type *</th><th>Location *</th><th>Salary / stipend</th><th>Deadline</th><th>Skills</th><th>Eligibility</th><th>Role description *</th><th class="bulk-col-action"></th></tr></thead><tbody id="vacancy-rows"></tbody></table></div>
+        <div class="bulk-add-row"><button type="button" class="btn btn-light" id="add-vacancy">+ Add vacancy</button><span>Each row becomes one vacancy request for admin review.</span></div>
+        <div class="form-actions bulk-submit-row"><a href="{{ url_for('employer.vacancies') }}" class="btn btn-light">Cancel</a><button class="btn btn-primary" type="submit">Submit all vacancies</button></div>
+      </form>
+    </section>
   </div>
+
   <template id="vacancy-row-template"><tr class="bulk-vacancy-row"><td class="bulk-row-number"></td><td><input class="bulk-cell-input" name="title" required placeholder="Python Developer"></td><td><select class="bulk-cell-input" name="vacancy_type" required><option>Internship</option><option>Entry-level Job</option></select></td><td><input class="bulk-cell-input" name="location" required placeholder="Pune / Remote"></td><td><input class="bulk-cell-input" name="salary" placeholder="₹25k / ₹6 LPA"></td><td><input class="bulk-cell-input" type="date" name="deadline" data-min-today></td><td><textarea class="bulk-cell-input bulk-cell-textarea" name="skills" rows="1" placeholder="Python, SQL"></textarea></td><td><textarea class="bulk-cell-input bulk-cell-textarea" name="eligibility" rows="1" placeholder="B.Tech / Freshers"></textarea></td><td><textarea class="bulk-cell-input bulk-description" name="description" rows="1" required placeholder="Responsibilities and expectations..."></textarea></td><td><button type="button" class="bulk-remove" aria-label="Remove vacancy">×</button></td></tr></template>
 {% endblock %}
