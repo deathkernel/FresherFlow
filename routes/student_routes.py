@@ -52,14 +52,14 @@ def dashboard():
             "SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?", (uid,)
         ).fetchone()["c"],
         "available_jobs": db.execute(
-            "SELECT COUNT(*) c FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now'))"
+            "SELECT COUNT(*) c FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
         ).fetchone()["c"],
     }
     jobs = db.execute(
         "SELECT v.*,ep.organization_name,0 is_external,NULL apply_url "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
-        "AND (v.deadline IS NULL OR v.deadline>=date('now')) "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime')) "
         "ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
     return render_template("student/dashboard.html", stats=stats, jobs=jobs)
