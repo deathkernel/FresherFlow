@@ -27,34 +27,51 @@
       </div>
       <form class="filter-bar admin-filter" method="get" role="search"><input type="search" class="form-control" placeholder="Filter visible rows instantly" aria-label="Filter visible rows" data-admin-table-search><input class="form-control" name="q" value="{{ q }}" placeholder="Search student, email, company or job title" aria-label="Search admin data"><button class="btn btn-primary" type="submit">Search</button>{% if q %}<a class="btn btn-light" href="{{ url_for('admin.dashboard') }}">Clear</a>{% endif %}</form>
       <div id="jobs" class="section-head">
-        <div><span class="eyebrow">MODERATION</span><h2>Job Moderation</h2><p>Review every vacancy with the same job counts used by the summary cards.</p></div>
+        <div><span class="eyebrow">MODERATION</span><h2>Job Moderation</h2><p>Select multiple jobs and approve or reject them from the Admin panel.</p></div>
         <span class="admin-result-count">{{ jobs|length }} matching jobs</span>
       </div>
       <div class="content-card reveal">
-        <div class="table-wrap">
-          <table class="table align-middle">
-            <thead>
-              <tr><th>Job</th><th>Company</th><th>Location</th><th>Applications</th><th>Moderation</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {% for job in jobs %}
-                <tr data-admin-row>
-                  <td><strong>{{ job.title }}</strong><small>{{ job.vacancy_type }} · #{{ job.id }}</small></td>
-                  <td><strong>{{ job.organization_name }}</strong><small>{{ job.employer_email }}</small></td>
-                  <td>{{ job.location }}</td>
-                  <td>{{ job.application_count }}</td>
-                  <td>
-                    <span class="status {{ job.moderation_status }}">{{ job.moderation_status|capitalize }}</span>
-                    <small>{{ job.status|capitalize }} vacancy</small>
-                  </td>
-                  <td><a class="btn btn-sm btn-light" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review</a></td>
-                </tr>
-              {% else %}
-                <tr><td colspan="6"><div class="table-empty"><strong>No jobs found.</strong><span>Try changing the search text.</span></div></td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <form method="post" action="{{ url_for('admin.bulk_moderate_vacancies') }}" data-bulk-moderation-form>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="bulk-moderation-toolbar">
+            <label class="bulk-select-all"><input type="checkbox" data-job-select-all> <span>Select all visible</span></label>
+            <div class="bulk-moderation-actions">
+              <select class="form-select form-select-sm" name="decision" aria-label="Bulk moderation decision">
+                <option value="approved">Approve selected</option>
+                <option value="rejected">Reject selected</option>
+              </select>
+              <input class="form-control form-control-sm" name="note" placeholder="Optional note for selected jobs" aria-label="Bulk moderation note">
+              <button class="btn btn-sm btn-primary" type="submit" data-bulk-moderate-submit>Apply to selected</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table align-middle">
+              <thead>
+                <tr><th class="bulk-select-col"></th><th>Job</th><th>Company</th><th>Location</th><th>Applications</th><th>Moderation</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {% for job in jobs %}
+                  <tr data-admin-row>
+                    <td class="bulk-select-col">
+                      <input type="checkbox" name="vacancy_ids" value="{{ job.id }}" data-job-select aria-label="Select {{ job.title }}">
+                    </td>
+                    <td><strong>{{ job.title }}</strong><small>{{ job.vacancy_type }} · #{{ job.id }}</small></td>
+                    <td><strong>{{ job.organization_name }}</strong><small>{{ job.employer_email }}</small></td>
+                    <td>{{ job.location }}</td>
+                    <td>{{ job.application_count }}</td>
+                    <td>
+                      <span class="status {{ job.moderation_status }}">{{ job.moderation_status|capitalize }}</span>
+                      <small>{{ job.status|capitalize }} vacancy</small>
+                    </td>
+                    <td><a class="btn btn-sm btn-light" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review</a></td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="7"><div class="table-empty"><strong>No jobs found.</strong><span>Try changing the search text.</span></div></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       </div>
       <div id="applications" class="section-head"><div><span class="eyebrow">MANAGEMENT</span><h2>Student Applications</h2><p>Review applications submitted to employer-posted jobs.</p></div><span class="admin-result-count">{{ applications|length }} matching applications</span></div>
       <div class="content-card reveal"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Student</th><th>Job</th><th>Company</th><th>Applied</th><th>Status</th><th>Profile</th></tr></thead><tbody>
