@@ -33,7 +33,7 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        login_email = "admin@123" if email == "admin" else email;
+        login_email = "admin@123" if email == "admin" else email
         if admin_credentials_valid(login_email, password):
             session.clear()
             session["user_id"] = "admin"
