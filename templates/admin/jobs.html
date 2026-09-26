@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Job Moderation — FresherFlow{% endblock %}
+{% block body %}
+  <div class="app-shell admin-theme">
+    <aside class="sidebar">
+      <div class="brand">Fresher<span>Flow</span></div>
+      <div class="side-label">ADMIN WORKSPACE</div>
+      <nav>
+        <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <div class="side-nav-label">MANAGEMENT</div>
+        <a class="active" href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+        <a href="{{ url_for('admin.applications') }}">Applications</a>
+        <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+        <a href="{{ url_for('admin.companies') }}">Companies</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="user-chip"><div class="avatar">D</div><div><b>Developer</b><small>Platform control</small></div></div>
+        <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="workspace-head">
+        <div><span class="eyebrow">JOB MANAGEMENT</span><h1>Job Moderation</h1><p>Review, approve or reject employer-submitted vacancies.</p></div>
+      </header>
+
+      <div class="admin-page-stats">
+        <span class="admin-filter-chip">All {{ counts.total }}</span>
+        <span class="admin-filter-chip pending">Pending {{ counts.pending }}</span>
+        <span class="admin-filter-chip approved">Approved {{ counts.approved }}</span>
+        <span class="admin-filter-chip rejected">Rejected {{ counts.rejected }}</span>
+      </div>
+
+      <form class="admin-search-bar" method="get" role="search">
+        <input type="search" class="form-control" name="q" value="{{ q }}" placeholder="Search job, company, location or employer email">
+        <select class="form-select" name="moderation" aria-label="Filter by approval status">
+          <option value="">All approval states</option>
+          <option value="pending" {% if moderation == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if moderation == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if moderation == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button class="btn btn-primary" type="submit">Filter</button>
+        {% if q or moderation %}<a class="btn btn-light" href="{{ url_for('admin.jobs') }}">Clear</a>{% endif %}
+      </form>
+
+      <div class="section-head admin-section-head">
+        <div><span class="eyebrow">VACANCIES</span><h2>{{ rows|length }} matching jobs</h2><p>Select multiple jobs for a bulk approval action.</p></div>
+      </div>
+
+      <div class="content-card reveal">
+        <form method="post" action="{{ url_for('admin.bulk_moderate_vacancies') }}" data-bulk-moderation-form>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="bulk-moderation-toolbar">
+            <label class="bulk-select-all"><input type="checkbox" data-job-select-all> <span>Select all visible</span></label>
+            <div class="bulk-moderation-actions">
+              <select class="form-select form-select-sm" name="decision" aria-label="Bulk moderation decision">
+                <option value="approved">Approve selected</option>
+                <option value="rejected">Reject selected</option>
+              </select>
+              <input class="form-control form-control-sm" name="note" placeholder="Optional note" aria-label="Bulk moderation note">
+              <button class="btn btn-sm btn-primary" type="submit" data-bulk-moderate-submit>Apply to selected</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table align-middle">
+              <thead><tr><th class="bulk-select-col"></th><th>Job</th><th>Company</th><th>Location</th><th>Applications</th><th>Approval</th><th>Action</th></tr></thead>
+              <tbody>
+                {% for job in jobs %}
+                  <tr data-admin-row>
+                    <td class="bulk-select-col"><input type="checkbox" name="vacancy_ids" value="{{ job.id }}" data-job-select aria-label="Select {{ job.title }}"></td>
+                    <td><strong>{{ job.title }}</strong><small>{{ job.vacancy_type }} · #{{ job.id }}</small></td>
+                    <td><strong>{{ job.organization_name }}</strong><small>{{ job.employer_email }}</small></td>
+                    <td>{{ job.location }}</td>
+                    <td>{{ job.application_count }}</td>
+                    <td><span class="status {{ job.moderation_status }}">{{ job.moderation_status|capitalize }}</span><small>{{ job.status|capitalize }} vacancy</small></td>
+                    <td><a class="btn btn-sm btn-light" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review</a></td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="7"><div class="table-empty"><strong>No jobs found.</strong><span>Try changing the search or approval filter.</span></div></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
