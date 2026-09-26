@@ -78,21 +78,106 @@
         {% for application in applications %}<tr data-admin-row><td><strong>{{ application.student_name }}</strong><small>{{ application.student_email }}</small></td><td><strong>{{ application.title }}</strong><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td><td>{{ application.organization_name }}</td><td>{{ application.applied_at }}</td><td><span class="status {{ application.status|lower }}">{{ application.status }}</span></td><td><a class="btn btn-sm btn-light" href="{{ url_for('admin.student_profile', student_id=application.student_id) }}">Review</a></td></tr>
         {% else %}<tr><td colspan="6"><div class="table-empty"><strong>No student applications found.</strong><span>Applications will appear here when students apply.</span></div></td></tr>{% endfor %}
       </tbody></table></div></div>
-      <div class="content-card reveal">
-        <div class="section-head"><div><h3>Add Employer</h3><p>Create an employer account directly from the admin panel.</p></div></div>
-        <form method="post" action="{{ url_for('admin.add_company') }}" class="row g-3">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="col-md-4"><label class="form-label">Contact name</label><input class="form-control" name="name" required></div>
-          <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" type="email" name="email" required></div>
-          <div class="col-md-4"><label class="form-label">Temporary password</label><input class="form-control" type="password" name="password" minlength="12" required></div>
-          <div class="col-md-4"><label class="form-label">Organization</label><input class="form-control" name="organization_name" required></div>
-          <div class="col-md-4"><label class="form-label">Organization type</label><input class="form-control" name="organization_type"></div>
-          <div class="col-md-4"><label class="form-label">Location</label><input class="form-control" name="location"></div>
-          <div class="col-md-6"><label class="form-label">Website</label><input class="form-control" name="website"></div>
-          <div class="col-md-6"><label class="form-label">Description</label><input class="form-control" name="description"></div>
-          <div class="col-12"><button class="btn btn-primary" type="submit">Add Employer</button></div>
-        </form>
-      </div>
+      <section class="admin-add-employer reveal">
+        <div class="admin-add-employer-head">
+          <div class="admin-add-employer-icon">+</div>
+          <div>
+            <span class="eyebrow">EMPLOYER MANAGEMENT</span>
+            <h3>Add new employer</h3>
+            <p>Create a company account directly from the Admin panel. A unique Company ID will be assigned automatically.</p>
+          </div>
+        </div>
+
+        <div class="admin-add-employer-layout">
+          <div class="admin-add-employer-side">
+            <div class="admin-add-step">
+              <span>01</span>
+              <div><strong>Contact</strong><small>Person who manages the account</small></div>
+            </div>
+            <div class="admin-add-step">
+              <span>02</span>
+              <div><strong>Company</strong><small>Organization details shown to candidates</small></div>
+            </div>
+            <div class="admin-add-step">
+              <span>03</span>
+              <div><strong>Access</strong><small>Temporary login credentials</small></div>
+            </div>
+            <div class="admin-add-note">
+              <strong>Automatic Company ID</strong>
+              <span>The system generates the private Company ID after the account is created.</span>
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('admin.add_company') }}" class="admin-employer-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="admin-form-group">
+              <div class="admin-form-group-head">
+                <div><span>Contact details</span><small>Employer account information</small></div>
+              </div>
+              <div class="admin-form-grid">
+                <div class="admin-form-field">
+                  <label for="admin-employer-name">Contact name</label>
+                  <input id="admin-employer-name" class="form-control" name="name" placeholder="e.g. Rahul Sharma" required>
+                </div>
+                <div class="admin-form-field">
+                  <label for="admin-employer-email">Email address</label>
+                  <input id="admin-employer-email" class="form-control" type="email" name="email" placeholder="name@company.com" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-form-group">
+              <div class="admin-form-group-head">
+                <div><span>Company details</span><small>Information used across the employer profile</small></div>
+              </div>
+              <div class="admin-form-grid">
+                <div class="admin-form-field admin-form-field-wide">
+                  <label for="admin-employer-org">Organization name</label>
+                  <input id="admin-employer-org" class="form-control" name="organization_name" placeholder="e.g. Acme Technologies" required>
+                </div>
+                <div class="admin-form-field">
+                  <label for="admin-employer-type">Organization type</label>
+                  <input id="admin-employer-type" class="form-control" name="organization_type" placeholder="Technology, Finance...">
+                </div>
+                <div class="admin-form-field">
+                  <label for="admin-employer-location">Location</label>
+                  <input id="admin-employer-location" class="form-control" name="location" placeholder="Pune / Mumbai / Remote">
+                </div>
+                <div class="admin-form-field admin-form-field-wide">
+                  <label for="admin-employer-website">Website <span>optional</span></label>
+                  <input id="admin-employer-website" class="form-control" type="url" name="website" placeholder="https://company.com">
+                </div>
+                <div class="admin-form-field admin-form-field-wide">
+                  <label for="admin-employer-description">Company description <span>optional</span></label>
+                  <textarea id="admin-employer-description" class="form-control" name="description" rows="4" placeholder="Briefly describe the organization, team or work."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-form-group">
+              <div class="admin-form-group-head">
+                <div><span>Account access</span><small>Set the temporary password for the employer</small></div>
+              </div>
+              <div class="admin-form-grid admin-form-grid-access">
+                <div class="admin-form-field">
+                  <label for="admin-employer-password">Temporary password</label>
+                  <input id="admin-employer-password" class="form-control" type="password" name="password" minlength="12" placeholder="Minimum 12 characters" required>
+                </div>
+                <div class="admin-password-hint">
+                  <strong>Before sharing access</strong>
+                  <span>Use a temporary password and ask the employer to change it after first login.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-employer-form-footer">
+              <span>Company ID is generated automatically after creation.</span>
+              <button class="btn btn-primary" type="submit">Create employer account →</button>
+            </div>
+          </form>
+        </div>
+      </section>
       <div id="companies" class="section-head"><div><span class="eyebrow">ORGANIZATIONS</span><h2>Companies</h2><p>Inspect employer profiles and control account access.</p></div><span class="admin-result-count">{{ companies|length }} matching companies</span></div>
       <div class="content-card reveal"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Company</th><th>Company ID</th><th>Contact</th><th>Location</th><th>Account</th><th>Action</th></tr></thead><tbody>
         {% for company in companies %}<tr data-admin-row><td><strong>{{ company.organization_name }}</strong><small>{{ company.organization_type or 'Organization' }}</small></td><td><span class="admin-company-id">{{ company.company_id }}</span></td><td>{{ company.contact_name }}<small>{{ company.email }}</small></td><td>{{ company.location or '—' }}</td><td><span class="status {{ company.account_status|lower }}">{{ company.account_status|capitalize }}</span></td><td class="text-nowrap"><a class="btn btn-sm btn-light" href="{{ url_for('admin.company_detail', user_id=company.user_id) }}">Details</a><form class="d-inline" method="post" action="{{ url_for('admin.company_status', user_id=company.user_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ 'suspended' if company.account_status=='active' else 'active' }}"><button class="btn btn-sm btn-outline-dark" type="submit" data-admin-confirm="change this company account">{{ 'Suspend' if company.account_status=='active' else 'Activate' }}</button></form> <form class="d-inline" method="post" action="{{ url_for('admin.delete_company', user_id=company.user_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit" data-admin-confirm="permanently remove this employer and its jobs">Remove</button></form></td></tr>
