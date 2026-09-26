@@ -171,11 +171,13 @@ def resume():
     )
     if not profile or not profile["resume_filename"]:
         return render_template("404.html"), 404
-    return send_from_directory(
+    response = send_from_directory(
         current_app.config["UPLOAD_FOLDER"],
         profile["resume_filename"],
         as_attachment=False,
     )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @student_bp.get("/jobs")
