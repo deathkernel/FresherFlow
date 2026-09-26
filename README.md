@@ -33,18 +33,18 @@ The application creates its SQLite database under `instance/` on first start. Ru
 - Student / Employer: `http://127.0.0.1:5000/login`
 - Admin: `http://127.0.0.1:5000/admin`
 
-### Local admin login
+### Local admin login (development only)
 
 - Admin ID: `admin@123`
 - Password: `admin123`
 
-For a deployed environment, set `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` instead of relying on the local defaults.
+These defaults are enabled only when `FRESHERFLOW_ENV=development`. For staging/production, set `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`; otherwise admin login is disabled.
 
 ## Features
 
 - Student registration, profile, resume and opportunity search
 - Internship and entry-level job vacancies
-- Employer registration, organization profile and vacancy management
+- Employer organization profile and vacancy management; employer accounts are created by Admin
 - Excel `.xlsx` bulk vacancy import
 - Admin moderation and company management
 - Applications and application status tracking
