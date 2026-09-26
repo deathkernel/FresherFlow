@@ -2908,3 +2908,9 @@ a {
 .admin-company-table td small{max-width:220px}
 @media(max-width:980px){.admin-company-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.admin-company-hero{align-items:flex-start;flex-direction:column;padding:20px}.admin-company-hero .status{align-self:flex-start}.admin-company-identity{align-items:flex-start}.admin-company-grid{gap:14px}.admin-company-card-head,.admin-company-card-body{padding:17px}.admin-company-details>div{grid-template-columns:1fr;gap:5px}.admin-company-table{min-width:640px}}
+
+/* Semantic admin profile progress */
+.admin-progress progress{display:block;width:100%;height:8px;border:0;border-radius:999px;background:#eeeff4;appearance:none}
+.admin-progress progress::-webkit-progress-bar{border-radius:999px;background:#eeeff4}
+.admin-progress progress::-webkit-progress-value{border-radius:999px;background:linear-gradient(90deg,#625bf5,#8a5cf6)}
+.admin-progress progress::-moz-progress-bar{border-radius:999px;background:linear-gradient(90deg,#625bf5,#8a5cf6)}
