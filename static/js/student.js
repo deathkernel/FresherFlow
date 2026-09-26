@@ -17,20 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   search?.addEventListener("input", filter);
   type?.addEventListener("change", filter);
-  const editor = document.querySelector("[data-profile-edit]");
-  const fieldset = document.getElementById("profile-editor");
-  const actions = document.querySelector("[data-profile-actions]");
-  const cancel = document.querySelector("[data-profile-cancel]");
-  editor?.addEventListener("click", () => {
-    if (!fieldset) return;
-    fieldset.disabled = false;
-    editor.hidden = true;
-    if (actions) actions.hidden = false;
-    const firstField = fieldset.querySelector("input:not([type='hidden']), select, textarea");
-    firstField?.focus();
-  });
-  cancel?.addEventListener("click", () => window.location.reload());
-
   document.querySelectorAll("[data-application-status]").forEach((select) => {
     const rows = [...document.querySelectorAll("[data-application-row]")];
     select.addEventListener("change", () => {
