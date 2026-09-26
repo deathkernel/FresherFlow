@@ -1,7 +1,7 @@
 {% extends "employer/base.html" %}
 {% block employer_content %}
   <div class="stat-grid">
-    <div class="dash-stat reveal"><span>Active vacancies</span><strong>{{ stats.vacancies }}</strong><small>Currently published</small></div>
+    <div class="dash-stat reveal"><span>Live vacancies</span><strong>{{ stats.live_jobs }}</strong><small>Approved and visible</small></div>
     <div class="dash-stat reveal"><span>Applications</span><strong>{{ stats.applications }}</strong><small>Total received</small></div>
     <div class="dash-stat reveal"><span>Shortlisted</span><strong>{{ stats.shortlisted }}</strong><small>Candidate pipeline</small></div>
     <div class="dash-stat reveal"><span>Selected</span><strong>{{ stats.selected }}</strong><small>Successful candidates</small></div>
