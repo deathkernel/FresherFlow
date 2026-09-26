@@ -150,7 +150,12 @@ def profile():
         "SELECT * FROM student_profiles WHERE user_id=?", (uid,)
     ).fetchone()
     user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
-    return render_template("student/profile.html", profile=profile_data, user=user)
+    return render_template(
+        "student/profile.html",
+        profile=profile_data,
+        user=user,
+        edit_mode=request.args.get("edit") == "1",
+    )
 
 
 @student_bp.get("/resume")
