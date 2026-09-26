@@ -2,9 +2,11 @@ import io
 import re
 import sqlite3
 from datetime import date, datetime
+from zipfile import BadZipFile
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
 
 from database.database import get_db
 from routes.decorators import role_required
@@ -100,8 +102,14 @@ def bulk_vacancy_forms(form):
 def excel_vacancy_forms(file_storage):
     filename=(file_storage.filename or "").strip().lower()
     if not filename.endswith(".xlsx"): return None, "Please upload an Excel .xlsx file."
-    try: workbook=load_workbook(filename=io.BytesIO(file_storage.read()), read_only=True, data_only=True)
-    except Exception: return None, "The Excel file could not be read. Please upload a valid .xlsx file."
+    try:
+        workbook = load_workbook(
+            filename=io.BytesIO(file_storage.read()),
+            read_only=True,
+            data_only=True,
+        )
+    except (InvalidFileException, BadZipFile, OSError, ValueError):
+        return None, "The Excel file could not be read. Please upload a valid .xlsx file."
     try:
         sheet=workbook.active; rows=sheet.iter_rows(values_only=True)
         try: header_row=next(rows)
@@ -175,12 +183,12 @@ def new_vacancy():
         if error: flash(error,"error"); return render_template("employer/post-vacancy.html")
         db=get_db(); publish=request.form.get("publish")=="1"
         try:
-            status="draft"
-            moderation_status="pending"
+            status = "active" if publish else "draft"
+            moderation_status = "pending"
             db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(session["user_id"],data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],status,moderation_status)); db.commit()
         except sqlite3.IntegrityError:
             db.rollback(); flash("The vacancy could not be saved.","error"); return render_template("employer/post-vacancy.html")
-        flash("Vacancy published successfully." if publish else "Vacancy saved as draft.","success")
+        flash("Vacancy submitted for admin approval." if publish else "Vacancy saved as draft.","success")
         return redirect(url_for("employer.vacancies"))
     return render_template("employer/post-vacancy.html")
 
@@ -199,7 +207,7 @@ def bulk_new_vacancies():
         if error: flash(error,"error"); return render_template("employer/bulk-vacancies.html"),400
     db=get_db(); uid=session["user_id"]
     try:
-        for data in vacancies: db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(uid,data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],"draft","pending"))
+        for data in vacancies: db.execute("INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(uid,data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],"active","pending"))
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback(); flash("None of the vacancies were imported because one or more entries were invalid.","error"); return render_template("employer/bulk-vacancies.html"),400
@@ -274,10 +282,10 @@ def publish_all_drafts():
 def vacancy_status(vacancy_id):
     status=request.form.get("status")
     if status not in VACANCY_STATUSES: return redirect(url_for("employer.vacancies"))
-    db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
+    db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline,moderation_status FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
     if not job: return redirect(url_for("employer.vacancies"))
     if status=="active" and deadline_invalid(job["deadline"]): flash("The application deadline has passed or is invalid.","error"); return redirect(url_for("employer.vacancies"))
-    moderation_status = "pending" if status == "active" else "pending"
+    moderation_status = "pending" if status == "active" else job["moderation_status"]
     db.execute("UPDATE vacancies SET status=?, moderation_status=? WHERE id=? AND employer_id=?",(status,moderation_status,vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
 
 
