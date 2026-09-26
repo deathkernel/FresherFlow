@@ -398,3 +398,86 @@
     width: 100%;
   }
 }
+
+
+/* Structured eligibility presentation */
+.eligibility-block {
+  padding: 20px;
+  border: 1px solid #e8e9f1;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fbfbff, #ffffff);
+}
+
+.eligibility-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.eligibility-head .eyebrow {
+  margin-bottom: 5px;
+}
+
+.eligibility-head h4 {
+  margin: 0;
+  color: #252a39;
+  font-size: 1rem;
+}
+
+.eligibility-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #d9f0e4;
+  border-radius: 999px;
+  background: #f0fbf5;
+  color: #198754;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.eligibility-list {
+  display: grid;
+  gap: 10px;
+}
+
+.eligibility-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  padding: 12px 13px;
+  border: 1px solid #eceef4;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.eligibility-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #efeeff;
+  color: #5a54dd;
+  font-size: 0.65rem;
+  font-weight: 850;
+}
+
+.eligibility-item p {
+  margin: 2px 0 0;
+  color: #5e6675;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 620px) {
+  .eligibility-head {
+    flex-direction: column;
+  }
+
+  .eligibility-badge {
+    align-self: flex-start;
+  }
+}
