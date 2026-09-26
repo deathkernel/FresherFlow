@@ -45,6 +45,37 @@ def create_app():
             )
         return response
 
+    @app.errorhandler(404)
+    def not_found(_error):
+        return render_template("404.html"), 404
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return render_template(
+            "error.html",
+            status_code=400,
+            title="Bad request",
+            message=getattr(error, "description", "The request could not be processed."),
+        ), 400
+
+    @app.errorhandler(413)
+    def request_too_large(_error):
+        return render_template(
+            "error.html",
+            status_code=413,
+            title="Request too large",
+            message="The uploaded file or request is larger than the allowed limit.",
+        ), 413
+
+    @app.errorhandler(500)
+    def server_error(_error):
+        return render_template(
+            "error.html",
+            status_code=500,
+            title="Something went wrong",
+            message="FresherFlow could not complete that request. Please try again.",
+        ), 500
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
