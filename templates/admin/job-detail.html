@@ -14,7 +14,7 @@
         <a href="{{ url_for('admin.companies') }}">Companies</a>
       </nav>
       <div class="side-bottom">
-        <div class="user-chip"><div class="avatar">D</div><div><b>Developer</b><small>Platform control</small></div></div>
+        <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Platform control</small></div></div>
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
     </aside>
