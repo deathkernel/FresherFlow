@@ -8,6 +8,7 @@
       <nav>
         <a class="active" href="#top">Overview</a>
         <div class="side-nav-label">MANAGEMENT</div>
+        <a href="#jobs">Job Moderation</a>
         <a href="#applications">Applications</a>
         <a href="#companies">Companies</a>
       </nav>
@@ -18,13 +19,44 @@
     </aside>
     <section class="workspace" id="top">
       <header class="workspace-head"><div><span class="eyebrow">PLATFORM ADMINISTRATION</span><h1>Control Center</h1><p>Monitor applications, companies and platform activity from one place.</p></div></header>
-      <div class="stat-grid">
+      <div class="stat-grid admin-stat-grid">
         <div class="dash-stat"><span>Companies</span><strong>{{ stats.companies }}</strong><small>{{ stats.active_companies }} active</small></div>
-        <div class="dash-stat"><span>Approved jobs</span><strong>{{ stats.approved_jobs }}</strong><small>Published / approved</small></div>
-        <div class="dash-stat"><span>Applications</span><strong>{{ stats.applications }}</strong><small>Student applications</small></div>
+        <div class="dash-stat"><span>Total jobs</span><strong>{{ stats.jobs }}</strong><small>{{ stats.live_jobs }} live</small></div>
+        <div class="dash-stat"><span>Pending reviews</span><strong>{{ stats.pending_jobs }}</strong><small>Jobs awaiting moderation</small></div>
+        <div class="dash-stat"><span>Applications</span><strong>{{ stats.applications }}</strong><small>All student applications</small></div>
       </div>
       <form class="filter-bar admin-filter" method="get" role="search"><input type="search" class="form-control" placeholder="Filter visible rows instantly" aria-label="Filter visible rows" data-admin-table-search><input class="form-control" name="q" value="{{ q }}" placeholder="Search student, email, company or job title" aria-label="Search admin data"><button class="btn btn-primary" type="submit">Search</button>{% if q %}<a class="btn btn-light" href="{{ url_for('admin.dashboard') }}">Clear</a>{% endif %}</form>
-      <div id="applications" class="section-head"><div><span class="eyebrow">MANAGEMENT</span><h2>Student Applications</h2><p>Review applications submitted to employer-posted jobs.</p></div></div>
+      <div id="jobs" class="section-head">
+        <div><span class="eyebrow">MODERATION</span><h2>Job Moderation</h2><p>Review every vacancy with the same job counts used by the summary cards.</p></div>
+        <span class="admin-result-count">{{ jobs|length }} matching jobs</span>
+      </div>
+      <div class="content-card reveal">
+        <div class="table-wrap">
+          <table class="table align-middle">
+            <thead>
+              <tr><th>Job</th><th>Company</th><th>Location</th><th>Applications</th><th>Moderation</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              {% for job in jobs %}
+                <tr data-admin-row>
+                  <td><strong>{{ job.title }}</strong><small>{{ job.vacancy_type }} · #{{ job.id }}</small></td>
+                  <td><strong>{{ job.organization_name }}</strong><small>{{ job.employer_email }}</small></td>
+                  <td>{{ job.location }}</td>
+                  <td>{{ job.application_count }}</td>
+                  <td>
+                    <span class="status {{ job.moderation_status }}">{{ job.moderation_status|capitalize }}</span>
+                    <small>{{ job.status|capitalize }} vacancy</small>
+                  </td>
+                  <td><a class="btn btn-sm btn-light" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review</a></td>
+                </tr>
+              {% else %}
+                <tr><td colspan="6"><div class="table-empty"><strong>No jobs found.</strong><span>Try changing the search text.</span></div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="applications" class="section-head"><div><span class="eyebrow">MANAGEMENT</span><h2>Student Applications</h2><p>Review applications submitted to employer-posted jobs.</p></div><span class="admin-result-count">{{ applications|length }} matching applications</span></div>
       <div class="content-card reveal"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Student</th><th>Job</th><th>Company</th><th>Applied</th><th>Status</th><th>Profile</th></tr></thead><tbody>
         {% for application in applications %}<tr data-admin-row><td><strong>{{ application.student_name }}</strong><small>{{ application.student_email }}</small></td><td><strong>{{ application.title }}</strong><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td><td>{{ application.organization_name }}</td><td>{{ application.applied_at }}</td><td><span class="status {{ application.status|lower }}">{{ application.status }}</span></td><td><a class="btn btn-sm btn-light" href="{{ url_for('admin.student_profile', student_id=application.student_id) }}">Review</a></td></tr>
         {% else %}<tr><td colspan="6"><div class="table-empty"><strong>No student applications found.</strong><span>Applications will appear here when students apply.</span></div></td></tr>{% endfor %}
@@ -44,7 +76,7 @@
           <div class="col-12"><button class="btn btn-primary" type="submit">Add Employer</button></div>
         </form>
       </div>
-      <div id="companies" class="section-head"><div><span class="eyebrow">ORGANIZATIONS</span><h2>Companies</h2><p>Inspect employer profiles and control account access.</p></div></div>
+      <div id="companies" class="section-head"><div><span class="eyebrow">ORGANIZATIONS</span><h2>Companies</h2><p>Inspect employer profiles and control account access.</p></div><span class="admin-result-count">{{ companies|length }} matching companies</span></div>
       <div class="content-card reveal"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Company</th><th>Company ID</th><th>Contact</th><th>Location</th><th>Account</th><th>Action</th></tr></thead><tbody>
         {% for company in companies %}<tr data-admin-row><td><strong>{{ company.organization_name }}</strong><small>{{ company.organization_type or 'Organization' }}</small></td><td><span class="admin-company-id">{{ company.company_id }}</span></td><td>{{ company.contact_name }}<small>{{ company.email }}</small></td><td>{{ company.location or '—' }}</td><td><span class="status {{ company.account_status|lower }}">{{ company.account_status|capitalize }}</span></td><td class="text-nowrap"><a class="btn btn-sm btn-light" href="{{ url_for('admin.company_detail', user_id=company.user_id) }}">Details</a><form class="d-inline" method="post" action="{{ url_for('admin.company_status', user_id=company.user_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ 'suspended' if company.account_status=='active' else 'active' }}"><button class="btn btn-sm btn-outline-dark" type="submit" data-admin-confirm="change this company account">{{ 'Suspend' if company.account_status=='active' else 'Activate' }}</button></form> <form class="d-inline" method="post" action="{{ url_for('admin.delete_company', user_id=company.user_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit" data-admin-confirm="permanently remove this employer and its jobs">Remove</button></form></td></tr>
         {% else %}<tr><td colspan="6"><div class="table-empty"><strong>No companies found.</strong><span>Registered employer organizations will appear here.</span></div></td></tr>{% endfor %}
