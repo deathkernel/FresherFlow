@@ -9,7 +9,7 @@
       <p>The page you're looking for doesn't exist or may no longer be available.</p>
       <div class="not-found-actions">
         <a href="{{ url_for('index') }}" class="btn btn-primary">Back home</a>
-        <a href="javascript:history.back()" class="btn btn-light">Go back</a>
+        <a href="{{ url_for('dashboard_redirect') }}" class="btn btn-light">Go to dashboard</a>
       </div>
     </div>
   </div>
