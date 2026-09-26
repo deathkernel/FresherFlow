@@ -2662,3 +2662,56 @@ a {
     height: 55px;
   }
 }
+
+
+.student-register-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 20px 0 18px;
+  padding: 11px 13px;
+  border: 1px solid #e2e0fb;
+  border-radius: 12px;
+  background: #f8f7ff;
+  color: #5a54d6;
+  font-size: 0.72rem;
+}
+
+.student-register-note::before {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 7px;
+  background: #eeedff;
+  font-weight: 800;
+}
+
+.student-register-note strong,
+.student-register-note span {
+  display: block;
+}
+
+.student-register-note strong {
+  font-size: 0.72rem;
+}
+
+.student-register-note span {
+  margin-left: auto;
+  color: #81889a;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 700px) {
+  .student-register-note {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .student-register-note span {
+    width: calc(100% - 29px);
+    margin-left: 29px;
+  }
+}
