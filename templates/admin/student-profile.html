@@ -135,7 +135,7 @@
                 <div><span>PROFILE STATUS</span><h2>Profile strength</h2></div>
                 <strong>{{ profile.profile_strength or 0 }}%</strong>
               </div>
-              <div class="admin-progress"><span style="width:{{ profile.profile_strength or 0 }}%"></span></div>
+              <div class="admin-progress"><progress max="100" value="{{ profile.profile_strength or 0 }}">{{ profile.profile_strength or 0 }}%</progress></div>
               <p>Based on the information available in the student's profile.</p>
             </section>
 
