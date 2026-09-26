@@ -1,125 +1,100 @@
 {% extends "base.html" %}
-{% block title %}{{ company.organization_name }} — Developer{% endblock %}
+{% block title %}{{ company.organization_name }} — FresherFlow{% endblock %}
 {% block body %}
-  <style>
-  .company-page{max-width:1180px;margin:0 auto;padding:34px 28px 56px}
-  .company-back{display:inline-flex;align-items:center;gap:8px;color:#5f6b7a;text-decoration:none;font-weight:600;margin-bottom:24px}
-  .company-back:hover{color:#111827}
-  .company-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;background:#fff;border:1px solid #e6eaf0;border-radius:18px;padding:28px 30px;margin-bottom:24px;box-shadow:0 8px 30px rgba(15,23,42,.05)}
-  .company-identity{display:flex;align-items:center;gap:18px;min-width:0}
-  .company-logo{width:64px;height:64px;border-radius:16px;background:#eef4ff;color:#1769e0;display:grid;place-items:center;font-size:24px;font-weight:800;flex:none}
-  .company-hero h1{margin:0 0 7px;font-size:30px;letter-spacing:-.5px;color:#111827}
-  .company-meta{margin:0;color:#697586;font-size:14px}
-  .company-id-badge{display:inline-flex;align-items:center;margin-top:11px;padding:6px 10px;border:1px solid #dedcff;border-radius:999px;background:#f3f1ff;color:#554ddd;font-size:12px;font-weight:800;letter-spacing:.02em}
-  .company-status{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
-  .company-status.active{background:#e8f7ef;color:#16834b}.company-status.suspended{background:#eef0f3;color:#667085}
-  .company-status i{width:7px;height:7px;border-radius:50%;background:currentColor}
-  .company-grid{display:grid;grid-template-columns:minmax(0,1fr) 1.45fr;gap:24px;align-items:start}
-  .company-card{background:#fff;border:1px solid #e6eaf0;border-radius:16px;box-shadow:0 6px 24px rgba(15,23,42,.04);overflow:hidden}
-  .company-card-head{padding:20px 22px;border-bottom:1px solid #edf0f4;display:flex;justify-content:space-between;align-items:center;gap:16px}
-  .company-card-head h2{font-size:17px;margin:0;color:#172033}.company-card-head p{margin:4px 0 0;color:#7b8798;font-size:13px}
-  .company-card-body{padding:22px}
-  .detail-list{display:grid;gap:0;margin:0}
-  .detail-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:18px;padding:14px 0;border-bottom:1px solid #edf0f4}
-  .detail-row:first-child{padding-top:0}.detail-row:last-child{border-bottom:0;padding-bottom:0}
-  .detail-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.45px;color:#8a95a5}.detail-value{font-size:14px;color:#253044;overflow-wrap:anywhere}
-  .detail-value a{color:#1769e0;text-decoration:none}.detail-value a:hover{text-decoration:underline}
-  .description{margin-top:22px;padding-top:20px;border-top:1px solid #edf0f4}.description h3{font-size:13px;text-transform:uppercase;letter-spacing:.45px;color:#8a95a5;margin:0 0 9px}.description p{margin:0;color:#4c586b;font-size:14px;line-height:1.65;white-space:pre-line}
-  .company-action{margin-top:22px;padding-top:20px;border-top:1px solid #edf0f4}
-  .company-action button{width:100%;border-radius:10px;padding:10px 14px;font-weight:700}
-  .jobs-table{width:100%;border-collapse:collapse}.jobs-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8a95a5;background:#fafbfc;padding:12px 16px;border-bottom:1px solid #e9edf2}.jobs-table td{padding:16px;border-bottom:1px solid #edf0f4;vertical-align:middle;font-size:13px;color:#465267}.jobs-table tr:last-child td{border-bottom:0}.job-title{font-weight:700;color:#172033;font-size:14px}.job-sub{display:block;color:#8a95a5;font-size:12px;margin-top:4px}.job-status{font-weight:600;text-transform:capitalize}.job-badge{display:inline-flex;padding:5px 9px;border-radius:7px;font-size:11px;font-weight:700;text-transform:capitalize}.job-badge.pending{background:#fff5d9;color:#9a6700}.job-badge.approved{background:#e8f7ef;color:#16834b}.job-badge.rejected{background:#fdecec;color:#c0392b}.job-note{display:block;color:#8a95a5;font-size:11px;margin-top:5px;max-width:180px}.review-btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #d6dce5;border-radius:9px;padding:8px 13px;color:#1769e0;background:#fff;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}.review-btn:hover{background:#f5f8ff;border-color:#1769e0}
-  .empty-state{text-align:center;padding:46px 20px;color:#8a95a5}.empty-icon{width:42px;height:42px;margin:0 auto 12px;border-radius:12px;background:#f2f4f7;display:grid;place-items:center;color:#667085;font-weight:800}.empty-state strong{display:block;color:#344054;margin-bottom:4px}
-  @media(max-width:900px){.company-grid{grid-template-columns:1fr}.company-hero{padding:22px}.company-hero h1{font-size:25px}.company-page{padding:24px 16px 40px}.jobs-table{min-width:680px}.jobs-scroll{overflow-x:auto}}
-  @media(max-width:600px){.company-hero{flex-direction:column}.company-status{align-self:flex-start}.company-identity{align-items:flex-start}.company-logo{width:52px;height:52px;border-radius:13px;font-size:20px}.detail-row{grid-template-columns:1fr;gap:5px}}
-  </style>
-  <div class="company-page">
-    <a class="company-back" href="{{ url_for('admin.companies') }}">← Back to Companies</a>
-    <section class="company-hero">
-      <div class="company-identity">
-        <div class="company-logo">{{ (company.organization_name or 'C')[:1]|upper }}</div>
-        <div>
-          <h1>{{ company.organization_name }}</h1>
-          <p class="company-meta">{{ company.organization_type or 'Organization' }}{% if company.location %} · {{ company.location }}{% endif %}</p>
-          <span class="company-id-badge">Company ID · {{ company.company_id }}</span>
+  <div class="app-shell admin-theme">
+    <aside class="sidebar">
+      <div class="brand">Fresher<span>Flow</span></div>
+      <div class="side-label">ADMIN WORKSPACE</div>
+      <nav>
+        <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <div class="side-nav-label">MANAGEMENT</div>
+        <a href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+        <a href="{{ url_for('admin.applications') }}">Applications</a>
+        <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+        <a class="active" href="{{ url_for('admin.companies') }}">Companies</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Platform control</small></div></div>
+        <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+      </div>
+    </aside>
+    <section class="workspace">
+      <div class="admin-company-page reveal">
+        <a class="admin-company-back" href="{{ url_for('admin.companies') }}">← Back to Companies</a>
+        <section class="admin-company-hero">
+          <div class="admin-company-identity">
+            <div class="admin-company-logo">{{ (company.organization_name or 'C')[:1]|upper }}</div>
+            <div>
+              <span class="eyebrow">COMPANY REVIEW</span>
+              <h1>{{ company.organization_name }}</h1>
+              <p>{{ company.organization_type or 'Organization' }}{% if company.location %} · {{ company.location }}{% endif %}</p>
+              <span class="admin-company-id">Company ID · {{ company.company_id }}</span>
+            </div>
+          </div>
+          <span class="status {{ 'active' if company.account_status == 'active' else 'suspended' }}">{{ company.account_status|capitalize }}</span>
+        </section>
+
+        <div class="admin-company-grid">
+          <section class="admin-company-card">
+            <div class="admin-company-card-head">
+              <div><span class="eyebrow">ORGANIZATION</span><h2>Company information</h2><p>Registered company and contact details.</p></div>
+            </div>
+            <div class="admin-company-card-body">
+              <div class="admin-company-details">
+                <div><span>Company ID</span><strong>{{ company.company_id }}</strong></div>
+                <div><span>Contact</span><strong>{{ company.contact_name or 'Not provided' }}</strong></div>
+                <div><span>Email</span><strong><a href="mailto:{{ company.email }}">{{ company.email }}</a></strong></div>
+                <div>
+                  <span>Website</span>
+                  {% set safe_website = company.website|safe_website %}
+                  {% if safe_website %}<strong><a href="{{ safe_website }}" target="_blank" rel="noopener">{{ safe_website }}</a></strong>{% else %}<strong>Not specified</strong>{% endif %}
+                </div>
+                <div><span>Type</span><strong>{{ company.organization_type or 'Not specified' }}</strong></div>
+                <div><span>Location</span><strong>{{ company.location or 'Not specified' }}</strong></div>
+                <div><span>Verification</span><strong>{{ company.verification_status|capitalize if company.verification_status else 'Not specified' }}</strong></div>
+              </div>
+              <div class="admin-company-description">
+                <span>About the company</span>
+                <p>{{ company.description or 'No company description provided.' }}</p>
+              </div>
+              <form class="admin-company-action" method="post" action="{{ url_for('admin.company_status', user_id=company.user_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ 'suspended' if company.account_status == 'active' else 'active' }}">
+                <button class="btn {{ 'btn-outline-danger' if company.account_status == 'active' else 'btn-success' }}" type="submit">
+                  {{ 'Suspend company' if company.account_status == 'active' else 'Activate company' }}
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <section class="admin-company-card">
+            <div class="admin-company-card-head">
+              <div><span class="eyebrow">VACANCIES</span><h2>Jobs from this company</h2><p>Review every submitted opportunity from this employer.</p></div>
+              <span class="admin-company-count">{{ jobs|length }} shown</span>
+            </div>
+            <div class="table-wrap">
+              <table class="table align-middle admin-company-table">
+                <thead><tr><th>Role</th><th>Status</th><th>Moderation</th><th>Action</th></tr></thead>
+                <tbody>
+                  {% for job in jobs %}
+                    <tr>
+                      <td><strong>{{ job.title }}</strong><small>{{ job.vacancy_type }} · {{ job.location }}</small></td>
+                      <td><span class="status {{ job.status|lower }}">{{ job.status|title }}</span></td>
+                      <td>
+                        <span class="status {{ job.moderation_status|lower }}">{{ job.moderation_status|capitalize }}</span>
+                        {% if job.moderation_note %}<small>{{ job.moderation_note }}</small>{% endif %}
+                      </td>
+                      <td><a class="btn btn-sm btn-light" href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review</a></td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="4"><div class="table-empty"><strong>No jobs submitted.</strong><span>This company has not submitted any opportunities yet.</span></div></td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
-      <span class="company-status {{ 'active' if company.account_status=='active' else 'suspended' }}"><i></i>{{ company.account_status|capitalize }}</span>
     </section>
-    <div class="company-grid">
-      <section class="company-card">
-        <div class="company-card-head">
-          <div>
-            <h2>Company information</h2>
-            <p>Registered organization and contact details</p>
-          </div>
-        </div>
-        <div class="company-card-body">
-          <div class="detail-list">
-            <div class="detail-row"><span class="detail-label">Company ID</span><span class="detail-value"><strong>{{ company.company_id }}</strong></span></div>
-            <div class="detail-row"><span class="detail-label">Contact</span><span class="detail-value">{{ company.contact_name or 'Not provided' }}</span></div>
-            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value"><a href="mailto:{{ company.email }}">{{ company.email }}</a></span></div>
-            <div class="detail-row"><span class="detail-label">Website</span><span class="detail-value">{% set safe_website = company.website|safe_website %}{% if safe_website %}<a href="{{ safe_website }}" target="_blank" rel="noopener">{{ safe_website }}</a>{% else %}Not specified{% endif %}</span></div>
-            <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">{{ company.organization_type or 'Not specified' }}</span></div>
-            <div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">{{ company.location or 'Not specified' }}</span></div>
-            <div class="detail-row"><span class="detail-label">Verification</span><span class="detail-value">{{ company.verification_status|capitalize if company.verification_status else 'Not specified' }}</span></div>
-          </div>
-          <div class="description">
-            <h3>About the company</h3>
-            <p>{{ company.description or 'No company description provided.' }}</p>
-          </div>
-          <div class="company-action">
-            <form method="post"
-                  action="{{ url_for('admin.company_status', user_id=company.user_id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden"
-                     name="status"
-                     value="{{ 'suspended' if company.account_status=='active' else 'active' }}">
-              <button class="btn {{ 'btn-outline-danger' if company.account_status=='active' else 'btn-success' }}">{{ 'Suspend company' if company.account_status=='active' else 'Activate company' }}</button>
-            </form>
-          </div>
-        </div>
-      </section>
-      <section class="company-card">
-        <div class="company-card-head">
-          <div>
-            <h2>Jobs from this company</h2>
-            <p>Published and submitted opportunities</p>
-          </div>
-          <span class="small text-muted">{{ jobs|length }} shown</span>
-        </div>
-        <div class="jobs-scroll">
-          <table class="jobs-table">
-            <thead>
-              <tr>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Moderation</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for job in jobs %}
-                <tr>
-                  <td><span class="job-title">{{ job.title }}</span><span class="job-sub">{{ job.vacancy_type }} · {{ job.location }}</span></td>
-                  <td><span class="job-status">{{ job.status }}</span></td>
-                  <td><span class="job-badge {{ job.moderation_status }}">{{ job.moderation_status }}</span>{% if job.moderation_note %}<span class="job-note">{{ job.moderation_note }}</span>{% endif %}</td>
-                  <td><a class="review-btn"
-   href="{{ url_for('admin.job_detail', job_id=job.id) }}">Review →</a></td>
-                </tr>
-              {% else %}
-                <tr>
-                  <td colspan="4">
-                    <div class="empty-state">
-                      <div class="empty-icon">—</div>
-                      <strong>No jobs submitted</strong><span>This company has not submitted any opportunities yet.</span>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
   </div>
 {% endblock %}
