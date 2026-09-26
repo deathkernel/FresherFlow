@@ -10,6 +10,7 @@
         <div class="side-nav-label">MANAGEMENT</div>
         <a href="#jobs">Job Moderation</a>
         <a href="#applications">Applications</a>
+        <a href="#add-employer">Add New Employer</a>
         <a href="#companies">Companies</a>
       </nav>
       <div class="side-bottom">
@@ -78,7 +79,7 @@
         {% for application in applications %}<tr data-admin-row><td><strong>{{ application.student_name }}</strong><small>{{ application.student_email }}</small></td><td><strong>{{ application.title }}</strong><small>{{ application.vacancy_type }} · #{{ application.vacancy_id }}</small></td><td>{{ application.organization_name }}</td><td>{{ application.applied_at }}</td><td><span class="status {{ application.status|lower }}">{{ application.status }}</span></td><td><a class="btn btn-sm btn-light" href="{{ url_for('admin.student_profile', student_id=application.student_id) }}">Review</a></td></tr>
         {% else %}<tr><td colspan="6"><div class="table-empty"><strong>No student applications found.</strong><span>Applications will appear here when students apply.</span></div></td></tr>{% endfor %}
       </tbody></table></div></div>
-      <section class="admin-add-employer reveal">
+      <section id="add-employer" class="admin-add-employer reveal">
         <div class="admin-add-employer-head">
           <div class="admin-add-employer-icon">+</div>
           <div>
