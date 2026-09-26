@@ -38,6 +38,7 @@ def migrate_employer_data(db):
         row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()
     }
     additions = {
+        "company_id": "TEXT",
         "account_status": "TEXT NOT NULL DEFAULT 'active'",
         "verification_status": "TEXT NOT NULL DEFAULT 'verified'",
         "verification_note": "TEXT",
@@ -48,6 +49,12 @@ def migrate_employer_data(db):
             db.execute(
                 f"ALTER TABLE employer_profiles ADD COLUMN {column} {definition}"
             )
+    db.execute(
+        "UPDATE employer_profiles SET company_id='FF-CMP-' || printf('%06d', user_id) WHERE company_id IS NULL OR company_id=''"
+    )
+    db.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_employer_profiles_company_id ON employer_profiles(company_id)"
+    )
     db.execute(
         "UPDATE employer_profiles SET account_status='active' WHERE account_status IS NULL"
     )
