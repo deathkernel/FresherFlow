@@ -38,11 +38,14 @@
   <div class="app-shell" style="min-height:100vh;">
     <aside class="sidebar">
       <div class="brand">Fresher<span>Flow</span></div>
-      <div class="side-label">DEVELOPER CONSOLE</div>
+      <div class="side-label">ADMIN WORKSPACE</div>
       <nav>
         <a href="{{ url_for('admin.dashboard') }}">Overview</a>
-        <a class="active" href="{{ url_for('admin.dashboard') }}#applications">Applications</a>
-        <a href="{{ url_for('admin.dashboard') }}#companies">Companies</a>
+        <div class="side-nav-label">MANAGEMENT</div>
+        <a class="active" href="{{ url_for('admin.applications') }}">Applications</a>
+        <a href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+        <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+        <a href="{{ url_for('admin.companies') }}">Companies</a>
       </nav>
       <div class="side-bottom">
         <div class="user-chip">
