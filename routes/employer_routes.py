@@ -197,7 +197,15 @@ def bulk_new_vacancies():
 @employer_bp.get("/vacancies")
 @role_required("employer")
 def vacancies():
-    rows=get_db().execute("SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",(session["user_id"],)).fetchall(); return render_template("employer/vacancies.html",vacancies=rows)
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",
+        (session["user_id"],),
+    ).fetchall()
+    draft_count = sum(1 for row in rows if row["status"] == "draft")
+    return render_template(
+        "employer/vacancies.html", vacancies=rows, draft_count=draft_count
+    )
 
 
 @employer_bp.route("/vacancies/<int:vacancy_id>/edit",methods=["GET","POST"])
