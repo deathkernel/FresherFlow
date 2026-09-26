@@ -60,7 +60,7 @@ The project addresses the need for a simple role-based recruitment workflow wher
 - Develop a web-based recruitment portal for freshers.
 - Provide separate Student, Employer and Admin panels.
 - Allow students to maintain profiles, upload resumes, search vacancies, save opportunities and apply.
-- Allow employers to maintain organization profiles, create/edit vacancies, import vacancies from Excel and manage applications.
+- Allow administrators to create employer accounts; allow employers to maintain organization profiles, create/edit vacancies, import vacancies from Excel and manage applications.
 - Allow administrators to moderate vacancies and control employer accounts.
 - Store application and vacancy information using SQLite.
 - Apply server-side validation, CSRF protection and safe session configuration.
@@ -95,7 +95,7 @@ Existing recruitment systems generally provide job search, employer posting and 
 | Module | Major Features |
 |---|---|
 | Student | Registration, profile, resume, vacancy search, save, apply, application tracking |
-| Employer | Registration, organization profile, vacancy management, Excel import, application status |
+| Employer | Organization profile, vacancy management, Excel import, application status |
 | Admin | Dashboard, application review, vacancy moderation, employer creation, suspension/activation/removal |
 
 ## 2.4 Stakeholders
@@ -111,7 +111,7 @@ Existing recruitment systems generally provide job search, employer posting and 
 
 ### Functional Requirements
 
-- Student and employer registration/login.
+- Student public registration and Student/Employer login.
 - Student and employer profile management.
 - Resume upload.
 - Vacancy creation/editing.
@@ -278,7 +278,7 @@ Testing covers route authorization, input validation, database constraints, vaca
 
 | ID | Test | Expected Result |
 |---|---|---|
-| TC-01 | Valid student registration | Account/profile created |
+| TC-01 | Valid student registration | Student account/profile created |
 | TC-02 | Short password | Registration rejected |
 | TC-03 | Invalid resume extension | Upload rejected |
 | TC-04 | Resume over 5 MB | Upload rejected |
@@ -295,8 +295,8 @@ Testing covers route authorization, input validation, database constraints, vaca
 
 | ID | Workflow | Validation |
 |---|---|---|
-| FV-01 | Student Login → Dashboard | Student dashboard |
-| FV-02 | Employer Login → Dashboard | Active employer dashboard |
+| FV-01 | Student Registration/Login → Dashboard | Student dashboard |
+| FV-02 | Admin creates employer → Employer Login → Dashboard | Active employer dashboard |
 | FV-03 | Suspended Employer Login | Employer workflow blocked |
 | FV-04 | Student Search → Details | Only available approved vacancies shown |
 | FV-05 | Student Apply | Single application / duplicate prevented |
