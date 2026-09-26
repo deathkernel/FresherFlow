@@ -155,7 +155,7 @@
                 <div><strong>{{ profile.resume_filename or "No resume uploaded" }}</strong><small>{{ "Current student resume" if profile.resume_filename else "Resume not available" }}</small></div>
               </div>
               {% if profile.resume_filename %}
-                <a class="btn btn-primary w-100 mt-3" href="{{ url_for('student.resume') }}" target="_blank">View resume</a>
+                <a class="btn btn-primary w-100 mt-3" href="{{ url_for('admin.student_resume', student_id=user.id) }}" target="_blank">View resume</a>
               {% endif %}
             </section>
           </aside>
