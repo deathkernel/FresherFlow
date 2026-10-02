@@ -1,15 +1,23 @@
-import os
+import pytest
 
+from config import Config
 from database.database import get_db
 from security import login_is_locked, record_login_failure
+
+
+@pytest.fixture
+def app(tmp_path, monkeypatch):
+    monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "fresherflow.db"))
+    monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+    from app import create_app
+    app = create_app()
+    app.config.update(TESTING=True)
+    return app
 
 
 def test_database_defaults_are_safe(app):
     with app.app_context():
         db = get_db()
-        vacancy = db.execute(
-            "SELECT moderation_status FROM vacancies WHERE 1=0"
-        ).fetchone()
         employer_sql = db.execute(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='employer_profiles'"
         ).fetchone()["sql"]
