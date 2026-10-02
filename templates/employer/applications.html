@@ -79,6 +79,14 @@
     {% endfor %}
   </div>
 
+  {% if page > 1 or applications|length == per_page %}
+    <nav class="pagination-bar" aria-label="Candidate pages">
+      {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('employer.applications', page=page-1) }}">← Previous</a>{% endif %}
+      <span>Page {{ page }}</span>
+      {% if applications|length == per_page %}<a class="btn btn-sm btn-light" href="{{ url_for('employer.applications', page=page+1) }}">Next →</a>{% endif %}
+    </nav>
+  {% endif %}
+
   <div class="modal fade candidate-profile-modal" id="candidateProfileModal" tabindex="-1" aria-labelledby="candidateProfileModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
