@@ -6,3 +6,13 @@ venv/
 instance/*.db
 instance/.secret_key
 uploads/resumes/*
+# Local database
+database/*.db
+
+# Personal documents
+Gadekar_Samarth_Resume.pdf
+
+# Local project artifacts
+FresherFlow_100_Vacancy_Excel_Template.xlsx
+FresherFlow_50_Vacancy_Upload.xlsx
+FresherFlow_Project_Report.docx
