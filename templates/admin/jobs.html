@@ -44,7 +44,7 @@
       </form>
 
       <div class="section-head admin-section-head">
-        <div><span class="eyebrow">VACANCIES</span><h2>{{ rows|length }} matching jobs</h2><p>Select multiple jobs for a bulk approval action.</p></div>
+        <div><span class="eyebrow">VACANCIES</span><h2>{{ jobs|length }} jobs on this page</h2><p>Select multiple jobs for a bulk approval action.</p></div>
       </div>
 
       <div class="content-card reveal">
@@ -84,6 +84,13 @@
           </div>
         </form>
       </div>
+      {% if page > 1 or jobs|length == per_page %}
+        <nav class="pagination-bar" aria-label="Job pages">
+          {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.jobs', q=q, moderation=moderation, page=page-1) }}">← Previous</a>{% endif %}
+          <span>Page {{ page }}</span>
+          {% if jobs|length == per_page %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.jobs', q=q, moderation=moderation, page=page+1) }}">Next →</a>{% endif %}
+        </nav>
+      {% endif %}
     </section>
   </div>
 {% endblock %}
