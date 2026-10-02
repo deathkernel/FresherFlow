@@ -51,6 +51,13 @@
           </table>
         </div>
       </div>
+      {% if page > 1 or applications|length == per_page %}
+        <nav class="pagination-bar" aria-label="Application pages">
+          {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.applications', q=q, page=page-1) }}">← Previous</a>{% endif %}
+          <span>Page {{ page }}</span>
+          {% if applications|length == per_page %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.applications', q=q, page=page+1) }}">Next →</a>{% endif %}
+        </nav>
+      {% endif %}
     </section>
   </div>
 {% endblock %}
