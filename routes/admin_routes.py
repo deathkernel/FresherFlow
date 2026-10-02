@@ -1,13 +1,25 @@
 import os
 import sqlite3
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, send_from_directory, session, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import get_admin_credentials
 from database.database import get_db
 from routes.decorators import role_required
 from security import valid_website_url
+
+
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -58,12 +70,27 @@ def logout():
 def dashboard():
     db = get_db()
     stats = {
-        "companies": db.execute("SELECT COUNT(*) c FROM employer_profiles").fetchone()["c"],
-        "active_companies": db.execute("SELECT COUNT(*) c FROM employer_profiles WHERE account_status='active'").fetchone()["c"],
-        "jobs": db.execute("SELECT COUNT(*) c FROM vacancies").fetchone()["c"],
-        "live_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE status='active' AND moderation_status='approved'").fetchone()["c"],
-        "pending_jobs": db.execute("SELECT COUNT(*) c FROM vacancies WHERE moderation_status='pending'").fetchone()["c"],
-        "applications": db.execute("SELECT COUNT(*) FROM applications").fetchone()[0],
+        "companies": db.execute(
+            "SELECT COUNT(*) c FROM employer_profiles"
+        ).fetchone()["c"],
+        "active_companies": db.execute(
+            "SELECT COUNT(*) c FROM employer_profiles "
+            "WHERE account_status='active'"
+        ).fetchone()["c"],
+        "jobs": db.execute(
+            "SELECT COUNT(*) c FROM vacancies"
+        ).fetchone()["c"],
+        "live_jobs": db.execute(
+            "SELECT COUNT(*) c FROM vacancies "
+            "WHERE status='active' AND moderation_status='approved'"
+        ).fetchone()["c"],
+        "pending_jobs": db.execute(
+            "SELECT COUNT(*) c FROM vacancies "
+            "WHERE moderation_status='pending'"
+        ).fetchone()["c"],
+        "applications": db.execute(
+            "SELECT COUNT(*) FROM applications"
+        ).fetchone()[0],
     }
     return render_template("admin/dashboard.html", stats=stats)
 
@@ -106,7 +133,13 @@ def jobs():
         "approved": db.execute("SELECT COUNT(*) FROM vacancies WHERE moderation_status='approved'").fetchone()[0],
         "rejected": db.execute("SELECT COUNT(*) FROM vacancies WHERE moderation_status='rejected'").fetchone()[0],
     }
-    return render_template("admin/jobs.html", jobs=rows, counts=counts, q=q, moderation=moderation)
+    return render_template(
+        "admin/jobs.html",
+        jobs=rows,
+        counts=counts,
+        q=q,
+        moderation=moderation,
+    )
 
 
 @admin_bp.get("/applications")
@@ -139,7 +172,12 @@ def applications():
         args,
     ).fetchall()
     total = db.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
-    return render_template("admin/applications.html", applications=rows, total=total, q=q)
+    return render_template(
+        "admin/applications.html",
+        applications=rows,
+        total=total,
+        q=q,
+    )
 
 
 @admin_bp.get("/companies")
@@ -173,13 +211,20 @@ def companies():
         "active": db.execute("SELECT COUNT(*) FROM employer_profiles WHERE account_status='active'").fetchone()[0],
         "suspended": db.execute("SELECT COUNT(*) FROM employer_profiles WHERE account_status='suspended'").fetchone()[0],
     }
-    return render_template("admin/companies.html", companies=rows, counts=counts, q=q, account=account)
+    return render_template(
+        "admin/companies.html",
+        companies=rows,
+        counts=counts,
+        q=q,
+        account=account,
+    )
 
 
 @admin_bp.get("/companies/add")
 @admin_required
 def add_company_page():
     return render_template("admin/add-employer.html")
+
 
 @admin_bp.get("/students/<int:student_id>")
 @admin_required
