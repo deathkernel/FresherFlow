@@ -15,7 +15,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from database.database import get_db
-from security import valid_resume_upload
+from security import (
+    client_login_key,
+    clear_login_failures,
+    login_is_locked,
+    record_login_failure,
+    valid_resume_upload,
+)
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -54,6 +60,10 @@ def login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         db = get_db()
+        login_key = client_login_key(request, "user", email)
+        if login_is_locked(db, login_key):
+            flash("Too many failed attempts. Please try again in a few minutes.", "error")
+            return render_template("login.html", login_context=login_context)
         user = db.execute(
             "SELECT * FROM users WHERE email=? AND role=?",
             (email, login_context),
@@ -74,6 +84,7 @@ def login():
                         "login.html", login_context=login_context
                     )
 
+            clear_login_failures(db, login_key)
             session.clear()
             session["user_id"] = user["id"]
             session["name"] = user["name"]
@@ -81,6 +92,7 @@ def login():
             session.permanent = True
             return redirect(url_for(login_target(user["role"])))
 
+        record_login_failure(db, login_key)
         flash("Invalid email or password.", "error")
         return render_template("login.html", login_context=login_context)
 
