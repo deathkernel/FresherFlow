@@ -186,7 +186,7 @@ def resume():
     response = send_from_directory(
         current_app.config["UPLOAD_FOLDER"],
         profile["resume_filename"],
-        as_attachment=False,
+        as_attachment=True,
     )
     response.headers["Cache-Control"] = "private, no-store"
     return response
