@@ -307,6 +307,7 @@ def add_company():
             VALUES(?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
             (f"FF-CMP-{cur.lastrowid:06d}", cur.lastrowid, organization, organization_type, website, location, description, "active", "verified"),
         )
+        audit("create_employer", "employer", cur.lastrowid, organization)
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback()
@@ -453,6 +454,12 @@ def bulk_moderate_vacancies():
             SET moderation_status=?, moderation_note=?, moderated_at=CURRENT_TIMESTAMP, status=?
             WHERE id IN ({placeholders})""",
         [decision, note, status, *selected_ids],
+    )
+    audit(
+        "bulk_moderate_vacancies",
+        "vacancy",
+        ",".join(map(str, selected_ids)),
+        decision,
     )
     db.commit()
     flash(f"{len(selected_ids)} job(s) {decision} successfully.", "success")
