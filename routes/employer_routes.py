@@ -502,13 +502,27 @@ def bulk_new_vacancies():
 @role_required("employer")
 def vacancies():
     db = get_db()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 20
+    offset = (page - 1) * per_page
+    uid = session["user_id"]
+    total = db.execute(
+        "SELECT COUNT(*) FROM vacancies WHERE employer_id=?", (uid,)
+    ).fetchone()[0]
     rows = db.execute(
-        "SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC",
-        (session["user_id"],),
+        "SELECT * FROM vacancies WHERE employer_id=? ORDER BY id DESC LIMIT ? OFFSET ?",
+        (uid, per_page, offset),
     ).fetchall()
-    draft_count = sum(1 for row in rows if row["status"] == "draft")
+    draft_count = db.execute(
+        "SELECT COUNT(*) FROM vacancies WHERE employer_id=? AND status='draft'", (uid,)
+    ).fetchone()[0]
     return render_template(
-        "employer/vacancies.html", vacancies=rows, draft_count=draft_count
+        "employer/vacancies.html",
+        vacancies=rows,
+        draft_count=draft_count,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 
@@ -627,7 +641,16 @@ def vacancy_status(vacancy_id):
 @employer_bp.get("/applications")
 @role_required("employer")
 def applications():
-    rows = get_db().execute("""
+    db = get_db()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 20
+    offset = (page - 1) * per_page
+    uid = session["user_id"]
+    total = db.execute(
+        "SELECT COUNT(*) FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
+        (uid,),
+    ).fetchone()[0]
+    rows = db.execute("""
         SELECT a.*, v.title, u.name, u.email,
                sp.phone, sp.education, sp.college, sp.graduation_year,
                sp.skills, sp.certifications, sp.preferred_job_type,
@@ -638,11 +661,15 @@ def applications():
         LEFT JOIN student_profiles sp ON sp.user_id=a.student_id
         WHERE v.employer_id=?
         ORDER BY a.id DESC
-    """, (session["user_id"],)).fetchall()
+        LIMIT ? OFFSET ?
+    """, (uid, per_page, offset)).fetchall()
 
     return render_template(
         "employer/applications.html",
         applications=rows,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 
