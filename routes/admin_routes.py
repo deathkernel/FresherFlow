@@ -20,7 +20,6 @@ from routes.decorators import role_required
 from security import valid_website_url
 
 
-
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
