@@ -11,29 +11,30 @@ from flask import (
     session,
     url_for,
 )
-from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 from database.database import get_db
-from security import valid_resume_upload, valid_website_url
+from security import valid_resume_upload
+
 
 auth_bp = Blueprint("auth", __name__)
 MIN_PASSWORD_LENGTH = 12
 
 
 def allowed_resume(filename):
-    """Backward-compatible extension check for callers/templates."""
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in {
-        "pdf",
-        "doc",
-        "docx",
-    }
+    """Keep the old extension check for code that still uses it."""
+    if "." not in filename:
+        return False
+    return filename.rsplit(".", 1)[1].lower() in {"pdf", "doc", "docx"}
 
 
 def login_target(role):
-    return {"student": "student.dashboard", "employer": "employer.dashboard"}.get(
-        role, "auth.login"
-    )
+    targets = {
+        "student": "student.dashboard",
+        "employer": "employer.dashboard",
+    }
+    return targets.get(role, "auth.login")
 
 
 def render_login():
@@ -57,6 +58,7 @@ def login():
             "SELECT * FROM users WHERE email=? AND role=?",
             (email, login_context),
         ).fetchone()
+
         if user and check_password_hash(user["password_hash"], password):
             if user["role"] == "employer":
                 profile = db.execute(
@@ -68,7 +70,10 @@ def login():
                         "This employer account is currently suspended. Please contact support.",
                         "error",
                     )
-                    return render_template("login.html", login_context=login_context)
+                    return render_template(
+                        "login.html", login_context=login_context
+                    )
+
             session.clear()
             session["user_id"] = user["id"]
             session["name"] = user["name"]
@@ -84,92 +89,98 @@ def login():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        form = request.form
-        name = form.get("name", "").strip()
-        email = form.get("email", "").strip().lower()
-        password = form.get("password", "")
-        confirm_password = form.get("confirm_password", "")
-        role = form.get("role", "student")
-        if role != "student":
-            flash("Employer accounts can only be created by an administrator.", "error")
-            return render_template("register.html", selected_role="student")
-        if (
-            not name
-            or not email
-            or len(password) < MIN_PASSWORD_LENGTH
-            or password != confirm_password
-        ):
-            flash(
-                f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.",
-                "error",
-            )
-            return render_template("register.html", selected_role="student")
-        db = get_db()
-        resume_path = None
-        try:
-            cur = db.execute(
-                "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
-                (name, email, generate_password_hash(password), role),
-            )
-            user_id = cur.lastrowid
-            if role == "student":
-                resume = request.files.get("resume")
-                resume_filename = None
-                if resume and resume.filename:
-                    if not valid_resume_upload(resume):
-                        db.rollback()
-                        flash(
-                            "Resume must be a valid PDF, DOC or DOCX file under 5 MB.",
-                            "error",
-                        )
-                        return render_template("register.html", selected_role="student")
-                    resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
-                    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
-                    upload_dir.mkdir(parents=True, exist_ok=True)
-                    resume_path = upload_dir / resume_filename
-                    resume.save(resume_path)
-                db.execute(
-                    """INSERT INTO student_profiles
-                    (user_id,phone,education,college,graduation_year,skills,certifications,preferred_job_type,preferred_location,resume_filename,profile_strength)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                    (
-                        user_id,
-                        form.get("phone", "").strip(),
-                        form.get("education", "").strip(),
-                        form.get("college", "").strip(),
-                        form.get("graduation_year", "").strip(),
-                        form.get("skills", "").strip(),
-                        form.get("certifications", "").strip(),
-                        form.get("preferred_job_type", "Both"),
-                        form.get("preferred_location", "").strip(),
-                        resume_filename,
-                        100 if resume_filename else 80,
-                    ),
+    if request.method != "POST":
+        return render_template("register.html", selected_role="student")
+
+    form = request.form
+    name = form.get("name", "").strip()
+    email = form.get("email", "").strip().lower()
+    password = form.get("password", "")
+    confirm_password = form.get("confirm_password", "")
+    role = form.get("role", "student")
+
+    if role != "student":
+        flash("Employer accounts can only be created by an administrator.", "error")
+        return render_template("register.html", selected_role="student")
+
+    if (
+        not name
+        or not email
+        or len(password) < MIN_PASSWORD_LENGTH
+        or password != confirm_password
+    ):
+        flash(
+            f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.",
+            "error",
+        )
+        return render_template("register.html", selected_role="student")
+
+    db = get_db()
+    resume_path = None
+
+    try:
+        cur = db.execute(
+            "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
+            (name, email, generate_password_hash(password), role),
+        )
+        user_id = cur.lastrowid
+
+        resume = request.files.get("resume")
+        resume_filename = None
+        if resume and resume.filename:
+            if not valid_resume_upload(resume):
+                db.rollback()
+                flash(
+                    "Resume must be a valid PDF, DOC or DOCX file under 5 MB.",
+                    "error",
                 )
-            db.commit()
-        except sqlite3.IntegrityError:
-            db.rollback()
-            if resume_path:
-                resume_path.unlink(missing_ok=True)
-            flash(
-                "That email is already registered or the submitted data is invalid.",
-                "error",
-            )
-            return render_template(
-                "register.html",
-                selected_role="student",
-            )
-        except OSError:
-            db.rollback()
-            if resume_path:
-                resume_path.unlink(missing_ok=True)
-            current_app.logger.exception("Resume upload failed during registration")
-            flash("The resume could not be saved. Please try again.", "error")
-            return render_template("register.html", selected_role="student")
-        flash("Account created. Please sign in.", "success")
-        return redirect(url_for("auth.login"))
-    return render_template("register.html", selected_role="student")
+                return render_template("register.html", selected_role="student")
+
+            resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
+            upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            resume_path = upload_dir / resume_filename
+            resume.save(resume_path)
+
+        db.execute(
+            """INSERT INTO student_profiles
+            (user_id,phone,education,college,graduation_year,skills,certifications,
+             preferred_job_type,preferred_location,resume_filename,profile_strength)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                user_id,
+                form.get("phone", "").strip(),
+                form.get("education", "").strip(),
+                form.get("college", "").strip(),
+                form.get("graduation_year", "").strip(),
+                form.get("skills", "").strip(),
+                form.get("certifications", "").strip(),
+                form.get("preferred_job_type", "Both"),
+                form.get("preferred_location", "").strip(),
+                resume_filename,
+                100 if resume_filename else 80,
+            ),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        db.rollback()
+        if resume_path:
+            resume_path.unlink(missing_ok=True)
+        flash(
+            "That email is already registered or the submitted data is invalid.",
+            "error",
+        )
+        return render_template("register.html", selected_role="student")
+    except OSError:
+        db.rollback()
+        if resume_path:
+            resume_path.unlink(missing_ok=True)
+        current_app.logger.exception("Resume upload failed during registration")
+        flash("The resume could not be saved. Please try again.", "error")
+        return render_template("register.html", selected_role="student")
+
+    flash("Account created. Please sign in.", "success")
+    return redirect(url_for("auth.login"))
 
 
 @auth_bp.post("/logout")
