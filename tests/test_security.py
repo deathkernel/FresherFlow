@@ -1,4 +1,5 @@
 from io import BytesIO
+from zipfile import ZipFile
 
 from werkzeug.datastructures import FileStorage
 
@@ -23,8 +24,15 @@ def test_accepts_doc_signature():
     )
 
 
-def test_accepts_docx_zip_signature():
-    assert valid_resume_upload(upload("resume.docx", b"PK\x03\x04" + b"x"))
+def test_accepts_real_docx_container():
+    stream = BytesIO()
+    with ZipFile(stream, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "<document/>")
+    assert valid_resume_upload(upload("resume.docx", stream.getvalue()))
+
+def test_rejects_fake_docx_zip_signature():
+    assert not valid_resume_upload(upload("resume.docx", b"PK\x03\x04" + b"x"))
 
 
 def test_rejects_disallowed_extension():
