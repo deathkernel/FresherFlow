@@ -32,11 +32,11 @@
       </article>
     {% else %}<div class="empty-state"><strong>No roles match your search.</strong><span>Try another title, skill, company or opportunity type.</span>{% if q or typ %}<a href="{{ url_for('student.jobs') }}" class="btn btn-light btn-sm">Clear filters</a>{% endif %}</div>{% endfor %}
   </div>
-  {% if page > 1 or jobs|length == per_page %}
+  {% if page > 1 or has_next %}
     <nav class="pagination-bar" aria-label="Opportunity pages">
       {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('student.jobs', q=q, type=typ, location=location, skill=skill, sort=sort, page=page-1) }}">← Previous</a>{% endif %}
       <span>Page {{ page }}</span>
-      {% if jobs|length == per_page %}<a class="btn btn-sm btn-light" href="{{ url_for('student.jobs', q=q, type=typ, location=location, skill=skill, sort=sort, page=page+1) }}">Next →</a>{% endif %}
+      {% if has_next %}<a class="btn btn-sm btn-light" href="{{ url_for('student.jobs', q=q, type=typ, location=location, skill=skill, sort=sort, page=page+1) }}">Next →</a>{% endif %}
     </nav>
   {% endif %}
 {% endblock %}
