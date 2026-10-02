@@ -201,6 +201,9 @@ def jobs():
     location = request.args.get("location", "").strip()
     skill = request.args.get("skill", "").strip()
     sort = request.args.get("sort", "newest").strip()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 24
+    offset = (page - 1) * per_page
     uid = session["user_id"]
     sql = (
         "SELECT v.id,v.title,v.vacancy_type,v.description,v.location,v.salary,v.skills,"
@@ -231,7 +234,15 @@ def jobs():
     elif sort == "title":
         order_by = "LOWER(v.title) ASC, v.id DESC"
 
-    jobs = db.execute(sql + " ORDER BY " + order_by, args).fetchall()
+    total = db.execute(
+        "SELECT COUNT(*) FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+        "WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
+    ).fetchone()[0]
+    jobs = db.execute(
+        sql + " ORDER BY " + order_by + " LIMIT ? OFFSET ?",
+        [*args, per_page, offset],
+    ).fetchall()
     return render_template(
         "student/jobs.html",
         jobs=jobs,
@@ -240,6 +251,9 @@ def jobs():
         location=location,
         skill=skill,
         sort=sort,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 
