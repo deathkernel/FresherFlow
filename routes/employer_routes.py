@@ -61,9 +61,13 @@ def experience_requirement_invalid(vacancy_type, eligibility):
 
 
 def deadline_invalid(deadline):
-    if not deadline: return False
-    try: return date.fromisoformat(deadline) < date.today()
-    except ValueError: return True
+    if not deadline:
+        return False
+
+    try:
+        return date.fromisoformat(deadline) < date.today()
+    except ValueError:
+        return True
 
 
 def vacancy_form(form):
@@ -240,18 +244,48 @@ def vacancies():
     )
 
 
-@employer_bp.route("/vacancies/<int:vacancy_id>/edit",methods=["GET","POST"])
+@employer_bp.route("/vacancies/<int:vacancy_id>/edit", methods=["GET", "POST"])
 @role_required("employer")
 def edit_vacancy(vacancy_id):
-    db=get_db(); job=db.execute("SELECT * FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
-    if not job: return render_template("404.html"),404
-    if request.method=="POST":
-        data,error=vacancy_form(request.form)
-        if error: flash(error,"error"); return render_template("employer/edit-vacancy.html",job=job)
+    db = get_db()
+    job = db.execute(
+        "SELECT * FROM vacancies WHERE id=? AND employer_id=?",
+        (vacancy_id, session["user_id"]),
+    ).fetchone()
+
+    if not job:
+        return render_template("404.html"), 404
+
+    if request.method == "POST":
+        data, error = vacancy_form(request.form)
+        if error:
+            flash(error, "error")
+            return render_template("employer/edit-vacancy.html", job=job)
         try:
-            db.execute("UPDATE vacancies SET title=?,vacancy_type=?,description=?,location=?,salary=?,skills=?,eligibility=?,deadline=?,status='draft',moderation_status='pending',moderation_note=NULL,moderated_at=NULL WHERE id=? AND employer_id=?",(data["title"],data["vacancy_type"],data["description"],data["location"],data["salary"],data["skills"],data["eligibility"],data["deadline"],vacancy_id,session["user_id"])); db.commit()
+            db.execute(
+                "UPDATE vacancies SET title=?, vacancy_type=?, description=?, "
+                "location=?, salary=?, skills=?, eligibility=?, deadline=?, "
+                "status='draft', moderation_status='pending', "
+                "moderation_note=NULL, moderated_at=NULL "
+                "WHERE id=? AND employer_id=?",
+                (
+                    data["title"],
+                    data["vacancy_type"],
+                    data["description"],
+                    data["location"],
+                    data["salary"],
+                    data["skills"],
+                    data["eligibility"],
+                    data["deadline"],
+                    vacancy_id,
+                    session["user_id"],
+                ),
+            )
+            db.commit()
         except sqlite3.IntegrityError:
-            db.rollback(); flash("The vacancy could not be updated.","error"); return render_template("employer/edit-vacancy.html",job=job)
+            db.rollback()
+            flash("The vacancy could not be updated.", "error")
+            return render_template("employer/edit-vacancy.html", job=job)
         flash("Vacancy updated and saved as a draft. Publish it from My Vacancies when ready.","success"); return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html",job=job)
 
@@ -292,19 +326,40 @@ def publish_all_drafts():
 @employer_bp.post("/vacancies/<int:vacancy_id>/status")
 @role_required("employer")
 def vacancy_status(vacancy_id):
-    status=request.form.get("status")
-    if status not in VACANCY_STATUSES: return redirect(url_for("employer.vacancies"))
-    db=get_db(); job=db.execute("SELECT vacancy_type,eligibility,deadline,moderation_status FROM vacancies WHERE id=? AND employer_id=?",(vacancy_id,session["user_id"])).fetchone()
-    if not job: return redirect(url_for("employer.vacancies"))
-    if status=="active" and deadline_invalid(job["deadline"]): flash("The application deadline has passed or is invalid.","error"); return redirect(url_for("employer.vacancies"))
+    status = request.form.get("status")
+    if status not in VACANCY_STATUSES:
+        return redirect(url_for("employer.vacancies"))
+
+    db = get_db()
+    job = db.execute(
+        "SELECT vacancy_type, eligibility, deadline, moderation_status "
+        "FROM vacancies WHERE id=? AND employer_id=?",
+        (vacancy_id, session["user_id"]),
+    ).fetchone()
+
+    if not job:
+        return redirect(url_for("employer.vacancies"))
+
+    if status == "active" and deadline_invalid(job["deadline"]):
+        flash(
+            "The application deadline has passed or is invalid.",
+            "error",
+        )
+        return redirect(url_for("employer.vacancies"))
     moderation_status = "pending" if status == "active" else job["moderation_status"]
-    db.execute("UPDATE vacancies SET status=?, moderation_status=? WHERE id=? AND employer_id=?",(status,moderation_status,vacancy_id,session["user_id"])); db.commit(); return redirect(url_for("employer.vacancies"))
+    db.execute(
+        "UPDATE vacancies SET status=?, moderation_status=? "
+        "WHERE id=? AND employer_id=?",
+        (status, moderation_status, vacancy_id, session["user_id"]),
+    )
+    db.commit()
+    return redirect(url_for("employer.vacancies"))
 
 
 @employer_bp.get("/applications")
 @role_required("employer")
 def applications():
-    rows=get_db().execute("""
+    rows = get_db().execute("""
         SELECT a.*, v.title, u.name, u.email,
                sp.phone, sp.education, sp.college, sp.graduation_year,
                sp.skills, sp.certifications, sp.preferred_job_type,
@@ -315,17 +370,38 @@ def applications():
         LEFT JOIN student_profiles sp ON sp.user_id=a.student_id
         WHERE v.employer_id=?
         ORDER BY a.id DESC
-    """, (session["user_id"],)).fetchall(); return render_template("employer/applications.html",applications=rows)
+    """, (session["user_id"],)).fetchall()
+
+    return render_template(
+        "employer/applications.html",
+        applications=rows,
+    )
 
 
 @employer_bp.post("/applications/<int:application_id>/status")
 @role_required("employer")
 def application_status(application_id):
-    status=request.form.get("status")
-    if status not in APPLICATION_STATUSES: return redirect(url_for("employer.applications"))
-    db=get_db(); row=db.execute("SELECT a.id FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE a.id=? AND v.employer_id=?",(application_id,session["user_id"])).fetchone()
-    if not row: return redirect(url_for("employer.applications"))
-    db.execute("UPDATE applications SET status=? WHERE id=?",(status,application_id)); db.commit(); return redirect(url_for("employer.applications"))
+    status = request.form.get("status")
+    if status not in APPLICATION_STATUSES:
+        return redirect(url_for("employer.applications"))
+
+    db = get_db()
+    row = db.execute(
+        "SELECT a.id FROM applications a "
+        "JOIN vacancies v ON v.id=a.vacancy_id "
+        "WHERE a.id=? AND v.employer_id=?",
+        (application_id, session["user_id"]),
+    ).fetchone()
+
+    if not row:
+        return redirect(url_for("employer.applications"))
+
+    db.execute(
+        "UPDATE applications SET status=? WHERE id=?",
+        (status, application_id),
+    )
+    db.commit()
+    return redirect(url_for("employer.applications"))
 
 @employer_bp.route("/password", methods=["GET", "POST"])
 @role_required("employer")
