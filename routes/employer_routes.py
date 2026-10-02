@@ -71,41 +71,122 @@ def deadline_invalid(deadline):
 
 
 def vacancy_form(form):
-    title = form.get("title", "").strip(); vacancy_type = form.get("vacancy_type", "").strip(); location = form.get("location", "").strip(); description = form.get("description", "").strip(); eligibility = form.get("eligibility", "").strip(); deadline = form.get("deadline") or None
-    if not title or not location or not description: return None, "Title, location and description are required."
-    if vacancy_type not in VACANCY_TYPES: return None, "Choose a valid vacancy type."
-    if experience_requirement_invalid(vacancy_type, eligibility): return None, "Entry-level Jobs cannot require prior work experience. For roles requiring experience, publish an Internship instead."
-    if deadline_invalid(deadline): return None, "Application deadline must be today or a future date."
-    return {"title": title, "vacancy_type": vacancy_type, "description": description, "location": location, "salary": form.get("salary", "").strip(), "skills": form.get("skills", "").strip(), "eligibility": eligibility, "deadline": deadline}, None
+    title = form.get("title", "").strip()
+    vacancy_type = form.get("vacancy_type", "").strip()
+    location = form.get("location", "").strip()
+    description = form.get("description", "").strip()
+    eligibility = form.get("eligibility", "").strip()
+    deadline = form.get("deadline") or None
+
+    if not title or not location or not description:
+        return None, "Title, location and description are required."
+    if vacancy_type not in VACANCY_TYPES:
+        return None, "Choose a valid vacancy type."
+    if experience_requirement_invalid(vacancy_type, eligibility):
+        return (
+            None,
+            "Entry-level Jobs cannot require prior work experience. "
+            "For roles requiring experience, publish an Internship instead.",
+        )
+    if deadline_invalid(deadline):
+        return None, "Application deadline must be today or a future date."
+
+    return {
+        "title": title,
+        "vacancy_type": vacancy_type,
+        "description": description,
+        "location": location,
+        "salary": form.get("salary", "").strip(),
+        "skills": form.get("skills", "").strip(),
+        "eligibility": eligibility,
+        "deadline": deadline,
+    }, None
 
 
-def normalize_excel_header(value): return " ".join(str(value or "").strip().lower().replace("_", " ").split())
+def normalize_excel_header(value):
+    return " ".join(
+        str(value or "").strip().lower().replace("_", " ").split()
+    )
 
 
 def excel_cell_text(value):
-    if value is None: return ""
-    if isinstance(value, datetime): return value.date().isoformat()
-    if isinstance(value, date): return value.isoformat()
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
     return str(value).strip()
 
 
 def bulk_vacancy_forms(form):
-    titles=form.getlist("title"); types=form.getlist("vacancy_type"); locations=form.getlist("location"); descriptions=form.getlist("description"); salaries=form.getlist("salary"); skills=form.getlist("skills"); eligibilities=form.getlist("eligibility"); deadlines=form.getlist("deadline"); count=len(titles)
-    if not count or count != len(types) or count != len(locations) or count != len(descriptions): return None, "Please complete each vacancy card before publishing."
-    vacancies=[]
-    for i in range(count):
-        data={"title":titles[i].strip(),"vacancy_type":types[i].strip(),"location":locations[i].strip(),"description":descriptions[i].strip(),"salary":salaries[i].strip() if i<len(salaries) else "","skills":skills[i].strip() if i<len(skills) else "","eligibility":eligibilities[i].strip() if i<len(eligibilities) else "","deadline":deadlines[i] if i<len(deadlines) else None}
-        if not data["title"] or not data["location"] or not data["description"]: return None, f"Vacancy {i+1}: title, location and description are required."
-        if data["vacancy_type"] not in VACANCY_TYPES: return None, f"Vacancy {i+1}: choose a valid vacancy type."
-        if experience_requirement_invalid(data["vacancy_type"], data["eligibility"]): return None, f"Vacancy {i+1}: Entry-level Jobs cannot require prior work experience."
-        if deadline_invalid(data["deadline"]): return None, f"Vacancy {i+1}: application deadline must be today or a future date."
+    titles = form.getlist("title")
+    types = form.getlist("vacancy_type")
+    locations = form.getlist("location")
+    descriptions = form.getlist("description")
+    salaries = form.getlist("salary")
+    skills = form.getlist("skills")
+    eligibilities = form.getlist("eligibility")
+    deadlines = form.getlist("deadline")
+
+    count = len(titles)
+    if (
+        not count
+        or count != len(types)
+        or count != len(locations)
+        or count != len(descriptions)
+    ):
+        return None, "Please complete each vacancy card before publishing."
+
+    vacancies = []
+    for index in range(count):
+        data = {
+            "title": titles[index].strip(),
+            "vacancy_type": types[index].strip(),
+            "location": locations[index].strip(),
+            "description": descriptions[index].strip(),
+            "salary": salaries[index].strip() if index < len(salaries) else "",
+            "skills": skills[index].strip() if index < len(skills) else "",
+            "eligibility": (
+                eligibilities[index].strip()
+                if index < len(eligibilities)
+                else ""
+            ),
+            "deadline": deadlines[index] if index < len(deadlines) else None,
+        }
+
+        number = index + 1
+        if not data["title"] or not data["location"] or not data["description"]:
+            return (
+                None,
+                f"Vacancy {number}: title, location and description are required.",
+            )
+        if data["vacancy_type"] not in VACANCY_TYPES:
+            return None, f"Vacancy {number}: choose a valid vacancy type."
+        if experience_requirement_invalid(
+            data["vacancy_type"], data["eligibility"]
+        ):
+            return (
+                None,
+                f"Vacancy {number}: Entry-level Jobs cannot require prior work experience.",
+            )
+        if deadline_invalid(data["deadline"]):
+            return (
+                None,
+                f"Vacancy {number}: application deadline must be today "
+                "or a future date.",
+            )
+
         vacancies.append(data)
+
     return vacancies, None
 
 
 def excel_vacancy_forms(file_storage):
-    filename=(file_storage.filename or "").strip().lower()
-    if not filename.endswith(".xlsx"): return None, "Please upload an Excel .xlsx file."
+    filename = (file_storage.filename or "").strip().lower()
+    if not filename.endswith(".xlsx"):
+        return None, "Please upload an Excel .xlsx file."
+
     try:
         workbook = load_workbook(
             filename=io.BytesIO(file_storage.read()),
@@ -113,32 +194,86 @@ def excel_vacancy_forms(file_storage):
             data_only=True,
         )
     except (InvalidFileException, BadZipFile, OSError, ValueError):
-        return None, "The Excel file could not be read. Please upload a valid .xlsx file."
+        return (
+            None,
+            "The Excel file could not be read. Please upload a valid .xlsx file.",
+        )
+
     try:
-        sheet=workbook.active; rows=sheet.iter_rows(values_only=True)
-        try: header_row=next(rows)
-        except StopIteration: return None, "The Excel file is empty."
-        headers={}
-        for index,value in enumerate(header_row):
-            normalized=normalize_excel_header(value)
-            if normalized in EXCEL_HEADERS: headers[EXCEL_HEADERS[normalized]]=index
-        required={"title","vacancy_type","location","description"}; missing=required-set(headers)
-        if missing: return None, "Missing required Excel columns: " + ", ".join(sorted(missing)) + "."
-        vacancies=[]
-        for row_number,row in enumerate(rows,start=2):
-            if not any(value not in (None, "") for value in row): continue
-            data={}
+        sheet = workbook.active
+        rows = sheet.iter_rows(values_only=True)
+
+        try:
+            header_row = next(rows)
+        except StopIteration:
+            return None, "The Excel file is empty."
+
+        headers = {}
+        for index, value in enumerate(header_row):
+            normalized = normalize_excel_header(value)
+            if normalized in EXCEL_HEADERS:
+                headers[EXCEL_HEADERS[normalized]] = index
+
+        required = {"title", "vacancy_type", "location", "description"}
+        missing = required - set(headers)
+        if missing:
+            return (
+                None,
+                "Missing required Excel columns: "
+                + ", ".join(sorted(missing))
+                + ".",
+            )
+
+        vacancies = []
+        for row_number, row in enumerate(rows, start=2):
+            if not any(value not in (None, "") for value in row):
+                continue
+
+            data = {}
             for field in EXCEL_HEADERS.values():
-                index=headers.get(field); data[field]=excel_cell_text(row[index]) if index is not None and index<len(row) else ""
-            data["deadline"]=data["deadline"] or None
-            if not data["title"] or not data["location"] or not data["description"]: return None, f"Excel row {row_number}: title, location and description are required."
-            if data["vacancy_type"] not in VACANCY_TYPES: return None, f"Excel row {row_number}: type must be Internship or Entry-level Job."
-            if experience_requirement_invalid(data["vacancy_type"], data["eligibility"]): return None, f"Excel row {row_number}: Entry-level Jobs cannot require prior work experience."
-            if deadline_invalid(data["deadline"]): return None, f"Excel row {row_number}: application deadline must be today or a future date."
+                index = headers.get(field)
+                if index is not None and index < len(row):
+                    data[field] = excel_cell_text(row[index])
+                else:
+                    data[field] = ""
+
+            data["deadline"] = data["deadline"] or None
+
+            if not data["title"] or not data["location"] or not data["description"]:
+                return (
+                    None,
+                    f"Excel row {row_number}: title, location and description "
+                    "are required.",
+                )
+            if data["vacancy_type"] not in VACANCY_TYPES:
+                return (
+                    None,
+                    f"Excel row {row_number}: type must be Internship "
+                    "or Entry-level Job.",
+                )
+            if experience_requirement_invalid(
+                data["vacancy_type"], data["eligibility"]
+            ):
+                return (
+                    None,
+                    f"Excel row {row_number}: Entry-level Jobs cannot require "
+                    "prior work experience.",
+                )
+            if deadline_invalid(data["deadline"]):
+                return (
+                    None,
+                    f"Excel row {row_number}: application deadline must be "
+                    "today or a future date.",
+                )
+
             vacancies.append(data)
-        if not vacancies: return None, "No vacancy rows were found in the Excel file."
-        return vacancies,None
-    finally: workbook.close()
+
+        if not vacancies:
+            return None, "No vacancy rows were found in the Excel file."
+
+        return vacancies, None
+    finally:
+        workbook.close()
 
 
 @employer_bp.get("/dashboard")
