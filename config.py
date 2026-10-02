@@ -1,43 +1,49 @@
 import os
 import secrets
-from werkzeug.security import generate_password_hash
 from datetime import timedelta
 from pathlib import Path
 
+from werkzeug.security import generate_password_hash
+
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
-INSTANCE_DIR.mkdir(exist_ok=True)
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
 
 DEFAULT_ADMIN_EMAIL = "admin@123"
-DEFAULT_ADMIN_PASSWORD_HASH = generate_password_hash("admin123", method="pbkdf2:sha256:600000")
+DEFAULT_ADMIN_PASSWORD_HASH = generate_password_hash(
+    "admin123", method="pbkdf2:sha256:600000"
+)
+
+INSTANCE_DIR.mkdir(exist_ok=True)
 
 
 def local_secret():
     if SECRET_FILE.exists():
         return SECRET_FILE.read_text(encoding="utf-8").strip()
+
     value = secrets.token_hex(32)
     SECRET_FILE.write_text(value, encoding="utf-8")
     return value
 
 
 def get_admin_credentials():
-    """Return configured admin credentials, with local defaults for development."""
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+
     if email and password_hash:
         return email, password_hash
+
     environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
     if environment == "development":
         return DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD_HASH
+
     return "", ""
 
 
 class Config:
-    """Application configuration with safe production defaults."""
-
     ENVIRONMENT = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
     configured_secret = os.environ.get("SECRET_KEY", "").strip()
+
     if ENVIRONMENT == "production" and not configured_secret:
         raise RuntimeError(
             "SECRET_KEY must be configured when FRESHERFLOW_ENV=production"
@@ -51,7 +57,10 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = (
-        os.environ.get("SESSION_COOKIE_SECURE", "1" if ENVIRONMENT == "production" else "0")
+        os.environ.get(
+            "SESSION_COOKIE_SECURE",
+            "1" if ENVIRONMENT == "production" else "0",
+        )
         == "1"
     )
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
