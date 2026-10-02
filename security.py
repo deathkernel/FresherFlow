@@ -127,7 +127,8 @@ def client_login_key(request, scope, identity):
     """Create a bounded rate-limit key from scope, IP and supplied identity."""
     remote = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
     ip = remote.split(",", 1)[0].strip()
-    return f"{scope}:{ip}:{(identity or "").strip().lower()}"
+    normalized = (identity or "").strip().lower()
+    return f"{scope}:{ip}:{normalized}"
 
 def valid_website_url(value):
     """Return True only for absolute HTTP(S) URLs."""
