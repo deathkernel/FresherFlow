@@ -11,9 +11,11 @@ MAX_RESUME_BYTES = 5 * 1024 * 1024
 
 def csrf_token():
     token = session.get(CSRF_SESSION_KEY)
-    if not token:
-        token = secrets.token_urlsafe(32)
-        session[CSRF_SESSION_KEY] = token
+    if token:
+        return token
+
+    token = secrets.token_urlsafe(32)
+    session[CSRF_SESSION_KEY] = token
     return token
 
 
@@ -24,9 +26,10 @@ def validate_csrf(token):
 
 
 def valid_resume_upload(file_storage):
-    """Validate resume extension, size and common file signatures."""
+    """Check the filename, size and basic file signature of a resume."""
     if not file_storage or not file_storage.filename:
         return False
+
     filename = Path(file_storage.filename).name
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if extension not in ALLOWED_RESUME_EXTENSIONS:
@@ -39,6 +42,7 @@ def valid_resume_upload(file_storage):
     stream.seek(0)
     header = stream.read(8)
     stream.seek(position)
+
     if size <= 0 or size > MAX_RESUME_BYTES:
         return False
 
@@ -51,12 +55,14 @@ def valid_resume_upload(file_storage):
 
 
 def valid_website_url(value):
-    """Allow only absolute HTTP(S) website URLs."""
+    """Return True only for absolute HTTP(S) URLs."""
     value = (value or "").strip()
     if not value:
         return True
+
     try:
         parsed = urlparse(value)
     except ValueError:
         return False
+
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
