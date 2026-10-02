@@ -234,11 +234,6 @@ def jobs():
     elif sort == "title":
         order_by = "LOWER(v.title) ASC, v.id DESC"
 
-    total = db.execute(
-        "SELECT COUNT(*) FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
-        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
-    ).fetchone()[0]
     jobs = db.execute(
         sql + " ORDER BY " + order_by + " LIMIT ? OFFSET ?",
         [*args, per_page, offset],
@@ -253,7 +248,7 @@ def jobs():
         sort=sort,
         page=page,
         per_page=per_page,
-        total=total,
+        has_next=len(jobs) == per_page,
     )
 
 
