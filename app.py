@@ -11,6 +11,10 @@ from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf, valid_website_url
 
 
+def safe_website(value):
+    return value if valid_website_url(value) else ""
+
+
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
@@ -18,7 +22,7 @@ def create_app():
     init_db(app.config["DATABASE"])
     app.teardown_appcontext(close_db)
     app.jinja_env.globals["csrf_token"] = csrf_token
-    app.jinja_env.filters["safe_website"] = lambda value: value if valid_website_url(value) else ""
+    app.jinja_env.filters["safe_website"] = safe_website
 
     @app.before_request
     def protect_forms():
@@ -51,30 +55,47 @@ def create_app():
 
     @app.errorhandler(400)
     def bad_request(error):
-        return render_template(
-            "error.html",
-            status_code=400,
-            title="Bad request",
-            message=getattr(error, "description", "The request could not be processed."),
-        ), 400
+        return (
+            render_template(
+                "error.html",
+                status_code=400,
+                title="Bad request",
+                message=getattr(
+                    error,
+                    "description",
+                    "The request could not be processed.",
+                ),
+            ),
+            400,
+        )
 
     @app.errorhandler(413)
     def request_too_large(_error):
-        return render_template(
-            "error.html",
-            status_code=413,
-            title="Request too large",
-            message="The uploaded file or request is larger than the allowed limit.",
-        ), 413
+        return (
+            render_template(
+                "error.html",
+                status_code=413,
+                title="Request too large",
+                message=(
+                    "The uploaded file or request is larger than the allowed limit."
+                ),
+            ),
+            413,
+        )
 
     @app.errorhandler(500)
     def server_error(_error):
-        return render_template(
-            "error.html",
-            status_code=500,
-            title="Something went wrong",
-            message="FresherFlow could not complete that request. Please try again.",
-        ), 500
+        return (
+            render_template(
+                "error.html",
+                status_code=500,
+                title="Something went wrong",
+                message=(
+                    "FresherFlow could not complete that request. Please try again."
+                ),
+            ),
+            500,
+        )
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
