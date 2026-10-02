@@ -131,6 +131,9 @@ def jobs():
     db = get_db()
     q = request.args.get("q", "").strip()
     moderation = request.args.get("moderation", "").strip().lower()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 20
+    offset = (page - 1) * per_page
 
     clauses = ["1=1"]
     args = []
@@ -153,8 +156,9 @@ def jobs():
            LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
            LEFT JOIN users u ON u.id=v.employer_id
            WHERE """ + " AND ".join(clauses) + """
-           ORDER BY v.id DESC""",
-        args,
+           ORDER BY v.id DESC
+           LIMIT ? OFFSET ?""",
+        [*args, per_page, offset],
     ).fetchall()
 
     counts = {
@@ -169,6 +173,9 @@ def jobs():
         counts=counts,
         q=q,
         moderation=moderation,
+        page=page,
+        per_page=per_page,
+        total_matching=counts["total"],
     )
 
 
@@ -177,6 +184,9 @@ def jobs():
 def applications():
     db = get_db()
     q = request.args.get("q", "").strip()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 20
+    offset = (page - 1) * per_page
     clauses = ["1=1"]
     args = []
     if q:
@@ -198,8 +208,9 @@ def applications():
            JOIN users u ON u.id=a.student_id
            LEFT JOIN student_profiles sp ON sp.user_id=u.id
            WHERE """ + " AND ".join(clauses) + """
-           ORDER BY a.applied_at DESC, a.id DESC""",
-        args,
+           ORDER BY a.applied_at DESC, a.id DESC
+           LIMIT ? OFFSET ?""",
+        [*args, per_page, offset],
     ).fetchall()
     total = db.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
     return render_template(
@@ -207,6 +218,8 @@ def applications():
         applications=rows,
         total=total,
         q=q,
+        page=page,
+        per_page=per_page,
     )
 
 
@@ -216,6 +229,9 @@ def companies():
     db = get_db()
     q = request.args.get("q", "").strip()
     account = request.args.get("account", "").strip().lower()
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 20
+    offset = (page - 1) * per_page
     clauses = ["1=1"]
     args = []
     if q:
@@ -233,8 +249,9 @@ def companies():
            FROM employer_profiles ep
            JOIN users u ON u.id=ep.user_id
            WHERE """ + " AND ".join(clauses) + """
-           ORDER BY ep.id DESC""",
-        args,
+           ORDER BY ep.id DESC
+           LIMIT ? OFFSET ?""",
+        [*args, per_page, offset],
     ).fetchall()
     counts = {
         "total": db.execute("SELECT COUNT(*) FROM employer_profiles").fetchone()[0],
@@ -247,6 +264,8 @@ def companies():
         counts=counts,
         q=q,
         account=account,
+        page=page,
+        per_page=per_page,
     )
 
 
