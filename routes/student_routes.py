@@ -10,8 +10,8 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     send_from_directory,
+    session,
     url_for,
 )
 from werkzeug.utils import secure_filename
@@ -42,18 +42,26 @@ def dashboard():
             "SELECT COUNT(*) c FROM applications WHERE student_id=?", (uid,)
         ).fetchone()["c"],
         "shortlisted": db.execute(
-            "SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Shortlisted'",
+            "SELECT COUNT(*) c FROM applications "
+            "WHERE student_id=? AND status='Shortlisted'",
             (uid,),
         ).fetchone()["c"],
         "selected": db.execute(
-            "SELECT COUNT(*) c FROM applications WHERE student_id=? AND status='Selected'",
+            "SELECT COUNT(*) c FROM applications "
+            "WHERE student_id=? AND status='Selected'",
             (uid,),
         ).fetchone()["c"],
         "saved": db.execute(
             "SELECT COUNT(*) c FROM saved_jobs WHERE student_id=?", (uid,)
         ).fetchone()["c"],
         "available_jobs": db.execute(
-            "SELECT COUNT(*) c FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
+            "SELECT COUNT(*) c FROM vacancies v "
+            "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+            "WHERE v.status='active' "
+            "AND v.moderation_status='approved' "
+            "AND ep.account_status='active' "
+            "AND (v.deadline IS NULL OR "
+            "v.deadline>=date('now','localtime'))"
         ).fetchone()["c"],
     }
     jobs = db.execute(
@@ -87,7 +95,8 @@ def profile():
         ]
         resume = request.files.get("resume")
         existing = db.execute(
-            "SELECT resume_filename FROM student_profiles WHERE user_id=?", (uid,)
+            "SELECT resume_filename FROM student_profiles WHERE user_id=?",
+            (uid,),
         ).fetchone()
         old_resume_filename = existing["resume_filename"] if existing else None
         resume_filename = old_resume_filename
@@ -107,7 +116,9 @@ def profile():
             try:
                 resume.save(new_resume_path)
             except OSError:
-                current_app.logger.exception("Resume upload failed during profile update")
+                current_app.logger.exception(
+                    "Resume upload failed during profile update"
+                )
                 flash("The resume could not be saved. Please try again.", "error")
                 return redirect(url_for("student.profile"))
 
@@ -115,9 +126,10 @@ def profile():
         strength = min(100, 20 + filled * 10 + (10 if resume_filename else 0))
         try:
             db.execute(
-                "UPDATE student_profiles SET phone=?,education=?,college=?,graduation_year=?,"
-                "skills=?,certifications=?,preferred_job_type=?,preferred_location=?,"
-                "resume_filename=?,profile_strength=? WHERE user_id=?",
+                "UPDATE student_profiles SET "
+            "phone=?, education=?, college=?, graduation_year=?, "
+            "skills=?, certifications=?, preferred_job_type=?, preferred_location=?, "
+            "resume_filename=?, profile_strength=? WHERE user_id=?",
                 (*fields, resume_filename, strength, uid),
             )
             db.commit()
