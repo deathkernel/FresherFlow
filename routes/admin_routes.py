@@ -17,7 +17,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from config import get_admin_credentials
 from database.database import get_db
 from routes.decorators import role_required
-from security import valid_website_url
+from security import (
+    client_login_key,
+    clear_login_failures,
+    login_is_locked,
+    record_login_failure,
+    valid_website_url,
+)
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -26,6 +32,24 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 def admin_required(view):
     return role_required("admin")(view)
 
+
+
+def audit(action, target_type=None, target_id=None, details=None):
+    db = get_db()
+    db.execute(
+        """INSERT INTO audit_log
+           (actor_type, actor_id, action, target_type, target_id, details, ip_address)
+           VALUES(?,?,?,?,?,?,?)""",
+        (
+            "admin",
+            str(session.get("user_id", "admin")),
+            action,
+            target_type,
+            str(target_id) if target_id is not None else None,
+            details,
+            request.remote_addr,
+        ),
+    )
 
 def admin_credentials_valid(email, password):
     configured_email, configured_password_hash = get_admin_credentials()
@@ -45,13 +69,20 @@ def login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         login_email = "admin@123" if email == "admin" else email
+        db = get_db()
+        login_key = client_login_key(request, "admin", login_email)
+        if login_is_locked(db, login_key):
+            flash("Too many failed attempts. Please try again in a few minutes.", "error")
+            return render_template("admin/login.html")
         if admin_credentials_valid(login_email, password):
+            clear_login_failures(db, login_key)
             session.clear()
             session["user_id"] = "admin"
             session["name"] = "Administrator"
             session["role"] = "admin"
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
+        record_login_failure(db, login_key)
         flash("Invalid admin credentials.", "error")
     return render_template("admin/login.html")
 
@@ -300,6 +331,7 @@ def delete_company(user_id):
         return redirect(url_for("admin.companies"))
 
     db.execute("DELETE FROM users WHERE id=? AND role='employer'", (user_id,))
+    audit("delete_employer", "employer", user_id, company["organization_name"])
     db.commit()
     flash(f"Employer account for {company['organization_name']} was removed.", "success")
     return redirect(url_for("admin.companies"))
@@ -331,6 +363,7 @@ def company_status(user_id):
         flash("Employer account not found.", "error")
         return redirect(url_for("admin.companies"))
     db.execute("UPDATE employer_profiles SET account_status=? WHERE user_id=?", (status, user_id))
+    audit("change_employer_status", "employer", user_id, status)
     db.commit()
     flash(f"Company account marked {status}.", "success")
     return redirect(url_for("admin.companies"))
@@ -358,6 +391,7 @@ def moderate_vacancy(vacancy_id):
             return redirect(url_for("admin.jobs"))
     status = "active" if decision == "approved" else "closed"
     db.execute("UPDATE vacancies SET moderation_status=?, moderation_note=?, moderated_at=CURRENT_TIMESTAMP, status=? WHERE id=?", (decision, note, status, vacancy_id))
+    audit("moderate_vacancy", "vacancy", vacancy_id, decision)
     db.commit()
     flash(f"Job {decision}.", "success")
     return redirect(url_for("admin.jobs"))
@@ -439,7 +473,7 @@ def student_resume(student_id):
     response = send_from_directory(
         current_app.config["UPLOAD_FOLDER"],
         profile["resume_filename"],
-        as_attachment=False,
+        as_attachment=True,
     )
     response.headers["Cache-Control"] = "private, no-store"
     return response
