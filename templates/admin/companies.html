@@ -71,6 +71,13 @@
           </table>
         </div>
       </div>
+      {% if page > 1 or companies|length == per_page %}
+        <nav class="pagination-bar" aria-label="Company pages">
+          {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.companies', q=q, account=account, page=page-1) }}">← Previous</a>{% endif %}
+          <span>Page {{ page }}</span>
+          {% if companies|length == per_page %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.companies', q=q, account=account, page=page+1) }}">Next →</a>{% endif %}
+        </nav>
+      {% endif %}
     </section>
   </div>
 {% endblock %}
