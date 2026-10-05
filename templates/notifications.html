@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Notifications — FresherFlow{% endblock %}
+{% block body %}
+<div class="simple-page">
+  <div class="simple-page-head"><span class="eyebrow">UPDATES</span><h1>Notifications</h1><p>Application updates, messages and platform activity in one place.</p></div>
+  <div class="notification-list">
+    {% for n in notifications %}
+      <article class="notification-card {% if not n.is_read %}unread{% endif %}">
+        <div class="notification-dot"></div>
+        <div><strong>{{ n.title }}</strong><p>{{ n.body }}</p><small>{{ n.created_at }}</small></div>
+      </article>
+    {% else %}
+      <div class="empty-state"><strong>You're all caught up.</strong><span>No new notifications right now.</span></div>
+    {% endfor %}
+  </div>
+  <a class="btn btn-light" href="{{ url_for('dashboard_redirect') }}">Back to dashboard</a>
+</div>
+{% endblock %}
