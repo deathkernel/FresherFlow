@@ -1,33 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Student Dashboard — FresherFlow{% endblock %}
 {% block body %}
-  <div class="app-shell student-theme">
-    <aside class="sidebar">
-      <div class="brand">Fresher<span>Flow</span></div>
-      <div class="side-label">STUDENT WORKSPACE</div>
-      <nav>
-        <a class="{% if request.endpoint == 'student.dashboard' %}active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a>
-        <div class="side-nav-label">OPPORTUNITIES</div>
-        <a class="{% if request.endpoint == 'student.jobs' or request.endpoint == 'student.job_details' %}active{% endif %}" href="{{ url_for('student.jobs') }}">Find Opportunities</a>
-        <a class="{% if request.endpoint == 'student.applications' %}active{% endif %}" href="{{ url_for('student.applications') }}">My Applications</a>
-        <div class="side-nav-label">ACCOUNT</div>
-        <a class="{% if request.endpoint == 'student.profile' or request.endpoint == 'student.resume' %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
-      </nav>
-      <div class="side-bottom">
-        <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Student / Fresher</small></div></div>
-        <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form>
-      </div>
-    </aside>
-    <section class="workspace">
-      <header class="workspace-head">
-        <div><span class="eyebrow">STUDENT PANEL</span><h1>Good to see you, {{ session.name.split()[0] }}.</h1><p>Keep your profile updated and check new opportunities when you can.</p></div>
-        {% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}<a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>{% endif %}
-      </header>
-      {% block student_content %}{% endblock %}
-    </section>
-  </div>
+<div class="app-shell student-theme">
+  <aside class="sidebar"><div class="brand">Fresher<span>Flow</span></div><div class="side-label">STUDENT WORKSPACE</div>
+    <nav>
+      <a class="{% if request.endpoint == 'student.dashboard' %}active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a>
+      <div class="side-nav-label">OPPORTUNITIES</div>
+      <a class="{% if request.endpoint in ['student.jobs','student.job_details'] %}active{% endif %}" href="{{ url_for('student.jobs') }}">Find Opportunities</a>
+      <a class="{% if request.endpoint == 'student.applications' %}active{% endif %}" href="{{ url_for('student.applications') }}">My Applications</a>
+      <div class="side-nav-label">COMMUNICATION</div>
+      <a href="{{ url_for('platform.notifications') }}">Notifications {% if unread_notifications %}<span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a>
+      <a href="{{ url_for('platform.messages') }}">Messages</a>
+      <div class="side-nav-label">ACCOUNT</div>
+      <a class="{% if request.endpoint in ['student.profile','student.resume'] %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
+    </nav>
+    <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Student / Fresher</small></div></div>
+      <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form>
+    </div>
+  </aside>
+  <section class="workspace"><header class="workspace-head"><div><span class="eyebrow">STUDENT PANEL</span><h1>Good to see you, {{ session.name.split()[0] }}.</h1><p>Keep your profile updated and discover opportunities that match your skills.</p></div>{% if request.endpoint not in ['student.jobs','student.job_details'] %}<a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>{% endif %}</header>{% block student_content %}{% endblock %}</section>
+</div>
 {% endblock %}
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/student.js') }}"></script>
-{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/forms.js') }}"></script><script src="{{ url_for('static', filename='js/student.js') }}"></script>{% endblock %}
