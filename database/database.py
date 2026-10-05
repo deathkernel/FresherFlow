@@ -132,6 +132,7 @@ def init_db(database_path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     db = sqlite3.connect(path)
+    db.row_factory = sqlite3.Row
     try:
         db.execute("PRAGMA foreign_keys = ON")
         schema = Path(__file__).with_name("schema.sql").read_text(
