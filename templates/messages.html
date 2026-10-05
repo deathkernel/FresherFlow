@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Messages — FresherFlow{% endblock %}
+{% block body %}
+<div class="simple-page">
+  <div class="simple-page-head"><span class="eyebrow">COMMUNICATION</span><h1>Messages</h1><p>Keep recruitment conversations inside FresherFlow.</p></div>
+  <div class="message-layout">
+    <aside class="message-list">
+      {% for c in conversations %}
+        <a class="{% if recipient and recipient.id == c.other_id %}active{% endif %}" href="{{ url_for('platform.messages', **{'with': c.other_id}) }}">
+          <strong>{{ c.other_name }}</strong><small>{{ c.last_message or 'Start a conversation' }}</small>
+        </a>
+      {% else %}<div class="empty-cell">No conversations yet.</div>{% endfor %}
+    </aside>
+    <section class="message-thread">
+      {% if recipient %}
+        <div class="message-thread-head"><strong>{{ recipient.name }}</strong><span>{{ recipient.role|title }}</span></div>
+        <div class="message-bubbles">
+          {% for m in thread %}<div class="message-bubble {% if m.sender_id == session.user_id %}mine{% endif %}"><p>{{ m.body }}</p><small>{{ m.created_at }}</small></div>{% endfor %}
+        </div>
+        <form method="post" action="{{ url_for('platform.send_message') }}" class="message-compose">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+          <textarea name="body" class="form-control" rows="3" maxlength="2000" placeholder="Write a message..." required></textarea>
+          <button class="btn btn-primary" type="submit">Send message</button>
+        </form>
+      {% else %}<div class="empty-state"><strong>Select a conversation.</strong><span>Messages with recruiters or candidates will appear here.</span></div>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
