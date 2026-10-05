@@ -79,3 +79,133 @@ label { font-weight: 700; color: #424958; margin-bottom: 7px; }
 @media (max-width: 980px) { .app-shell { grid-template-columns: 210px 1fr; } .workspace { padding: 32px 28px 55px; } .workspace-head { align-items: flex-start; } .process-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: relative; width: 100%; height: auto; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); } .sidebar nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; } .sidebar nav a { flex: 0 0 auto; } .sidebar nav a::before, .side-nav-label, .side-label { display: none; } .side-bottom { display: flex; align-items: center; gap: 12px; margin-top: 12px; } .side-bottom form { margin-left: auto; } .workspace { padding: 26px 16px 45px; } .workspace-head { flex-direction: column; margin-bottom: 22px; } .workspace-head-actions { width: 100%; } .workspace-head-actions .btn { flex: 1; } .section-head { align-items: flex-start; gap: 12px; } .stat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .job-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .form-grid .full { grid-column: auto; } .candidate-actions form { align-items: stretch; flex-direction: column; } .candidate-actions .form-select, .candidate-actions .btn { width: 100%; } .detail-meta { grid-template-columns: 1fr; } }
 @media (max-width: 460px) { .stat-grid { grid-template-columns: 1fr; } .side-bottom .user-chip { min-width: 0; } .side-bottom .user-chip div:last-child { display: none; } .section-head { flex-direction: column; } .section-actions, .form-actions { width: 100%; } .section-actions .btn, .form-actions .btn { width: 100%; } .detail-actions form, .detail-actions .btn { width: 100%; } .process-section { padding: 72px 5vw 25px; } }
+
+/* -------------------------------------------------------------------------- */
+/* FresherFlow interaction + design-system hardening                           */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --ff-brand: var(--brand, #625bf5);
+  --ff-brand-hover: #554ddd;
+  --ff-brand-soft: #efeeff;
+  --ff-focus: rgba(98, 91, 245, .18);
+  --ff-danger: #b42318;
+  --ff-success: #087443;
+  --ff-radius-control: 10px;
+}
+
+.btn {
+  min-height: 42px;
+  border-width: 1px;
+  border-style: solid;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:focus-visible,
+.sidebar nav a:focus-visible,
+.logout:focus-visible,
+.auth-logo:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--ff-focus);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled,
+.btn.disabled,
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-primary {
+  border-color: transparent;
+}
+
+.btn-primary-soft {
+  border: 1px solid #dfddff;
+}
+
+.btn-outline:hover {
+  border-color: #c9ccd8;
+  background: #fafaff;
+}
+
+.btn-ghost:hover {
+  background: #f6f5ff;
+  color: var(--ff-brand-hover);
+}
+
+.btn-danger {
+  background: #fff1f0;
+  border-color: #ffd7d3;
+  color: var(--ff-danger);
+}
+
+.btn-danger:hover {
+  background: #fee8e6;
+  border-color: #f4c1bb;
+}
+
+.btn-success {
+  background: #ecfdf3;
+  border-color: #cceedd;
+  color: var(--ff-success);
+}
+
+.btn-success:hover {
+  background: #e3f9ed;
+  border-color: #b9e5cf;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  opacity: .72;
+  cursor: not-allowed;
+  background: #f5f6f8;
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible,
+textarea:focus-visible {
+  outline: 0;
+}
+
+.sidebar nav a,
+.logout {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar nav a:focus-visible {
+  color: var(--ff-brand-hover);
+  background: #f0efff;
+}
+
+.logout:focus-visible {
+  color: var(--ff-brand-hover);
+  background: #f7f6ff;
+  border-radius: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .sidebar nav a,
+  .logout,
+  .form-control,
+  .form-select {
+    transition: none !important;
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+}
+
