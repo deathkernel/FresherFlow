@@ -176,7 +176,7 @@ def match_score(job_skills):
     return round((len(student_skills & required) / len(required)) * 100)
 
 
-@platform_bp.context_processor
+@platform_bp.app_context_processor
 def platform_context():
     if not session.get("user_id"):
         return {"match_score": match_score}
