@@ -155,11 +155,24 @@ def analytics():
 
 
 @platform_bp.context_processor
+def match_score(job_skills):
+    if not session.get("user_id") or session.get("role") != "student":
+        return None
+    profile = get_db().execute(
+        "SELECT skills FROM student_profiles WHERE user_id=?", (session["user_id"],)
+    ).fetchone()
+    student_skills = {s.strip().lower() for s in (profile["skills"] if profile else "").split(",") if s.strip()}
+    required = {s.strip().lower() for s in (job_skills or "").split(",") if s.strip()}
+    if not required:
+        return None
+    return round((len(student_skills & required) / len(required)) * 100)
+
+@platform_bp.context_processor
 def platform_context():
     if not session.get("user_id"):
-        return {}
+        return {"match_score": match_score}
     row = get_db().execute(
         "SELECT COUNT(*) AS c FROM notifications WHERE user_id=? AND is_read=0",
         (session["user_id"],),
     ).fetchone()
-    return {"unread_notifications": row["c"] if row else 0}
+    return {"unread_notifications": row["c"] if row else 0, "match_score": match_score}
