@@ -1,0 +1,18 @@
+{% extends "employer/base.html" %}
+{% block employer_content %}
+<div class="section-head"><div><span class="eyebrow">HIRING INSIGHTS</span><h2>Recruitment Analytics</h2><p>Understand your candidate funnel at a glance.</p></div></div>
+<div class="stat-grid">
+  <div class="dash-stat"><span>Total applications</span><strong>{{ counts.total or 0 }}</strong><small>All submitted candidates</small></div>
+  <div class="dash-stat"><span>Shortlisted</span><strong>{{ counts.shortlisted or 0 }}</strong><small>Moved forward</small></div>
+  <div class="dash-stat"><span>Interviews / selected</span><strong>{{ counts.selected or 0 }}</strong><small>Successful outcomes</small></div>
+  <div class="dash-stat"><span>Live vacancies</span><strong>{{ jobs.live or 0 }}</strong><small>Currently visible</small></div>
+</div>
+<section class="content-card analytics-funnel">
+  <div class="analytics-stage"><strong>{{ counts.total or 0 }}</strong><span>Applications</span></div>
+  <div class="analytics-arrow">→</div>
+  <div class="analytics-stage"><strong>{{ counts.shortlisted or 0 }}</strong><span>Shortlisted</span></div>
+  <div class="analytics-arrow">→</div>
+  <div class="analytics-stage"><strong>{{ counts.selected or 0 }}</strong><span>Selected</span></div>
+</section>
+<div class="flow-note"><strong>Tip:</strong> Keep vacancy requirements focused and review shortlisted candidates promptly to improve conversion.</div>
+{% endblock %}
