@@ -7,6 +7,7 @@ from database.database import close_db, init_db
 from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
+from routes.platform_routes import platform_bp
 from routes.student_routes import student_bp
 from security import csrf_token, validate_csrf, valid_website_url
 
@@ -33,20 +34,14 @@ def create_app():
     def security_headers(response):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault(
-            "Referrer-Policy", "strict-origin-when-cross-origin"
-        )
-        response.headers.setdefault(
-            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
-        )
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         response.headers.setdefault(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data:; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; script-src 'self' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
         )
         if request.is_secure:
-            response.headers.setdefault(
-                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
-            )
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         return response
 
     @app.errorhandler(404)
@@ -55,52 +50,30 @@ def create_app():
 
     @app.errorhandler(400)
     def bad_request(error):
-        return (
-            render_template(
-                "error.html",
-                status_code=400,
-                title="Bad request",
-                message=getattr(
-                    error,
-                    "description",
-                    "The request could not be processed.",
-                ),
-            ),
-            400,
-        )
+        return render_template(
+            "error.html", status_code=400, title="Bad request",
+            message=getattr(error, "description", "The request could not be processed."),
+        ), 400
 
     @app.errorhandler(413)
     def request_too_large(_error):
-        return (
-            render_template(
-                "error.html",
-                status_code=413,
-                title="Request too large",
-                message=(
-                    "The uploaded file or request is larger than the allowed limit."
-                ),
-            ),
-            413,
-        )
+        return render_template(
+            "error.html", status_code=413, title="Request too large",
+            message="The uploaded file or request is larger than the allowed limit.",
+        ), 413
 
     @app.errorhandler(500)
     def server_error(_error):
-        return (
-            render_template(
-                "error.html",
-                status_code=500,
-                title="Something went wrong",
-                message=(
-                    "FresherFlow could not complete that request. Please try again."
-                ),
-            ),
-            500,
-        )
+        return render_template(
+            "error.html", status_code=500, title="Something went wrong",
+            message="FresherFlow could not complete that request. Please try again.",
+        ), 500
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(platform_bp)
 
     @app.get("/")
     def index():
@@ -121,7 +94,7 @@ def create_app():
     @app.get("/admin")
     def admin_portal():
         if session.get("user_id") and session.get("role") == "admin":
-            return redirect(url_for("admin.dashboard"))
+            return redirect(url_for("admin.login"))
         return redirect(url_for("admin.login"))
 
     @app.get("/student-panel")
@@ -137,11 +110,7 @@ def create_app():
         if not session.get("user_id"):
             return redirect(url_for("auth.login"))
         role = session.get("role")
-        targets = {
-            "student": "student.dashboard",
-            "employer": "employer.dashboard",
-            "admin": "admin.dashboard",
-        }
+        targets = {"student": "student.dashboard", "employer": "employer.dashboard", "admin": "admin.dashboard"}
         return redirect(url_for(targets.get(role, "auth.login")))
 
     return app
