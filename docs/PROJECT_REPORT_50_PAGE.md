@@ -71,3 +71,14 @@ The revised deliverables are:
 
 The revised ER diagram is an explicit database model derived from database/schema.sql and distinguishes declared foreign keys from operational support tables.
 The final rendered report contains exactly 50 pages.
+
+
+## Final reflow revision
+
+The report was reflowed so normal chapter subsections are not forced onto separate pages. For example, Chapter 1 continues 1.1, 1.2, 1.3 and later subsections naturally onto the same page whenever space is available. Manual page breaks are retained only for front matter or dedicated appendix/evidence units.
+
+The final local deliverables are:
+- FresherFlow_DeepFilled_50_Page_Reflowed_Final.docx
+- FresherFlow_DeepFilled_50_Page_Reflowed_Final.pdf
+
+The latest rendered DOCX/PDF contains exactly 50 pages. The report was visually rendered and inspected after the reflow.
