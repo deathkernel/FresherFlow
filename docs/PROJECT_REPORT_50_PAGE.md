@@ -33,3 +33,17 @@ The following diagrams were generated in Figma/FigJam for this report:
 The formatted DOCX report was generated from the supplied college report template and verified by rendering to exactly 50 pages.
 
 The report uses distinct, high-resolution repository-faithful UI screen representations for landing, login, student dashboard, opportunities, job details, student profile, applications, employer vacancy creation, bulk import, employer applications, admin moderation and employer management.
+
+## Visual evidence update
+
+The final report incorporates distinct FresherFlow screenshots supplied for the project documentation, covering landing, student authentication, Student dashboard and applications, Student profile, Employer dashboard and vacancy management, and Admin moderation.
+
+The report uses Figma/FigJam-generated diagrams for the ER model and system architecture:
+- https://www.figma.com/board/UZ4cJZpj3bNqmuvZubvkrs
+- https://www.figma.com/board/5jkboQLsJyj86bEUBOSKbG
+
+The final local artifacts are named:
+- FresherFlow_Professional_Full_50_Page_Report.docx
+- FresherFlow_Professional_Full_50_Page_Report.pdf
+
+The rendered PDF contains exactly 50 pages.
