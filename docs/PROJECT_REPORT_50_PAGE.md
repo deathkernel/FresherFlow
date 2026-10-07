@@ -82,3 +82,20 @@ The final local deliverables are:
 - FresherFlow_DeepFilled_50_Page_Reflowed_Final.pdf
 
 The latest rendered DOCX/PDF contains exactly 50 pages. The report was visually rendered and inspected after the reflow.
+
+## Figma diagram asset revision
+
+The final report uses the Figma/FigJam diagram assets directly for the main design visuals:
+- System Architecture (Figma)
+- Entity Relationship Diagram (Figma-designed, full schema view)
+- Use Case Diagram (Figma)
+- Activity Diagram (Figma)
+- Data Flow Diagram (Figma)
+
+The ER diagram is the full database model and includes users, student_profiles, employer_profiles, vacancies, applications, saved_jobs, notifications, messages, auth_attempts and audit_log with PK/FK/UNIQUE notation.
+
+Final local artifacts:
+- FresherFlow_Figma_Diagrams_50_Page_Report.docx
+- figma_diagrams_render/FresherFlow_Figma_Diagrams_50_Page_Report.pdf
+
+The rendered report contains exactly 50 pages.
