@@ -99,3 +99,37 @@ Final local artifacts:
 - figma_diagrams_render/FresherFlow_Figma_Diagrams_50_Page_Report.pdf
 
 The rendered report contains exactly 50 pages.
+## Exact-index final revision
+
+The final report is based on the uploaded Project Report(4).docx as the first-five-page reference. The first five pages retain that template layout, while the project title and subject-specific wording are filled for FresherFlow.
+
+The Index on page 5 now follows the uploaded reference exactly in chapter and subsection order:
+1 Introduction
+1.1 Motivation
+1.2 Problem Statement
+1.3 Purpose/Objective and goals
+1.4 Literature survey
+1.5 Project scope and limitations
+2 System analysis
+2.1 Existing Systems
+2.2 Scope and limitations of existing systems
+2.3 Project perspective, features
+2.4 Stakeholders
+2.5 Requirement analysis – Functional requirements, performance requirements, security requirements etc.
+3 Implementation details-software/hardware specifications
+4 System Design
+4.1 Design constraints –Normalized Database Design and Data Dictionary
+4.2 Data Model – FDD Diagram
+4.3 User Interfaces
+4.3.1 Menus
+4.3.2 Input Screens using sample data
+4.3.3 Output Screens
+4.4.4 Reports, Graphs using sample data
+5 Testing Test Plan-Black Box Testing or Data Validation Test Cases, White Box Testing or Functional Validation Test cases and results
+6 Conclusion and Recommendations
+7 Future Scope
+8 Bibliography and References
+
+Normal subsection flow is retained: 1.1 and 1.2 are on the same content page when space permits, with manual breaks reserved for major pages/figures.
+
+The final rendered deliverable contains exactly 50 pages.
