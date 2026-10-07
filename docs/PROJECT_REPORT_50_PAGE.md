@@ -49,3 +49,13 @@ The final local artifacts are named:
 The report uses the actual FresherFlow screenshots supplied for the project documentation, including landing, login, Student dashboard, applications, profile, Employer dashboard/vacancies/organization, bulk publishing, Admin overview and moderation screens.
 
 The rendered DOCX/PDF contains exactly 50 pages.
+
+## Reference-format revision
+
+The report was regenerated using the supplied SalonReport.pdf as the formatting reference. The revised layout follows its page-border, Times New Roman, chapter-heading, contents/list-of-figures/list-of-tables, coding, snapshot, evaluation, conclusion and references structure, while replacing the subject matter with FresherFlow project content.
+
+The revised local deliverables are:
+- FresherFlow_SalonReference_50_Page_Report.docx
+- FresherFlow_SalonReference_50_Page_Report.pdf
+
+The rendered deliverable contains exactly 50 pages and uses distinct FresherFlow screenshots plus Figma/FigJam-generated ER and architecture diagrams.
