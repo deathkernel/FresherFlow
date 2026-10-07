@@ -46,4 +46,6 @@ The final local artifacts are named:
 - FresherFlow_Professional_Full_50_Page_Report.docx
 - FresherFlow_Professional_Full_50_Page_Report.pdf
 
-The rendered PDF contains exactly 50 pages.
+The report uses the actual FresherFlow screenshots supplied for the project documentation, including landing, login, Student dashboard, applications, profile, Employer dashboard/vacancies/organization, bulk publishing, Admin overview and moderation screens.
+
+The rendered DOCX/PDF contains exactly 50 pages.
