@@ -13,6 +13,7 @@
       <a href="{{ url_for('platform.messages') }}">Messages</a>
       <div class="side-nav-label">ACCOUNT</div>
       <a class="{% if request.endpoint in ['student.profile','student.resume'] %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
+      <a class="{% if request.endpoint == 'settings.preferences' %}active{% endif %}" href="{{ url_for('settings.preferences') }}">Settings</a>
     </nav>
     <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Student / Fresher</small></div></div>
       <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form>
