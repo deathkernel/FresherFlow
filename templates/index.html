@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}FresherFlow — Launch your career{% endblock %}
+{% block meta_description %}Discover internships and entry-level jobs for freshers, build your career profile and track applications in one place with FresherFlow.{% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
@@ -12,6 +13,7 @@
 <nav class="topbar landing-nav">
   <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">Fresher<span>Flow</span></a>
   <div class="nav-actions">
+    <a href="{{ url_for('seo.public_jobs') }}" class="btn btn-ghost">Browse jobs</a>
     <a href="#features" class="btn btn-ghost">Features</a>
     <a href="#how-it-works" class="btn btn-ghost">How it works</a>
     <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a>

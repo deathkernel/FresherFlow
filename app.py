@@ -11,6 +11,7 @@ from routes.employer_routes import employer_bp
 from routes.platform_routes import platform_bp
 from routes.student_routes import student_bp
 from routes.settings_routes import settings_bp
+from routes.seo_routes import seo_bp
 from security import csrf_token, validate_csrf, valid_website_url
 
 
@@ -106,6 +107,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(platform_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(seo_bp)
 
     @app.get("/")
     def index():
