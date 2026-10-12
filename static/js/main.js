@@ -16,14 +16,25 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     });
 
-  document.querySelectorAll(".toast-card").forEach((toast, index) => {
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(-8px)";
-      toast.style.transition = ".3s";
-
-      setTimeout(() => toast.remove(), 300);
-    }, 3200 + index * 250);
+  document.querySelectorAll(".toast-card").forEach((toast) => {
+    let timeoutId;
+    const dismiss = () => {
+      window.clearTimeout(timeoutId);
+      toast.classList.add("is-dismissing");
+      window.setTimeout(() => toast.remove(), 250);
+    };
+    const scheduleDismiss = () => {
+      window.clearTimeout(timeoutId);
+      if (!toast.matches(".error, .danger")) {
+        timeoutId = window.setTimeout(dismiss, 7000);
+      }
+    };
+    toast.querySelector(".toast-dismiss")?.addEventListener("click", dismiss);
+    toast.addEventListener("mouseenter", () => window.clearTimeout(timeoutId));
+    toast.addEventListener("mouseleave", scheduleDismiss);
+    toast.addEventListener("focusin", () => window.clearTimeout(timeoutId));
+    toast.addEventListener("focusout", scheduleDismiss);
+    scheduleDismiss();
   });
 
   document.querySelectorAll("[data-step-form]").forEach((form) => {
@@ -47,10 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
       indicators.forEach((item, i) => {
         item.classList.toggle("active", i === current);
         item.classList.toggle("complete", i < current);
-        item.setAttribute(
-          "aria-current",
-          i === current ? "step" : "false"
-        );
+        if (i === current) {
+          item.setAttribute("aria-current", "step");
+        } else {
+          item.removeAttribute("aria-current");
+        }
       });
 
       backButtons.forEach((button) => {
