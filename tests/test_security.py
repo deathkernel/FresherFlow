@@ -1,5 +1,5 @@
 from io import BytesIO
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from werkzeug.datastructures import FileStorage
 
@@ -90,7 +90,7 @@ def test_rejects_docx_with_windows_style_traversal_entry():
 def test_rejects_docx_with_excessive_total_uncompressed_size():
     stream = BytesIO()
     payload = b"x" * (4 * 1024 * 1024)
-    with ZipFile(stream, "w") as archive:
+    with ZipFile(stream, "w", compression=ZIP_DEFLATED) as archive:
         archive.writestr("[Content_Types].xml", "<Types/>")
         archive.writestr("word/document.xml", "<document/>")
         for index in range(7):

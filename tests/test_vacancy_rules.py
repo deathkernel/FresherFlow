@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from io import BytesIO
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from routes.employer_routes import deadline_invalid, vacancy_form
 from routes.student_routes import deadline_passed
@@ -58,7 +58,7 @@ def test_excel_import_rejects_zip_bomb_before_workbook_parsing():
 
     stream = BytesIO()
     payload = b"x" * (4 * 1024 * 1024)
-    with ZipFile(stream, "w") as archive:
+    with ZipFile(stream, "w", compression=ZIP_DEFLATED) as archive:
         for index in range(7):
             archive.writestr(f"xl/sharedStrings{index}.xml", payload)
     compressed = stream.getvalue()
