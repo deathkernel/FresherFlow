@@ -1,3 +1,4 @@
+import secrets
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -14,6 +15,7 @@ from flask import (
     session,
     url_for,
 )
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from database.database import get_db
@@ -352,3 +354,40 @@ def applications():
         (uid,),
     ).fetchall()
     return render_template("student/applications.html", applications=rows)
+
+
+@student_bp.route("/change-password", methods=["GET", "POST"])
+@role_required("student")
+def change_password():
+    db = get_db()
+    user_id = session["user_id"]
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        user = db.execute(
+            "SELECT password_hash FROM users WHERE id=? AND role='student'",
+            (user_id,),
+        ).fetchone()
+        if not user or not check_password_hash(user["password_hash"], current_password):
+            flash("Current password is incorrect.", "error")
+            return render_template("student/change-password.html")
+        if len(new_password) < 12:
+            flash("New password must be at least 12 characters.", "error")
+            return render_template("student/change-password.html")
+        if new_password != confirm_password:
+            flash("New password and confirmation do not match.", "error")
+            return render_template("student/change-password.html")
+        if new_password == current_password:
+            flash("Choose a new password different from the current password.", "error")
+            return render_template("student/change-password.html")
+        new_auth_version = secrets.token_urlsafe(32)
+        db.execute(
+            "UPDATE users SET password_hash=?, auth_version=? WHERE id=? AND role='student'",
+            (generate_password_hash(new_password), new_auth_version, user_id),
+        )
+        db.commit()
+        session["auth_version"] = new_auth_version
+        flash("Password changed successfully.", "success")
+        return redirect(url_for("settings.preferences"))
+    return render_template("student/change-password.html")
