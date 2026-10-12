@@ -1,0 +1,35 @@
+name: CodeQL security analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql:
+    name: Analyze Python
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-extended
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
