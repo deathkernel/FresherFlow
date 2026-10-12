@@ -44,3 +44,25 @@ def test_admin_credentials_are_disabled_outside_development(monkeypatch):
 
     import config
     assert config.get_admin_credentials() == ("", "")
+
+
+
+def test_production_rejects_short_secret_key():
+    import os
+    import subprocess
+    import sys
+
+    environment = os.environ.copy()
+    environment["FRESHERFLOW_ENV"] = "production"
+    environment["SECRET_KEY"] = "too-short"
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run(
+        [sys.executable, "-c", "import config"],
+        env=environment,
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+    )
+    assert result.returncode != 0
+    assert "at least 32 characters" in result.stderr

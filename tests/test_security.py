@@ -75,3 +75,25 @@ def test_rejects_docx_with_oversized_uncompressed_member():
 
 def test_rejects_empty_resume():
     assert not valid_resume_upload(upload("resume.pdf", b""))
+
+
+
+def test_rejects_docx_with_windows_style_traversal_entry():
+    stream = BytesIO()
+    with ZipFile(stream, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "<document/>")
+        archive.writestr(r"word\\..\\..\\outside.txt", "not allowed")
+    assert not valid_resume_upload(upload("resume.docx", stream.getvalue()))
+
+
+def test_rejects_docx_with_excessive_total_uncompressed_size():
+    stream = BytesIO()
+    payload = b"x" * (4 * 1024 * 1024)
+    with ZipFile(stream, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "<document/>")
+        for index in range(7):
+            archive.writestr(f"word/media/image{index}.bin", payload)
+    assert len(stream.getvalue()) < 5 * 1024 * 1024
+    assert not valid_resume_upload(upload("resume.docx", stream.getvalue()))

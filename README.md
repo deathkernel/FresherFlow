@@ -71,11 +71,13 @@ Set:
 
 ```text
 FRESHERFLOW_ENV=production
-SECRET_KEY=<long-random-secret>
+SECRET_KEY=<random-secret-at-least-32-characters>
 ADMIN_EMAIL=<admin-email>
 ADMIN_PASSWORD_HASH=<Werkzeug-password-hash>
 SESSION_COOKIE_SECURE=1
 ```
+
+Production requires a `SECRET_KEY` of at least 32 characters. Secure session cookies are enforced in production even if `SESSION_COOKIE_SECURE=0` is supplied. Do not enable Flask debug mode in production.
 
 Never commit administrator credentials or password hashes. Rotate the admin password hash and `SECRET_KEY` if exposure is suspected.
 
@@ -98,7 +100,10 @@ FresherFlow currently includes:
 - login throttling after repeated failures
 - per-user authentication versions that revoke other sessions after password changes
 - no built-in/default administrator credentials
-- resume size, extension and file-signature validation
+- resume size, extension, file-signature and bounded DOCX archive validation
+- Excel archive expansion limits and a maximum of 100 vacancies per bulk import
+- bounded bulk moderation batches and periodic stale login-attempt cleanup
+- `Cache-Control: no-store` on dynamic responses
 - DOCX container validation without extracting uploaded archives
 - sanitized server-side resume filenames
 - private resume downloads

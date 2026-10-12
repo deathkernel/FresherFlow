@@ -3,7 +3,7 @@ import re
 import secrets
 import sqlite3
 from datetime import date, datetime
-from zipfile import BadZipFile
+from zipfile import BadZipFile, LargeZipFile, ZipFile
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from openpyxl import load_workbook
@@ -23,6 +23,10 @@ EXCEL_HEADERS = {
     "stipend": "salary", "deadline": "deadline", "skills": "skills", "eligibility": "eligibility",
     "description": "description", "role description": "description",
 }
+MAX_BULK_VACANCIES = 100
+MAX_EXCEL_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
+MAX_EXCEL_MEMBER_BYTES = 10 * 1024 * 1024
+MAX_EXCEL_ARCHIVE_ENTRIES = 1000
 
 
 def experience_requirement_invalid(vacancy_type, eligibility):
@@ -131,6 +135,8 @@ def bulk_vacancy_forms(form):
     deadlines = form.getlist("deadline")
 
     count = len(titles)
+    if count > MAX_BULK_VACANCIES:
+        return None, f"Import at most {MAX_BULK_VACANCIES} vacancies per batch."
     if (
         not count
         or count != len(types)
@@ -188,13 +194,27 @@ def excel_vacancy_forms(file_storage):
     if not filename.endswith(".xlsx"):
         return None, "Please upload an Excel .xlsx file."
 
+    raw_file = file_storage.read()
     try:
+        # XLSX is a ZIP container. Check expanded sizes before XML parsing so a
+        # small compressed upload cannot expand into an unbounded workbook.
+        with ZipFile(io.BytesIO(raw_file)) as archive:
+            infos = archive.infolist()
+            if (
+                len(infos) > MAX_EXCEL_ARCHIVE_ENTRIES
+                or any(info.file_size > MAX_EXCEL_MEMBER_BYTES for info in infos)
+                or sum(info.file_size for info in infos) > MAX_EXCEL_UNCOMPRESSED_BYTES
+            ):
+                return (
+                    None,
+                    "The Excel file expands beyond the allowed safety limits.",
+                )
         workbook = load_workbook(
-            filename=io.BytesIO(file_storage.read()),
+            filename=io.BytesIO(raw_file),
             read_only=True,
             data_only=True,
         )
-    except (InvalidFileException, BadZipFile, OSError, ValueError):
+    except (InvalidFileException, BadZipFile, LargeZipFile, OSError, ValueError, EOFError):
         return (
             None,
             "The Excel file could not be read. Please upload a valid .xlsx file.",
@@ -267,6 +287,11 @@ def excel_vacancy_forms(file_storage):
                     "today or a future date.",
                 )
 
+            if len(vacancies) >= MAX_BULK_VACANCIES:
+                return (
+                    None,
+                    f"Import at most {MAX_BULK_VACANCIES} vacancies per batch.",
+                )
             vacancies.append(data)
 
         if not vacancies:

@@ -3,6 +3,10 @@
 {% block body %}
 <div class="simple-page">
   <div class="simple-page-head"><span class="eyebrow">UPDATES</span><h1>Notifications</h1><p>Application updates, messages and platform activity in one place.</p></div>
+  <form method="post" action="{{ url_for('platform.notifications_read_all') }}" class="mb-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-light" type="submit">Mark all as read</button>
+  </form>
   <div class="notification-list">
     {% for n in notifications %}
       <article class="notification-card {% if not n.is_read %}unread{% endif %}">

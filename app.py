@@ -20,6 +20,9 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
     if app.config.get("ENVIRONMENT") == "production":
+        # Enforce the production cookie invariant even if a caller overrides Config.
+        app.config["SESSION_COOKIE_SECURE"] = True
+    if app.config.get("ENVIRONMENT") == "production":
         admin_email, admin_password_hash = get_admin_credentials()
         if not admin_email or not admin_password_hash:
             raise RuntimeError(
@@ -38,6 +41,9 @@ def create_app():
 
     @app.after_request
     def security_headers(response):
+        # Avoid replaying dynamic pages, including authenticated pages, from caches.
+        if request.endpoint != "static":
+            response.headers.setdefault("Cache-Control", "no-store")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -127,7 +133,10 @@ app = create_app()
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 5000))
-    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    debug = (
+        app.config.get("ENVIRONMENT") != "production"
+        and os.environ.get("FLASK_DEBUG", "0") == "1"
+    )
     print("\n" + "=" * 58)
     print("                 FRESHERFLOW")
     print("              College Job Portal")
