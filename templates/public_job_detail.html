@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} at {{ job.organization_name }} | FresherFlow{% endblock %}
+{% block meta_description %}{{ (job.description or '')|striptags|replace('\n',' ')|truncate(155,true,'…') }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block body %}
+<script type="application/ld+json">{{ job_schema|tojson }}</script>
+<main id="main-content" class="container py-5" tabindex="-1"><nav aria-label="Breadcrumb" class="mb-3"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('seo.public_jobs') }}">Jobs</a> / {{ job.title }}</nav>
+<article class="card shadow-sm"><div class="card-body p-4 p-lg-5"><p class="text-uppercase text-primary fw-semibold">{{ job.vacancy_type }} · {{ job.location }}</p><h1>{{ job.title }}</h1><h2 class="h4">{{ job.organization_name }}</h2>{% if job.employer_location %}<p class="text-secondary">{{ job.employer_location }}</p>{% endif %}<p class="fs-5">{{ job.salary or 'Compensation not specified' }}</p>{% if job.deadline %}<p><strong>Application deadline:</strong> {{ job.deadline }}</p>{% endif %}<hr><h2 class="h4">Job description</h2><p class="text-break">{{ job.description }}</p>{% if job.skills %}<h2 class="h4 mt-4">Skills</h2><p>{{ job.skills }}</p>{% endif %}{% if job.eligibility %}<h2 class="h4 mt-4">Eligibility</h2><p>{{ job.eligibility }}</p>{% endif %}<div class="d-flex gap-2 flex-wrap mt-4"><a class="btn btn-primary" href="{{ url_for('auth.login',role='student') }}">Sign in to apply</a><a class="btn btn-outline-secondary" href="{{ url_for('auth.register',role='student') }}">Create student account</a></div><p class="mt-4 mb-0"><a href="{{ url_for('platform.company',employer_id=job.employer_id) }}">View company profile</a> · <a href="{{ url_for('seo.public_jobs') }}">Browse more jobs</a></p></div></article></main>
+{% endblock %}

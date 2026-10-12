@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ company.organization_name }} — FresherFlow{% endblock %}
+{% block meta_description %}Explore {{ company.organization_name }} on FresherFlow and browse its current approved internships and entry-level opportunities.{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-features.css') }}">{% endblock %}
 {% block body %}
 <div class="simple-page" id="main-content" tabindex="-1"><div class="company-hero"><div class="company-avatar">{{ company.organization_name[:1]|upper }}</div><div><span class="eyebrow">COMPANY PROFILE</span><h1>{{ company.organization_name }}</h1><p>{{ company.organization_type or 'Recruiting organization' }} · {{ company.location or 'Location not specified' }}</p>{% if company.website %}<a href="{{ company.website|safe_website }}" target="_blank" rel="noopener">Visit company website →</a>{% endif %}{% if session.get('role') == 'student' %}<a class="btn btn-light btn-sm ms-2" href="{{ url_for('platform.messages', **{'with': company.user_id}) }}">Message recruiter</a>{% endif %}</div></div>

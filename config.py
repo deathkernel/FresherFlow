@@ -46,6 +46,7 @@ class Config:
 
     SECRET_KEY = configured_secret or local_secret()
     DATABASE = str(INSTANCE_DIR / "fresherflow.db")
+    SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "").strip().rstrip("/")
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
