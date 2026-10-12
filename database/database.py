@@ -196,6 +196,21 @@ def apply_migrations(db):
         db.execute("INSERT INTO schema_migrations(version) VALUES(4)")
 
 
+
+    if 5 not in applied:
+        # Cover the public job feeds and the most common dashboard sort/filter paths.
+        db.executescript("""
+        CREATE INDEX IF NOT EXISTS idx_vacancies_public_listing
+            ON vacancies(status, moderation_status, deadline, id DESC);
+        CREATE INDEX IF NOT EXISTS idx_vacancies_public_created
+            ON vacancies(status, moderation_status, created_at DESC, id DESC);
+        CREATE INDEX IF NOT EXISTS idx_applications_student_applied
+            ON applications(student_id, applied_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_applications_vacancy_status
+            ON applications(vacancy_id, status);
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(5)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
