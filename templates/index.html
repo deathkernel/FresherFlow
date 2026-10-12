@@ -3,7 +3,7 @@
 {% block meta_description %}Discover internships and entry-level jobs for freshers, build your career profile and track applications in one place with FresherFlow.{% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
@@ -34,7 +34,7 @@
     <div class="hero-copy reveal">
       <div class="eyebrow"><span class="eyebrow-dot"></span> BUILT FOR FRESHERS & EARLY CAREERS</div>
       <div class="hero-signal">
-        <span class="signal-live">● Platform ready</span>
+        <span class="signal-live">● Platform preview</span>
         <span class="signal-copy">Student-first • employer-ready • admin-controlled</span>
       </div>
       <h1>Launch your career from <span>one place.</span></h1>
@@ -63,7 +63,7 @@
       <div class="hero-orbit orbit-a"></div>
       <div class="hero-orbit orbit-b"></div>
       <div class="floating-badge badge-top"><span class="badge-icon">✓</span><div><b>Profile ready</b><small>Strong candidate profile</small></div></div>
-      <div class="floating-badge badge-bottom"><span class="badge-icon purple">↗</span><div><b>Application tracked</b><small>Shortlisted • 2 min ago</small></div></div>
+      <div class="floating-badge badge-bottom"><span class="badge-icon purple">↗</span><div><b>Application tracking</b><small>Follow status updates</small></div></div>
 
       <div class="hero-chip chip-student">Student workspace</div>
       <div class="hero-chip chip-employer">Employer workspace</div>
@@ -86,9 +86,9 @@
             </div>
 
             <div class="mini-stats home-mini-stats">
-              <div><small>Open opportunities</small><strong>24</strong><span class="stat-caption">roles to explore</span></div>
-              <div><small>Applications</small><strong>08</strong><span class="stat-caption">in progress</span></div>
-              <div><small>Profile strength</small><strong>86%</strong><span class="stat-caption">looking good</span></div>
+              <div><small>Open opportunities</small><strong>Explore</strong><span class="stat-caption">browse available roles</span></div>
+              <div><small>Applications</small><strong>Track</strong><span class="stat-caption">follow your progress</span></div>
+              <div><small>Profile strength</small><strong>Build</strong><span class="stat-caption">complete your profile</span></div>
             </div>
 
             <div class="mini-panel">
