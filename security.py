@@ -160,4 +160,16 @@ def valid_website_url(value):
     except ValueError:
         return False
 
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+
+    # Reject credential-bearing URLs (which can disguise the actual destination)
+    # and malformed ports such as https://example.com:bad.
+    if parsed.username is not None or parsed.password is not None:
+        return False
+    try:
+        parsed.port
+    except ValueError:
+        return False
+
+    return True
