@@ -55,7 +55,7 @@ def valid_resume_upload(file_storage):
         return header.startswith(b"%PDF-")
     if extension == "doc":
         return header == bytes.fromhex("D0CF11E0A1B11AE1")
-    if not header.startswith(b"PK\\x03\\x04"):
+    if not header.startswith(bytes((0x50, 0x4B, 0x03, 0x04))):
         return False
 
     stream.seek(0)
