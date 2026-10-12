@@ -17,6 +17,10 @@
         <div class="message-bubbles">
           {% for m in thread %}<div class="message-bubble {% if m.sender_id == session.user_id %}mine{% endif %}"><p>{{ m.body }}</p><small>{{ m.created_at }}</small></div>{% endfor %}
         </div>
+        <form method="post" action="{{ url_for('platform.mark_messages_read') }}" class="mb-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+          <button class="btn btn-light" type="submit">Mark conversation as read</button>
+        </form>
         <form method="post" action="{{ url_for('platform.send_message') }}" class="message-compose">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="recipient_id" value="{{ recipient.id }}">
           <textarea name="body" class="form-control" rows="3" maxlength="2000" placeholder="Write a message..." required></textarea>

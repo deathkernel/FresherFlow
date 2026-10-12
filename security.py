@@ -1,6 +1,6 @@
 import secrets
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
 
@@ -10,6 +10,8 @@ from flask import abort, session
 CSRF_SESSION_KEY = "csrf_token"
 ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
 MAX_RESUME_BYTES = 5 * 1024 * 1024
+MAX_RESUME_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
+MAX_RESUME_ARCHIVE_ENTRIES = 1000
 LOGIN_MAX_FAILURES = 5
 LOGIN_LOCK_SECONDS = 300
 LOGIN_WINDOW_SECONDS = 900
@@ -61,16 +63,22 @@ def valid_resume_upload(file_storage):
     stream.seek(0)
     try:
         with ZipFile(stream) as archive:
-            names = archive.namelist()
-            if not names or any(
-                name.startswith(("/", "\\")) or ".." in Path(name).parts
-                for name in names
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            if (
+                not names
+                or len(infos) > MAX_RESUME_ARCHIVE_ENTRIES
+                or sum(info.file_size for info in infos) > MAX_RESUME_UNCOMPRESSED_BYTES
+                or any(info.file_size > MAX_RESUME_BYTES for info in infos)
             ):
                 return False
+            for name in names:
+                normalized = name.replace("\\", "/")
+                parts = PurePosixPath(normalized).parts
+                if normalized.startswith("/") or any(part == ".." for part in parts):
+                    return False
             required = {"[Content_Types].xml", "word/document.xml"}
             if not required.issubset(names):
-                return False
-            if any(info.file_size > MAX_RESUME_BYTES for info in archive.infolist()):
                 return False
     except (BadZipFile, OSError, ValueError):
         return False
@@ -100,6 +108,11 @@ def login_is_locked(db, key):
 
 def record_login_failure(db, key):
     now = int(time.time())
+    # Bound auth_attempts growth when attackers rotate email/IP combinations.
+    db.execute(
+        "DELETE FROM auth_attempts WHERE updated_at < ?",
+        (now - LOGIN_WINDOW_SECONDS,),
+    )
     row = db.execute(
         "SELECT failed_count, updated_at FROM auth_attempts WHERE attempt_key=?",
         (key,),

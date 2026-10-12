@@ -216,3 +216,80 @@ def test_expired_job_is_not_reachable_from_student_details(app):
     login(client, "student", "student@example.com", "student-password-123")
     response = client.get(f"/student/jobs/{vacancy_id}")
     assert response.status_code == 404
+
+
+
+def test_getting_notifications_does_not_mark_them_read(app):
+    seed_student(app)
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email='student@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "INSERT INTO notifications(user_id,title,body) VALUES(?,?,?)",
+            (student_id, "Test update", "Unread notification"),
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    response = client.get("/notifications")
+    assert response.status_code == 200
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT is_read FROM notifications WHERE title='Test update'"
+        ).fetchone()["is_read"] == 0
+
+    with client.session_transaction() as session:
+        token = session["csrf_token"]
+    response = client.post(
+        "/notifications/read-all",
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT is_read FROM notifications WHERE title='Test update'"
+        ).fetchone()["is_read"] == 1
+
+
+def test_getting_message_thread_does_not_mark_messages_read(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email='student@example.com'"
+        ).fetchone()["id"]
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "INSERT INTO messages(sender_id,recipient_id,body) VALUES(?,?,?)",
+            (employer_id, student_id, "Unread message"),
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    response = client.get(f"/messages?with={employer_id}")
+    assert response.status_code == 200
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT is_read FROM messages WHERE body='Unread message'"
+        ).fetchone()["is_read"] == 0
+
+    with client.session_transaction() as session:
+        token = session["csrf_token"]
+    response = client.post(
+        "/messages/read",
+        data={"csrf_token": token, "recipient_id": str(employer_id)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT is_read FROM messages WHERE body='Unread message'"
+        ).fetchone()["is_read"] == 1

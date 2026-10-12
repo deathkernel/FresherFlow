@@ -39,6 +39,10 @@ class Config:
         raise RuntimeError(
             "SECRET_KEY must be configured when FRESHERFLOW_ENV=production"
         )
+    if ENVIRONMENT == "production" and len(configured_secret) < 32:
+        raise RuntimeError(
+            "SECRET_KEY must be at least 32 characters in production"
+        )
 
     SECRET_KEY = configured_secret or local_secret()
     DATABASE = str(INSTANCE_DIR / "fresherflow.db")
@@ -47,11 +51,10 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Production cookies must always be HTTPS-only; an env override must not
+    # silently weaken this setting.
     SESSION_COOKIE_SECURE = (
-        os.environ.get(
-            "SESSION_COOKIE_SECURE",
-            "1" if ENVIRONMENT == "production" else "0",
-        )
-        == "1"
+        ENVIRONMENT == "production"
+        or os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
     )
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)

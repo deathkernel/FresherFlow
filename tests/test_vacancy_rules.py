@@ -1,6 +1,10 @@
 from datetime import date, timedelta
+from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
 
-from routes.employer_routes import deadline_invalid, vacancy_form
+from werkzeug.datastructures import FileStorage, MultiDict
+
+from routes.employer_routes import bulk_vacancy_forms, deadline_invalid, vacancy_form
 from routes.student_routes import deadline_passed
 
 
@@ -48,3 +52,36 @@ def test_entry_level_allows_explicit_no_experience():
 
     assert not experience_requirement_invalid("Entry-level Job", "No prior experience required")
     assert not experience_requirement_invalid("Entry-level Job", "Freshers welcome, no experience needed")
+
+
+
+def test_excel_import_rejects_zip_bomb_before_workbook_parsing():
+    from routes.employer_routes import excel_vacancy_forms
+
+    stream = BytesIO()
+    payload = b"x" * (4 * 1024 * 1024)
+    with ZipFile(stream, "w", compression=ZIP_DEFLATED) as archive:
+        for index in range(7):
+            archive.writestr(f"xl/sharedStrings{index}.xml", payload)
+    compressed = stream.getvalue()
+    assert len(compressed) < 5 * 1024 * 1024
+
+    vacancies, error = excel_vacancy_forms(
+        FileStorage(stream=BytesIO(compressed), filename="bulk.xlsx")
+    )
+    assert vacancies is None
+    assert "safety limits" in error.lower()
+
+
+
+def test_bulk_form_rejects_more_than_100_vacancies():
+    form = MultiDict()
+    for index in range(101):
+        form.add("title", f"Role {index}")
+        form.add("vacancy_type", "Internship")
+        form.add("location", "Pune")
+        form.add("description", "A valid description.")
+
+    vacancies, error = bulk_vacancy_forms(form)
+    assert vacancies is None
+    assert "100" in error

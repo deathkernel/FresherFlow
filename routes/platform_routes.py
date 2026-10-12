@@ -16,11 +16,19 @@ def notifications():
         "SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
         (session["user_id"],),
     ).fetchall()
-    get_db().execute(
-        "UPDATE notifications SET is_read=1 WHERE user_id=?", (session["user_id"],)
-    )
-    get_db().commit()
     return render_template("notifications.html", notifications=rows)
+
+
+@platform_bp.post("/notifications/read-all")
+@role_required("student", "employer")
+def notifications_read_all():
+    db = get_db()
+    db.execute(
+        "UPDATE notifications SET is_read=1 WHERE user_id=?",
+        (session["user_id"],),
+    )
+    db.commit()
+    return redirect(url_for("platform.notifications"))
 
 
 @platform_bp.post("/notifications/<int:notification_id>/read")
@@ -74,15 +82,25 @@ def messages():
                 """,
                 (uid, selected, selected, uid),
             ).fetchall()
-            db.execute(
-                "UPDATE messages SET is_read=1 WHERE sender_id=? AND recipient_id=?",
-                (selected, uid),
-            )
-            db.commit()
     return render_template(
         "messages.html", conversations=conversations, thread=thread,
         recipient=recipient,
     )
+
+
+@platform_bp.post("/messages/read")
+@role_required("student", "employer")
+def mark_messages_read():
+    recipient_id = request.form.get("recipient_id", type=int)
+    if recipient_id and recipient_id != session["user_id"]:
+        db = get_db()
+        db.execute(
+            "UPDATE messages SET is_read=1 WHERE sender_id=? AND recipient_id=?",
+            (recipient_id, session["user_id"]),
+        )
+        db.commit()
+        return redirect(url_for("platform.messages", **{"with": recipient_id}))
+    return redirect(url_for("platform.messages"))
 
 
 @platform_bp.post("/messages")

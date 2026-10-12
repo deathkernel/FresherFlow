@@ -435,6 +435,9 @@ def bulk_moderate_vacancies():
             continue
         if vacancy_id > 0 and vacancy_id not in selected_ids:
             selected_ids.append(vacancy_id)
+            if len(selected_ids) > 100:
+                flash("Moderate at most 100 jobs per batch.", "error")
+                return redirect(url_for("admin.jobs"))
 
     if decision not in {"approved", "rejected"}:
         flash("Choose Approve or Reject for the selected jobs.", "error")
