@@ -1,3 +1,4 @@
+import hmac
 from functools import wraps
 
 from flask import flash, redirect, session, url_for
@@ -25,9 +26,28 @@ def role_required(*roles):
                     return redirect(url_for("admin.login"))
                 return redirect(url_for("auth.login", role=login_role))
 
-            if session.get("role") not in allowed_roles:
+            session_role = session.get("role")
+            if session_role not in allowed_roles:
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
+
+            # Random per-user versions revoke other browser sessions after password changes.
+            if session_role in {"student", "employer"}:
+                user = get_db().execute(
+                    "SELECT role, auth_version FROM users WHERE id=?",
+                    (session.get("user_id"),),
+                ).fetchone()
+                current_version = str(user["auth_version"] or "") if user else ""
+                session_version = str(session.get("auth_version") or "")
+                if (
+                    not user
+                    or user["role"] != session_role
+                    or not current_version
+                    or not hmac.compare_digest(current_version, session_version)
+                ):
+                    session.clear()
+                    flash("Your session is no longer valid. Please sign in again.", "error")
+                    return redirect(url_for("auth.login", role=session_role))
 
             if session.get("role") == "employer":
                 profile = get_db().execute(

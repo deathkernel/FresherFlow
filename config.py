@@ -3,16 +3,10 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
-from werkzeug.security import generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
-
-DEFAULT_ADMIN_EMAIL = "admin@123"
-DEFAULT_ADMIN_PASSWORD_HASH = generate_password_hash(
-    "admin123", method="pbkdf2:sha256:600000"
-)
 
 INSTANCE_DIR.mkdir(exist_ok=True)
 
@@ -33,10 +27,7 @@ def get_admin_credentials():
     if email and password_hash:
         return email, password_hash
 
-    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
-    if environment == "development":
-        return DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD_HASH
-
+    # Never ship or silently enable a default administrator account.
     return "", ""
 
 
