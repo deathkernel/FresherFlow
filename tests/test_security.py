@@ -53,3 +53,25 @@ def test_website_url_validation():
     assert valid_website_url("")
     assert not valid_website_url("javascript:alert(1)")
     assert not valid_website_url("//evil.example")
+
+
+
+def test_rejects_docx_with_traversal_entry():
+    stream = BytesIO()
+    with ZipFile(stream, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "<document/>")
+        archive.writestr("../outside.txt", "not allowed")
+    assert not valid_resume_upload(upload("resume.docx", stream.getvalue()))
+
+
+def test_rejects_docx_with_oversized_uncompressed_member():
+    stream = BytesIO()
+    with ZipFile(stream, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "x" * (5 * 1024 * 1024 + 1))
+    assert not valid_resume_upload(upload("resume.docx", stream.getvalue()))
+
+
+def test_rejects_empty_resume():
+    assert not valid_resume_upload(upload("resume.pdf", b""))

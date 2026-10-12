@@ -67,9 +67,3 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_r
 CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(sender_id, recipient_id, created_at);
 
 
-CREATE TRIGGER IF NOT EXISTS users_auth_version_default
-AFTER INSERT ON users
-WHEN NEW.auth_version IS NULL OR NEW.auth_version=''
-BEGIN
-    UPDATE users SET auth_version=lower(hex(randomblob(32))) WHERE id=NEW.id;
-END;

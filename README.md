@@ -53,7 +53,7 @@ The application creates its SQLite database under `instance/` on first start. Ru
 
 ### Development
 
-Development can use the generated local secret and the documented development-only admin credentials.
+Development can use the generated local secret, but administrator credentials must be configured explicitly. No default administrator account is shipped.
 
 ### Production
 
@@ -67,7 +67,7 @@ ADMIN_PASSWORD_HASH=<Werkzeug-password-hash>
 SESSION_COOKIE_SECURE=1
 ```
 
-Do not use the development admin credentials in production.
+Never commit administrator credentials or password hashes. Rotate the admin password hash and `SECRET_KEY` if exposure is suspected.
 
 Generate a Werkzeug password hash with:
 
@@ -86,6 +86,8 @@ FresherFlow currently includes:
 - security response headers and CSP
 - password hashing with Werkzeug
 - login throttling after repeated failures
+- per-user authentication versions that revoke other sessions after password changes
+- no built-in/default administrator credentials
 - resume size, extension and file-signature validation
 - DOCX container validation without extracting uploaded archives
 - sanitized server-side resume filenames
@@ -179,7 +181,7 @@ Audit sensitive actions
 pytest -q
 ```
 
-CI runs the test suite on Python 3.11 and 3.12.
+CI runs the test suite on Python 3.11 and 3.12. Automated dependency auditing and GitHub security scanning are configured in separate workflows.
 
 ## Production notes
 
