@@ -55,7 +55,7 @@ def valid_resume_upload(file_storage):
         return header.startswith(b"%PDF-")
     if extension == "doc":
         return header == bytes.fromhex("D0CF11E0A1B11AE1")
-    if not header.startswith(b"PK\x03\x04"):
+    if not header.startswith(bytes((0x50, 0x4B, 0x03, 0x04))):
         return False
 
     stream.seek(0)
@@ -124,11 +124,17 @@ def clear_login_failures(db, key):
 
 
 def client_login_key(request, scope, identity):
-    """Create a bounded rate-limit key from scope, IP and supplied identity."""
-    remote = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
-    ip = remote.split(",", 1)[0].strip()
+    """Build a rate-limit key from the direct peer address and identity.
+
+    Do not trust X-Forwarded-For here: clients can forge it unless the app is
+    deployed behind an explicitly configured trusted-proxy middleware. If
+    proxy support is needed, configure ProxyFix with the exact trusted hop
+    count and use request.remote_addr after that middleware has run.
+    """
+    ip = request.remote_addr or "unknown"
     normalized = (identity or "").strip().lower()
     return f"{scope}:{ip}:{normalized}"
+
 
 def valid_website_url(value):
     """Return True only for absolute HTTP(S) URLs."""

@@ -89,6 +89,7 @@ def login():
             session["user_id"] = user["id"]
             session["name"] = user["name"]
             session["role"] = user["role"]
+            session["auth_version"] = user["auth_version"]
             session.permanent = True
             return redirect(url_for(login_target(user["role"])))
 

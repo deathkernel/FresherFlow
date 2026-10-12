@@ -1,3 +1,4 @@
+import secrets
 import sqlite3
 from pathlib import Path
 
@@ -119,6 +120,32 @@ def apply_migrations(db):
         END;
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(2)")
+
+    if 3 not in applied:
+        user_columns = {
+            row[1] for row in db.execute("PRAGMA table_info(users)").fetchall()
+        }
+        if "auth_version" not in user_columns:
+            db.execute(
+                "ALTER TABLE users ADD COLUMN auth_version TEXT NOT NULL DEFAULT ''"
+            )
+        db.execute(
+            """CREATE TRIGGER IF NOT EXISTS users_auth_version_default
+               AFTER INSERT ON users
+               WHEN NEW.auth_version IS NULL OR NEW.auth_version=''
+               BEGIN
+                   UPDATE users SET auth_version=lower(hex(randomblob(32)))
+                   WHERE id=NEW.id;
+               END"""
+        )
+        for row in db.execute(
+            "SELECT id FROM users WHERE auth_version IS NULL OR auth_version=''"
+        ).fetchall():
+            db.execute(
+                "UPDATE users SET auth_version=? WHERE id=?",
+                (secrets.token_urlsafe(32), row["id"]),
+            )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(3)")
 
 
 def init_db(database_path):

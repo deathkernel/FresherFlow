@@ -1,5 +1,6 @@
 import io
 import re
+import secrets
 import sqlite3
 from datetime import date, datetime
 from zipfile import BadZipFile
@@ -732,11 +733,14 @@ def change_password():
             flash("Choose a new password different from the current password.", "error")
             return render_template("employer/change-password.html")
 
+        new_auth_version = secrets.token_urlsafe(32)
         db.execute(
-            "UPDATE users SET password_hash=? WHERE id=? AND role='employer'",
-            (generate_password_hash(new_password), uid),
+            "UPDATE users SET password_hash=?, auth_version=? WHERE id=? AND role='employer'",
+            (generate_password_hash(new_password), new_auth_version, uid),
         )
         db.commit()
+        # Keep this browser signed in while invalidating all other sessions.
+        session["auth_version"] = new_auth_version
         flash("Password changed successfully.", "success")
         return redirect(url_for("employer.profile"))
 

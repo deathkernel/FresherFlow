@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sqlite3
 
@@ -68,7 +69,7 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        login_email = "admin@123" if email == "admin" else email
+        login_email = email
         db = get_db()
         login_key = client_login_key(request, "admin", login_email)
         if login_is_locked(db, login_key):
@@ -80,6 +81,10 @@ def login():
             session["user_id"] = "admin"
             session["name"] = "Administrator"
             session["role"] = "admin"
+            _, configured_hash = get_admin_credentials()
+            session["auth_version"] = hashlib.sha256(
+                configured_hash.encode("utf-8")
+            ).hexdigest()
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
         record_login_failure(db, login_key)

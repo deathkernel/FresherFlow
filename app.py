@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, redirect, render_template, request, session, url_for
 
-from config import Config
+from config import Config, get_admin_credentials
 from database.database import close_db, init_db
 from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
@@ -19,6 +19,12 @@ def safe_website(value):
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
+    if app.config.get("ENVIRONMENT") == "production":
+        admin_email, admin_password_hash = get_admin_credentials()
+        if not admin_email or not admin_password_hash:
+            raise RuntimeError(
+                "ADMIN_EMAIL and ADMIN_PASSWORD_HASH must be configured in production"
+            )
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     init_db(app.config["DATABASE"])
     app.teardown_appcontext(close_db)
