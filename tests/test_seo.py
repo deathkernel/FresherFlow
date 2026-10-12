@@ -18,8 +18,9 @@ def app(tmp_path, monkeypatch):
 def seed_job(app, *, status="active", moderation="approved", deadline=None):
     with app.app_context():
         db=get_db()
+        email=f"seo-{db.execute('SELECT COUNT(*) FROM users').fetchone()[0]}@example.com"
         eid=db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
-          ("SEO Employer","seo@example.com",generate_password_hash("seo-employer-password-123"),"employer")).lastrowid
+          ("SEO Employer",email,generate_password_hash("seo-employer-password-123"),"employer")).lastrowid
         db.execute("""INSERT INTO employer_profiles(company_id,user_id,organization_name,account_status,verification_status,location,description)
           VALUES(?,?,?,?,?,?,?)""",(f"FF-CMP-{eid:06d}",eid,"SEO Company","active","verified","Pune","Hiring fresh graduates."))
         jid=db.execute("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,skills,deadline,status,moderation_status)
@@ -51,13 +52,14 @@ def test_listing_excludes_unapproved_closed_and_expired_jobs(app):
 
 def test_sitemap_uses_configured_domain_and_only_lists_public_jobs(app):
     jid=seed_job(app)
-    seed_job(app,moderation="pending")
+    pending_id=seed_job(app,moderation="pending")
     response=app.test_client().get("/sitemap.xml")
     content=response.get_data(as_text=True)
     assert response.status_code==200 and response.mimetype=="application/xml"
     assert "https://fresherflow.example/jobs" in content
     assert f"https://fresherflow.example/jobs/{jid}" in content
-    assert content.count("<url>")==4
+    assert f"https://fresherflow.example/jobs/{pending_id}" not in content
+    assert content.count("<url>")==5
 
 
 def test_robots_txt_excludes_private_workspaces_and_links_sitemap(app):
