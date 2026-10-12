@@ -76,9 +76,10 @@ ADMIN_EMAIL=<admin-email>
 ADMIN_PASSWORD_HASH=<Werkzeug-password-hash>
 SESSION_COOKIE_SECURE=1
 TRUSTED_PROXY_HOPS=0
+SEO_BASE_URL=https://your-domain.example
 ```
 
-Production requires a `SECRET_KEY` of at least 32 characters. Secure session cookies are enforced in production even if `SESSION_COOKIE_SECURE=0` is supplied. Do not enable Flask debug mode in production. If TLS is terminated at a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact trusted proxy hop count (for example, `1` for one trusted proxy); leave it at `0` when no trusted proxy is configured.
+Production requires a `SECRET_KEY` of at least 32 characters. Set `SEO_BASE_URL` to the canonical HTTPS origin of your deployed site (without a trailing slash) so canonical metadata, `robots.txt`, and `sitemap.xml` use the correct domain. Secure session cookies are enforced in production even if `SESSION_COOKIE_SECURE=0` is supplied. Do not enable Flask debug mode in production. If TLS is terminated at a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact trusted proxy hop count (for example, `1` for one trusted proxy); leave it at `0` when no trusted proxy is configured.
 
 Never commit administrator credentials or password hashes. Rotate the admin password hash and `SECRET_KEY` if exposure is suspected.
 
