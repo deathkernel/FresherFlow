@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('student','employer')),
+    auth_version TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS student_profiles (
@@ -64,3 +65,11 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_employer_account_status ON employer_profiles(account_status);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(sender_id, recipient_id, created_at);
+
+
+CREATE TRIGGER IF NOT EXISTS users_auth_version_default
+AFTER INSERT ON users
+WHEN NEW.auth_version IS NULL OR NEW.auth_version=''
+BEGIN
+    UPDATE users SET auth_version=lower(hex(randomblob(32))) WHERE id=NEW.id;
+END;
