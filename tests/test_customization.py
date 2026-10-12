@@ -95,3 +95,48 @@ def test_student_can_change_password_and_invalidates_old_sessions(app):
         ).fetchone()
         from werkzeug.security import check_password_hash
         assert check_password_hash(row["password_hash"], "new-student-password-456")
+
+
+def test_application_notifications_respect_preferences(app):
+    seed_student(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
+            ("Test Employer", "employer@example.com",
+             generate_password_hash("employer-password-123"), "employer"),
+        ).lastrowid
+        db.execute(
+            """INSERT INTO employer_profiles
+               (company_id,user_id,organization_name,account_status,verification_status)
+               VALUES(?,?,?,?,?)""",
+            (f"FF-CMP-{employer_id:06d}", employer_id, "Test Company", "active", "verified"),
+        )
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("student@example.com",)
+        ).fetchone()["id"]
+        db.execute(
+            "INSERT INTO user_preferences(user_id,notify_application) VALUES(?,0)",
+            (student_id,),
+        )
+        db.execute(
+            "INSERT INTO user_preferences(user_id,notify_application) VALUES(?,0)",
+            (employer_id,),
+        )
+        vacancy_id = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','approved')""",
+            (employer_id, "Junior Developer", "Entry-level Job",
+             "A test vacancy", "Remote"),
+        ).lastrowid
+        db.execute(
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, student_id),
+        )
+        db.commit()
+        count = db.execute(
+            "SELECT COUNT(*) FROM notifications WHERE user_id IN (?,?)",
+            (student_id, employer_id),
+        ).fetchone()[0]
+        assert count == 0
