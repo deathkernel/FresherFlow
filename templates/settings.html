@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Settings — FresherFlow{% endblock %}
+{% block body %}
+<main class="settings-page" id="main-content" tabindex="-1">
+  <header class="settings-hero">
+    <div><span class="eyebrow">YOUR WORKSPACE</span><h1>Settings</h1><p>Make FresherFlow work the way you do. Your choices are saved to your account.</p></div>
+    <span class="settings-role">{{ session.role|capitalize }} account</span>
+  </header>
+  <form method="post" class="settings-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <section class="settings-card">
+      <div class="settings-card-head"><span class="settings-icon" aria-hidden="true">◐</span><div><h2>Appearance & accessibility</h2><p>Choose a comfortable visual setup. These preferences apply across your signed-in workspace.</p></div></div>
+      <div class="settings-control">
+        <div><label for="theme">Color theme</label><small>System follows your device appearance setting.</small></div>
+        <select class="form-select" id="theme" name="theme">
+          <option value="light" {% if preferences.theme == 'light' %}selected{% endif %}>Light</option>
+          <option value="dark" {% if preferences.theme == 'dark' %}selected{% endif %}>Dark</option>
+          <option value="system" {% if preferences.theme == 'system' %}selected{% endif %}>Use device setting</option>
+        </select>
+      </div>
+      <div class="settings-control">
+        <div><label for="font-scale">Text size</label><small>Large text improves readability across the workspace.</small></div>
+        <select class="form-select" id="font-scale" name="font_scale">
+          <option value="normal" {% if preferences.font_scale == 'normal' %}selected{% endif %}>Standard</option>
+          <option value="large" {% if preferences.font_scale == 'large' %}selected{% endif %}>Large</option>
+        </select>
+      </div>
+      <label class="settings-toggle"><span><strong>Reduce motion</strong><small>Limit decorative movement and transitions.</small></span><input type="checkbox" name="reduce_motion" {% if preferences.reduce_motion %}checked{% endif %}></label>
+    </section>
+    <section class="settings-card">
+      <div class="settings-card-head"><span class="settings-icon" aria-hidden="true">♧</span><div><h2>In-app notifications</h2><p>Choose which categories create new notifications. Existing notifications are not deleted.</p></div></div>
+      <label class="settings-toggle"><span><strong>Applications</strong><small>Application submitted and application-status updates.</small></span><input type="checkbox" name="notify_application" {% if preferences.notify_application %}checked{% endif %}></label>
+      <label class="settings-toggle"><span><strong>Messages</strong><small>Alerts when someone sends you a message.</small></span><input type="checkbox" name="notify_message" {% if preferences.notify_message %}checked{% endif %}></label>
+      <label class="settings-toggle"><span><strong>Vacancy updates</strong><small>Status changes to vacancies you manage.</small></span><input type="checkbox" name="notify_vacancy" {% if preferences.notify_vacancy %}checked{% endif %}></label>
+    </section>
+    {% if session.role == 'student' %}
+    <section class="settings-card settings-career-card">
+      <div class="settings-card-head"><span class="settings-icon" aria-hidden="true">↗</span><div><h2>Career preferences</h2><p>Your preferred role type and location help you narrow down opportunities.</p></div></div>
+      <p>Manage preferred job type, location, skills, education and resume from your student profile.</p>
+      <a class="btn btn-light" href="{{ url_for('student.profile', edit=1) }}">Edit career profile</a>
+    </section>
+    {% endif %}
+    <footer class="settings-savebar"><span>Preferences are saved to your account.</span><button class="btn btn-primary" type="submit">Save settings</button></footer>
+  </form>
+  <section class="settings-card settings-security-card"><div class="settings-card-head"><span class="settings-icon" aria-hidden="true">⌑</span><div><h2>Account security</h2><p>Keep your account secure by using a unique password of at least 12 characters.</p></div></div>
+  {% if session.role == 'student' %}<a class="btn btn-light" href="{{ url_for('student.change_password') }}">Change password</a>{% else %}<a class="btn btn-light" href="{{ url_for('employer.change_password') }}">Change password</a>{% endif %}
+  </section>
+</main>
+{% endblock %}
