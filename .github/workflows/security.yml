@@ -14,7 +14,7 @@ permissions:
   actions: read
 
 jobs:
-  analyze:
+  codeql:
     name: Analyze Python
     runs-on: ubuntu-latest
     permissions:
