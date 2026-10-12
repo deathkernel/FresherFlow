@@ -148,6 +148,54 @@ def apply_migrations(db):
         db.execute("INSERT INTO schema_migrations(version) VALUES(3)")
 
 
+    if 4 not in applied:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER PRIMARY KEY,
+            theme TEXT NOT NULL DEFAULT 'light' CHECK(theme IN ('light','dark','system')),
+            font_scale TEXT NOT NULL DEFAULT 'normal' CHECK(font_scale IN ('normal','large')),
+            reduce_motion INTEGER NOT NULL DEFAULT 0 CHECK(reduce_motion IN (0,1)),
+            notify_application INTEGER NOT NULL DEFAULT 1 CHECK(notify_application IN (0,1)),
+            notify_message INTEGER NOT NULL DEFAULT 1 CHECK(notify_message IN (0,1)),
+            notify_vacancy INTEGER NOT NULL DEFAULT 1 CHECK(notify_vacancy IN (0,1)),
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        DROP TRIGGER IF EXISTS notify_application_created;
+        DROP TRIGGER IF EXISTS notify_application_status;
+        DROP TRIGGER IF EXISTS notify_vacancy_status;
+        CREATE TRIGGER notify_application_created
+        AFTER INSERT ON applications
+        BEGIN
+            INSERT INTO notifications(user_id,title,body,kind)
+            SELECT NEW.student_id,'Application submitted','Your application has been submitted successfully.','application'
+            WHERE COALESCE((SELECT notify_application FROM user_preferences WHERE user_id=NEW.student_id),1)=1;
+            INSERT INTO notifications(user_id,title,body,kind)
+            SELECT v.employer_id,'New application','A student applied to your vacancy.','application'
+            FROM vacancies v
+            WHERE v.id=NEW.vacancy_id
+              AND COALESCE((SELECT notify_application FROM user_preferences WHERE user_id=v.employer_id),1)=1;
+        END;
+        CREATE TRIGGER notify_application_status
+        AFTER UPDATE OF status ON applications
+        WHEN OLD.status <> NEW.status
+        BEGIN
+            INSERT INTO notifications(user_id,title,body,kind)
+            SELECT NEW.student_id,'Application status updated','Your application is now ' || NEW.status || '.','application'
+            WHERE COALESCE((SELECT notify_application FROM user_preferences WHERE user_id=NEW.student_id),1)=1;
+        END;
+        CREATE TRIGGER notify_vacancy_status
+        AFTER UPDATE OF status ON vacancies
+        WHEN OLD.status <> NEW.status
+        BEGIN
+            INSERT INTO notifications(user_id,title,body,kind)
+            SELECT NEW.employer_id,'Vacancy status updated','Your vacancy is now ' || NEW.status || '.','vacancy'
+            WHERE COALESCE((SELECT notify_vacancy FROM user_preferences WHERE user_id=NEW.employer_id),1)=1;
+        END;
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(4)")
+
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)

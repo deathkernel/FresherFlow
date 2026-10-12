@@ -11,7 +11,7 @@
       <div class="side-nav-label">CANDIDATES</div><a href="{{ url_for('employer.applications') }}">Applications</a><a href="{{ url_for('platform.analytics') }}">Analytics</a>
       <div class="side-nav-label">COMMUNICATION</div><a href="{{ url_for('platform.notifications') }}">Notifications {% if unread_notifications %}<span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a><a href="{{ url_for('platform.messages') }}">Messages</a>
       <div class="side-nav-label">ORGANIZATION</div><a href="{{ url_for('employer.profile') }}">Organization Profile</a>
-      <div class="side-nav-label">SECURITY</div><a href="{{ url_for('employer.change_password') }}">Change Password</a>
+      <div class="side-nav-label">ACCOUNT</div><a class="{% if request.endpoint == 'settings.preferences' %}active{% endif %}" href="{{ url_for('settings.preferences') }}">Settings</a><a href="{{ url_for('employer.change_password') }}">Change Password</a>
     </nav>
     <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Employer / Recruiter</small></div></div><form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form></div>
   </aside>

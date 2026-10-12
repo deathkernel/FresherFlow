@@ -123,8 +123,12 @@ def send_message():
         (session["user_id"], recipient_id, body),
     )
     db.execute(
-        "INSERT INTO notifications(user_id,title,body,kind) VALUES(?,?,?,?)",
-        (recipient_id, "New message", "You received a new FresherFlow message.", "message"),
+        """INSERT INTO notifications(user_id,title,body,kind)
+           SELECT ?,?,?,? WHERE COALESCE(
+               (SELECT notify_message FROM user_preferences WHERE user_id=?),1
+           )=1""",
+        (recipient_id, "New message", "You received a new FresherFlow message.",
+         "message", recipient_id),
     )
     db.commit()
     return redirect(url_for("platform.messages", **{"with": recipient_id}))

@@ -55,6 +55,17 @@ CREATE TABLE IF NOT EXISTS messages (
     body TEXT NOT NULL, is_read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY(recipient_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id INTEGER PRIMARY KEY,
+    theme TEXT NOT NULL DEFAULT 'light' CHECK(theme IN ('light','dark','system')),
+    font_scale TEXT NOT NULL DEFAULT 'normal' CHECK(font_scale IN ('normal','large')),
+    reduce_motion INTEGER NOT NULL DEFAULT 0 CHECK(reduce_motion IN (0,1)),
+    notify_application INTEGER NOT NULL DEFAULT 1 CHECK(notify_application IN (0,1)),
+    notify_message INTEGER NOT NULL DEFAULT 1 CHECK(notify_message IN (0,1)),
+    notify_vacancy INTEGER NOT NULL DEFAULT 1 CHECK(notify_vacancy IN (0,1)),
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 CREATE INDEX IF NOT EXISTS idx_vacancies_employer_id ON vacancies(employer_id);
 CREATE INDEX IF NOT EXISTS idx_vacancies_moderation_status ON vacancies(moderation_status);
 CREATE INDEX IF NOT EXISTS idx_vacancies_status_deadline ON vacancies(status, deadline);

@@ -18,7 +18,7 @@
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
     </aside>
-    <section class="workspace" id="main-content" tabindex="-1">
+    <section class="workspace">
       <header class="workspace-head">
         <div><span class="eyebrow">STUDENT MANAGEMENT</span><h1>Applications</h1><p>Review student applications without mixing them with company or job management.</p></div>
       </header>
@@ -33,7 +33,7 @@
       <div class="content-card reveal">
         <div class="table-wrap">
           <table class="table align-middle">
-            <thead><tr><th>Student</th><th>Job</th><th>Company</th><th>Applied</th><th>Status</th><th>Profile</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Job</th><th scope="col">Company</th><th scope="col">Applied</th><th scope="col">Status</th><th scope="col">Profile</th></tr></thead>
             <tbody>
               {% for application in applications %}
                 <tr data-admin-row>
