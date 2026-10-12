@@ -53,6 +53,9 @@ def test_website_url_validation():
     assert valid_website_url("")
     assert not valid_website_url("javascript:alert(1)")
     assert not valid_website_url("//evil.example")
+    assert not valid_website_url("http://:80")
+    assert not valid_website_url("https://example.com:invalid")
+    assert not valid_website_url("https://user:password@example.com")
 
 
 
