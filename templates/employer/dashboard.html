@@ -17,7 +17,7 @@
   <div class="content-card reveal">
     <div class="table-wrap">
       <table class="table align-middle">
-        <thead><tr><th>Role</th><th>Type</th><th>Location</th><th>Status</th><th>Moderation</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Role</th><th scope="col">Type</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Moderation</th></tr></thead>
         <tbody>
           {% for vacancy in posted_vacancies %}
             <tr>
@@ -42,7 +42,7 @@
   <div class="content-card reveal">
     <div class="table-wrap">
       <table class="table align-middle">
-        <thead><tr><th>Candidate</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Candidate</th><th scope="col">Role</th><th scope="col">Email</th><th scope="col">Status</th></tr></thead>
         <tbody>
           {% for a in applications %}
             <tr><td><b>{{ a.name }}</b></td><td>{{ a.title }}</td><td>{{ a.email }}</td><td><span class="status {{ a.status|lower }}">{{ a.status }}</span></td></tr>
