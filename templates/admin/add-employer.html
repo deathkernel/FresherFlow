@@ -18,7 +18,7 @@
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
     </aside>
-    <section class="workspace">
+    <section class="workspace" id="main-content" tabindex="-1">
       <header class="workspace-head">
         <div><span class="eyebrow">EMPLOYER MANAGEMENT</span><h1>Add New Employer</h1><p>Create a company account directly from the Admin panel.</p></div>
       </header>

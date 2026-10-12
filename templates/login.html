@@ -2,7 +2,7 @@
 {% block title %}Sign in — FresherFlow{% endblock %}
 {% block body %}
   <div class="auth-simple-shell">
-    <main class="auth-simple-card reveal">
+    <main id="main-content" tabindex="-1" class="auth-simple-card reveal">
       <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
       <div class="auth-heading">
         <div class="eyebrow">{% if login_context == "employer" %}EMPLOYER ACCESS{% else %}WELCOME BACK{% endif %}</div>

@@ -209,3 +209,36 @@ textarea:focus-visible {
   }
 }
 
+
+
+/* Accessible shared interactions and the vacancy stepper. */
+.skip-link { position: fixed; z-index: 2000; top: 10px; left: 10px; padding: 12px 16px; border-radius: 10px; background: #171b2b; color: #fff; font-weight: 800; transform: translateY(-160%); }
+.skip-link:focus { transform: translateY(0); color: #fff; }
+.toast-stack { width: min(420px, calc(100vw - 32px)); right: 16px; top: 16px; }
+.toast-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; max-width: 100%; overflow-wrap: anywhere; }
+.toast-message { flex: 1; min-width: 0; }
+.toast-dismiss { flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0 4px; background: transparent; color: inherit; font: inherit; font-size: 1.2rem; line-height: 1.1; opacity: .8; cursor: pointer; }
+.toast-dismiss:hover, .toast-dismiss:focus-visible { opacity: 1; }
+.toast-card.is-dismissing { opacity: 0; transform: translateY(-8px); transition: opacity .25s ease, transform .25s ease; }
+.flow-stepper { display: flex; align-items: stretch; gap: 10px; margin: 0 0 22px; }
+.flow-step { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; align-content: center; align-items: center; column-gap: 9px; flex: 1 1 0; min-width: 0; padding: 12px; border: 1px solid #e5e7ef; border-radius: 14px; background: #fff; color: #697184; text-align: left; font: inherit; cursor: pointer; }
+.flow-step > span { display: grid; grid-row: 1 / span 2; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #f1f2f7; color: #697184; font-weight: 800; }
+.flow-step strong { font-size: .82rem; color: #303747; }
+.flow-step small { font-size: .7rem; color: #858c9a; }
+.flow-step.active { border-color: #bcb8ff; background: #f8f7ff; box-shadow: 0 0 0 2px rgba(98,91,245,.06); }
+.flow-step.active > span, .flow-step.complete > span { background: #625bf5; color: #fff; }
+.flow-step.complete { border-color: #d9d6ff; }
+.flow-panel[hidden] { display: none !important; }
+.flow-panel.active { animation: flowPanelIn .2s ease both; }
+@keyframes flowPanelIn { from { opacity: .65; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 640px) {
+  .flow-stepper { gap: 6px; }
+  .flow-step { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 9px; }
+  .flow-step > span { width: 28px; height: 28px; }
+  .flow-step small { display: none; }
+  .flow-line { flex-basis: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .ui-enter, .flow-panel.active, .toast-card { animation: none !important; }
+  .toast-card.is-dismissing { transition: none !important; }
+}

@@ -3,7 +3,7 @@
 {% block body %}
 <div class="app-shell employer-theme">
   <aside class="sidebar"><div class="brand">Fresher<span>Flow</span></div><div class="side-label">EMPLOYER WORKSPACE</div>
-    <nav>
+    <nav aria-label="Employer workspace navigation">
       <a class="{% if request.endpoint == 'employer.dashboard' %}active{% endif %}" href="{{ url_for('employer.dashboard') }}">Dashboard</a>
       <div class="side-nav-label">HIRING</div>
       <a class="{% if request.endpoint in ['employer.vacancies','employer.edit_vacancy'] %}active{% endif %}" href="{{ url_for('employer.vacancies') }}">My Vacancies</a>
@@ -15,7 +15,7 @@
     </nav>
     <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Employer / Recruiter</small></div></div><form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form></div>
   </aside>
-  <section class="workspace"><header class="workspace-head"><div><span class="eyebrow">RECRUITER PANEL</span><h1>Manage your hiring.</h1><p>Post openings, review candidates and track your recruitment funnel.</p></div><div class="workspace-head-actions"><a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a></div></header>{% block employer_content %}{% endblock %}</section>
+  <section class="workspace" id="main-content" tabindex="-1"><header class="workspace-head"><div><span class="eyebrow">RECRUITER PANEL</span><h1>Manage your hiring.</h1><p>Post openings, review candidates and track your recruitment funnel.</p></div><div class="workspace-head-actions"><a href="{{ url_for('employer.bulk_new_vacancies') }}" class="btn btn-light">Bulk publish</a><a href="{{ url_for('employer.new_vacancy') }}" class="btn btn-primary">Post vacancy</a></div></header>{% block employer_content %}{% endblock %}</section>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/forms.js') }}"></script><script src="{{ url_for('static', filename='js/employer.js') }}"></script><script src="{{ url_for('static', filename='js/bulk-vacancies.js') }}"></script>{% endblock %}

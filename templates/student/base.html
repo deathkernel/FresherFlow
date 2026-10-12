@@ -3,7 +3,7 @@
 {% block body %}
 <div class="app-shell student-theme">
   <aside class="sidebar"><div class="brand">Fresher<span>Flow</span></div><div class="side-label">STUDENT WORKSPACE</div>
-    <nav>
+    <nav aria-label="Student workspace navigation">
       <a class="{% if request.endpoint == 'student.dashboard' %}active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a>
       <div class="side-nav-label">OPPORTUNITIES</div>
       <a class="{% if request.endpoint in ['student.jobs','student.job_details'] %}active{% endif %}" href="{{ url_for('student.jobs') }}">Find Opportunities</a>
@@ -18,7 +18,7 @@
       <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Log out</button></form>
     </div>
   </aside>
-  <section class="workspace"><header class="workspace-head"><div><span class="eyebrow">STUDENT PANEL</span><h1>Good to see you, {{ session.name.split()[0] }}.</h1><p>Keep your profile updated and discover opportunities that match your skills.</p></div>{% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}<a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>{% endif %}</header>{% block student_content %}{% endblock %}</section>
+  <section class="workspace" id="main-content" tabindex="-1"><header class="workspace-head"><div><span class="eyebrow">STUDENT PANEL</span><h1>Good to see you, {{ session.name.split()[0] }}.</h1><p>Keep your profile updated and discover opportunities that match your skills.</p></div>{% if request.endpoint != 'student.jobs' and request.endpoint != 'student.job_details' %}<a href="{{ url_for('student.jobs') }}" class="btn btn-primary">Find a role</a>{% endif %}</header>{% block student_content %}{% endblock %}</section>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/forms.js') }}"></script><script src="{{ url_for('static', filename='js/student.js') }}"></script>{% endblock %}

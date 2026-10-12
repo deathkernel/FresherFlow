@@ -18,7 +18,7 @@
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
     </aside>
-    <section class="workspace">
+    <section class="workspace" id="main-content" tabindex="-1">
       <div class="admin-company-page reveal">
         <a class="admin-company-back" href="{{ url_for('admin.companies') }}">← Back to Companies</a>
         <section class="admin-company-hero">

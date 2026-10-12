@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ status_code }} — {{ title }} — FresherFlow{% endblock %}
 {% block body %}
-  <main class="not-found-shell">
+  <main class="not-found-shell" id="main-content" tabindex="-1">
     <section class="not-found-card reveal" role="alert">
       <div class="not-found-code">{{ status_code }}</div>
       <span class="eyebrow">FRESHERFLOW SYSTEM</span>
