@@ -1,11 +1,7 @@
 import os
 
-<<<<<<< Updated upstream
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
-=======
-from flask import Flask, redirect, render_template, request, session, url_for  # type: ignore[import-not-found]
->>>>>>> Stashed changes
 
 from config import Config, get_admin_credentials
 from database.database import close_db, init_db
