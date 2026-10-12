@@ -50,8 +50,8 @@ class Config:
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
-    # Static assets are not content-hashed, so use a short browser cache lifetime.
-    SEND_FILE_MAX_AGE_DEFAULT = 86400
+    # Assets are not fingerprinted; keep cache short to limit stale deployments.
+    SEND_FILE_MAX_AGE_DEFAULT = 3600
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
