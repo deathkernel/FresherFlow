@@ -11,6 +11,7 @@
     {% if request.endpoint and request.endpoint.startswith('employer.') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/employer.css') }}">{% endif %}
     {% if request.endpoint and request.endpoint.startswith('platform.') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-features.css') }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/workspace-motion.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-audit-fixes.css') }}">
     {% block head %}{% endblock %}
   </head>
   <body data-theme="{{ user_preferences.theme|default('light') }}" data-font-scale="{{ user_preferences.font_scale|default('normal') }}" data-reduce-motion="{{ 'true' if user_preferences.reduce_motion|default(0) else 'false' }}">
