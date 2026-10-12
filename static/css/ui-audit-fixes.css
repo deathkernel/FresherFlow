@@ -1,0 +1,63 @@
+/* UI audit fixes — targeted polish without changing the established brand. */
+:root {
+  --ff-text-body: #454c5b;
+  --ff-text-muted: #687183;
+  --ff-control-text: 1rem;
+}
+html { scroll-padding-top: 1.5rem; }
+body { -webkit-text-size-adjust: 100%; }
+.form-control, .form-select, textarea { font-size: max(16px, var(--ff-control-text)); }
+.form-control::placeholder, textarea::placeholder { color: #737b8b; opacity: 1; }
+.table thead th { font-size: .72rem; }
+.table tbody td > small,
+.form-text,
+.profile-form-field small,
+.bulk-card-head p { font-size: .78rem; line-height: 1.5; }
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(98, 91, 245, .42);
+  outline-offset: 3px;
+}
+.bulk-table-shell { max-width: 100%; overscroll-behavior-inline: contain; }
+.bulk-vacancy-table { min-width: 1120px; }
+.bulk-vacancy-table th:first-child,
+.bulk-vacancy-table td:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: #fff; box-shadow: 5px 0 10px rgba(16,19,34,.04);
+}
+.bulk-vacancy-table thead th:first-child { z-index: 3; background: #f8f9fc; }
+.bulk-cell-input { min-width: 110px; }
+.bulk-description { min-width: 220px; }
+.bulk-remove {
+  display: inline-grid; place-items: center; width: 36px; height: 36px;
+  border: 1px solid #f1c8c5; border-radius: 10px;
+  background: #fff5f4; color: #a82920; font-size: 1.25rem;
+}
+.bulk-remove:hover { background: #fee8e6; }
+.bulk-remove:focus-visible { outline: 3px solid rgba(180,35,24,.25); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .sidebar nav { scrollbar-width: thin; scrollbar-color: #c9c7fa transparent; }
+  .sidebar nav a { min-height: 44px; padding-inline: 12px; white-space: nowrap; }
+  .workspace { min-width: 0; }
+  .content-card, .student-applications-card, .bulk-import-card, .bulk-manual-card { min-width: 0; }
+  .message-layout { grid-template-columns: minmax(0,1fr) !important; }
+  .message-list { max-height: 220px; overflow: auto; }
+  .message-bubbles { max-height: 55vh; overflow-y: auto; }
+  .message-compose { position: sticky; bottom: 0; padding: 10px; background: rgba(255,255,255,.97); border-top: 1px solid #e8eaf0; }
+  .hero-copy h1 { font-size: clamp(2.5rem, 11vw, 4rem); }
+}
+@media (max-width: 460px) {
+  .workspace { padding-inline: 14px; }
+  .dash-stat strong { font-size: 1.75rem; }
+  .form-control, .form-select { min-height: 46px; }
+  .btn { min-height: 44px; }
+  .bulk-upload-form .form-actions .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .orb, .ambient-dot, .hero-orbit, .floating-badge, .tilt-card,
+  .reveal, .animated-list-item, .home-cta, .feature-card,
+  .process-card, .role-card, .btn, .sidebar nav a {
+    animation: none !important; transition: none !important;
+    transform: none !important;
+  }
+}
