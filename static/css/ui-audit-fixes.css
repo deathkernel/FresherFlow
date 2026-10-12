@@ -61,3 +61,12 @@ body { -webkit-text-size-adjust: 100%; }
     transform: none !important;
   }
 }
+
+
+/* Combined audit: accessible focus and reduced-motion-safe anchor behavior. */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.landing-nav { padding-top: max(12px, env(safe-area-inset-top)); }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid #554ddd; outline-offset: 3px; }
+:where(.landing, .workspace) a:not(.btn):not(.brand) { text-underline-offset: .18em; }
+@media (forced-colors: active) { :where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid Highlight; } }
