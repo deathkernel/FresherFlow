@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config, get_admin_credentials
 from database.database import close_db, init_db
@@ -19,6 +20,23 @@ def safe_website(value):
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
+    try:
+        trusted_proxy_hops = int(os.environ.get("TRUSTED_PROXY_HOPS", "0"))
+    except ValueError as exc:
+        raise RuntimeError("TRUSTED_PROXY_HOPS must be a non-negative integer") from exc
+    if trusted_proxy_hops < 0:
+        raise RuntimeError("TRUSTED_PROXY_HOPS must be a non-negative integer")
+    if trusted_proxy_hops:
+        # Trust only the explicitly configured number of proxy hops. Do not
+        # trust forwarded host/port/prefix headers from clients.
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=trusted_proxy_hops,
+            x_proto=trusted_proxy_hops,
+            x_host=0,
+            x_port=0,
+            x_prefix=0,
+        )
     if app.config.get("ENVIRONMENT") == "production":
         # Enforce the production cookie invariant even if a caller overrides Config.
         app.config["SESSION_COOKIE_SECURE"] = True

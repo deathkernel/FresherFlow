@@ -108,3 +108,28 @@ def test_production_forces_secure_session_cookies(app, monkeypatch):
 def test_dynamic_responses_are_not_cacheable(app):
     response = app.test_client().get("/")
     assert response.headers["Cache-Control"] == "no-store"
+
+
+
+def test_trusted_proxy_hops_enable_client_ip_and_https_detection(app, monkeypatch):
+    from app import create_app
+
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "1")
+    proxy_app = create_app()
+    proxy_app.config.update(TESTING=True)
+
+    @proxy_app.get("/_proxy-audit-test")
+    def proxy_audit_test():
+        return f"{request.remote_addr}|{request.is_secure}|{request.host}"
+
+    response = proxy_app.test_client().get(
+        "/_proxy-audit-test",
+        environ_base={"REMOTE_ADDR": "10.0.0.5"},
+        headers={
+            "X-Forwarded-For": "198.51.100.42",
+            "X-Forwarded-Proto": "https",
+            "X-Forwarded-Host": "attacker.example",
+        },
+    )
+    assert response.data == b"198.51.100.42|True|localhost"
+    assert response.headers["Strict-Transport-Security"].startswith("max-age=")
