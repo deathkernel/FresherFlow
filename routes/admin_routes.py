@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sqlite3
 
@@ -80,6 +81,10 @@ def login():
             session["user_id"] = "admin"
             session["name"] = "Administrator"
             session["role"] = "admin"
+            _, configured_hash = get_admin_credentials()
+            session["auth_version"] = hashlib.sha256(
+                configured_hash.encode("utf-8")
+            ).hexdigest()
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
         record_login_failure(db, login_key)

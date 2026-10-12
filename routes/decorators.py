@@ -1,8 +1,10 @@
+import hashlib
 import hmac
 from functools import wraps
 
 from flask import flash, redirect, session, url_for
 
+from config import get_admin_credentials
 from database.database import get_db
 
 
@@ -30,6 +32,22 @@ def role_required(*roles):
             if session_role not in allowed_roles:
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
+
+            # Admin sessions are invalidated when the configured password hash changes.
+            if session_role == "admin":
+                _, configured_hash = get_admin_credentials()
+                expected_version = (
+                    hashlib.sha256(configured_hash.encode("utf-8")).hexdigest()
+                    if configured_hash
+                    else ""
+                )
+                session_version = str(session.get("auth_version") or "")
+                if not expected_version or not hmac.compare_digest(
+                    expected_version, session_version
+                ):
+                    session.clear()
+                    flash("Admin credentials changed. Please sign in again.", "error")
+                    return redirect(url_for("admin.login"))
 
             # Random per-user versions revoke other browser sessions after password changes.
             if session_role in {"student", "employer"}:
