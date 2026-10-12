@@ -1,10 +1,10 @@
 from werkzeug.security import generate_password_hash
 
-from config import DEFAULT_ADMIN_EMAIL, get_admin_credentials
+from config import get_admin_credentials
 from routes.admin_routes import admin_credentials_valid
 
 
-def test_admin_auth_uses_hash(monkeypatch):
+def test_admin_auth_uses_configured_hash(monkeypatch):
     password = "a-strong-test-password"
     monkeypatch.setenv("FRESHERFLOW_ENV", "production")
     monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
@@ -17,12 +17,12 @@ def test_admin_auth_uses_hash(monkeypatch):
     assert not admin_credentials_valid("admin@example.com", "wrong-password")
 
 
-def test_admin_auth_uses_local_defaults_without_env(monkeypatch):
+def test_admin_auth_is_disabled_without_explicit_credentials(monkeypatch):
+    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
     email, password_hash = get_admin_credentials()
-    assert email == DEFAULT_ADMIN_EMAIL
-    assert password_hash
-    assert admin_credentials_valid(DEFAULT_ADMIN_EMAIL, "admin123")
-    assert not admin_credentials_valid(DEFAULT_ADMIN_EMAIL, "wrong-password")
+    assert email == ""
+    assert password_hash == ""
+    assert not admin_credentials_valid("admin@123", "admin123")

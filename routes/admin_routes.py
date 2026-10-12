@@ -68,7 +68,7 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        login_email = "admin@123" if email == "admin" else email
+        login_email = email
         db = get_db()
         login_key = client_login_key(request, "admin", login_email)
         if login_is_locked(db, login_key):
