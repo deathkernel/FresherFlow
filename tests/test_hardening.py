@@ -136,3 +136,22 @@ def test_employer_can_change_password_after_admin_provisioning(app):
     )
     assert response.status_code == 200
     assert b"Current password is incorrect." in response.data
+
+
+def test_authenticated_admin_root_redirects_to_dashboard(app, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@123")
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("admin123"))
+    client = app.test_client()
+
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={"csrf_token": token, "email": "Admin@123", "password": "admin123"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin/")
+
+    response = client.get("/admin", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin/")
