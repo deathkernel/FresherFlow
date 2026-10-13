@@ -62,7 +62,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\run_local_admin.ps1
 ```
 
-For the requested local setup, enter `Admin@123` as the Admin ID and `admin123` as the password when prompted. These values are examples for a local development machine only; do not reuse them for a public deployment. The script configures credentials only for that running process, so run it again whenever you restart the app.
+Enter your desired Admin ID and password when prompted. The script configures credentials only for that running process, so run it again whenever you restart the app. Do not use weak example passwords or reuse local credentials for a public deployment.
 
 You can also configure `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` manually. Keep credentials and hashes in your local environment or a deployment secret manager, never in source control.
 
