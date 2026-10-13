@@ -166,6 +166,15 @@ def jobs():
         [*args, per_page, offset],
     ).fetchall()
 
+    total_matching = db.execute(
+        """SELECT COUNT(*)
+           FROM vacancies v
+           LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+           LEFT JOIN users u ON u.id=v.employer_id
+           WHERE """ + " AND ".join(clauses),
+        args,
+    ).fetchone()[0]
+
     counts = {
         "total": db.execute("SELECT COUNT(*) FROM vacancies").fetchone()[0],
         "pending": db.execute("SELECT COUNT(*) FROM vacancies WHERE moderation_status='pending'").fetchone()[0],
@@ -180,7 +189,7 @@ def jobs():
         moderation=moderation,
         page=page,
         per_page=per_page,
-        total_matching=counts["total"],
+        total_matching=total_matching,
     )
 
 
