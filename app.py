@@ -128,7 +128,7 @@ def create_app():
     @app.get("/admin")
     def admin_portal():
         if session.get("user_id") and session.get("role") == "admin":
-            return redirect(url_for("admin.login"))
+            return redirect(url_for("admin.dashboard"))
         return redirect(url_for("admin.login"))
 
     @app.get("/student-panel")
