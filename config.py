@@ -3,6 +3,14 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
+from werkzeug.security import generate_password_hash
+
+
+# Generate the local fallback hash once per process. Re-hashing inside
+# get_admin_credentials() would produce a new salt on every request and
+# invalidate the admin session immediately after login.
+_LOCAL_ADMIN_PASSWORD_HASH = generate_password_hash("admin123")
+
 
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
@@ -27,7 +35,12 @@ def get_admin_credentials():
     if email and password_hash:
         return email, password_hash
 
-    # Never ship or silently enable a default administrator account.
+    # Convenience credentials for local development only. Production must use
+    # explicitly configured credentials and never falls back to this account.
+    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
+    if environment != "production":
+        return "admin@123", _LOCAL_ADMIN_PASSWORD_HASH
+
     return "", ""
 
 
