@@ -55,15 +55,16 @@ The application creates its SQLite database under `instance/` on first start. Ru
 
 Development can use the generated local secret, but administrator credentials must be configured explicitly. No default administrator account is shipped.
 
-On PowerShell, configure an administrator email and a Werkzeug password hash before starting the app:
+On Windows PowerShell, the easiest local workflow is the interactive helper. It asks for the admin ID and a hidden password, hashes the password locally, and clears the environment variables when the server exits:
 
 ```powershell
-$env:ADMIN_EMAIL = "admin@example.com"
-$env:ADMIN_PASSWORD_HASH = python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('replace-this-password'))"
-python app.py
+.\\.venv\\Scripts\\Activate.ps1
+.\\scripts\\run_local_admin.ps1
 ```
 
-Use a unique password. Keep the hash in your local environment or a deployment secret manager, never in source control.
+Then open `http://127.0.0.1:5000/admin`. The repository intentionally ships no default admin credentials. Use a unique password and never commit credentials or hashes.
+
+For manual setup, configure `ADMIN_EMAIL` and a Werkzeug `ADMIN_PASSWORD_HASH` in the environment before running `python app.py`.
 
 ### Production
 
