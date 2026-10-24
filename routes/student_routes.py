@@ -289,7 +289,8 @@ def apply(vacancy_id):
     uid = session["user_id"]
     vacancy = db.execute(
         "SELECT v.deadline FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active'",
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' "
+        "AND ep.account_status='active' AND ep.verification_status='verified'",
         (vacancy_id,),
     ).fetchone()
     if not vacancy:
@@ -319,7 +320,8 @@ def save(vacancy_id):
     job = db.execute(
         "SELECT v.id FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
+        "AND ep.account_status='active' AND ep.verification_status='verified' "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
         (vacancy_id,),
     ).fetchone()
     if not job:
