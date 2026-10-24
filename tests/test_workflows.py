@@ -312,7 +312,8 @@ def test_message_rate_limit_blocks_excessive_sends(app):
         session["name"] = student["name"]
         session["role"] = "student"
         session["auth_version"] = student["auth_version"]
-    token = csrf(client, "/messages")
+        session["csrf_token"] = "test-csrf-token"
+    token = "test-csrf-token"
 
     for index in range(11):
         response = client.post(
