@@ -211,6 +211,35 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(5)")
 
+    if 6 not in applied:
+        # Moderation is a separate state from vacancy publication status. Notify
+        # employers when an administrator approves or rejects a vacancy.
+        db.executescript("""
+        DROP TRIGGER IF EXISTS notify_vacancy_moderation;
+        CREATE TRIGGER notify_vacancy_moderation
+        AFTER UPDATE OF moderation_status ON vacancies
+        WHEN OLD.moderation_status <> NEW.moderation_status
+          AND NEW.moderation_status IN ('approved','rejected')
+        BEGIN
+            INSERT INTO notifications(user_id,title,body,kind)
+            SELECT NEW.employer_id,
+                   CASE NEW.moderation_status
+                       WHEN 'approved' THEN 'Vacancy approved'
+                       ELSE 'Vacancy rejected'
+                   END,
+                   CASE NEW.moderation_status
+                       WHEN 'approved' THEN 'Your vacancy has been approved and can appear in student job listings.'
+                       ELSE 'Your vacancy was rejected by the administrator. Review the moderation note and update the vacancy before resubmitting.'
+                   END,
+                   'vacancy'
+            WHERE COALESCE(
+                (SELECT notify_vacancy FROM user_preferences WHERE user_id=NEW.employer_id),
+                1
+            )=1;
+        END;
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(6)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
