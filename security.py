@@ -106,7 +106,7 @@ def login_is_locked(db, key):
     return locked_until > now
 
 
-def record_login_failure(db, key):
+def record_login_failure(db, key, max_failures=LOGIN_MAX_FAILURES):
     now = int(time.time())
     # Bound auth_attempts growth when attackers rotate email/IP combinations.
     db.execute(
@@ -118,7 +118,7 @@ def record_login_failure(db, key):
         (key,),
     ).fetchone()
     failures = 1 if not row or int(row["updated_at"]) + LOGIN_WINDOW_SECONDS < now else int(row["failed_count"]) + 1
-    locked_until = now + LOGIN_LOCK_SECONDS if failures >= LOGIN_MAX_FAILURES else 0
+    locked_until = now + LOGIN_LOCK_SECONDS if failures >= max_failures else 0
     db.execute(
         """INSERT INTO auth_attempts(attempt_key, failed_count, locked_until, updated_at)
            VALUES(?,?,?,?)
@@ -134,6 +134,12 @@ def record_login_failure(db, key):
 def clear_login_failures(db, key):
     db.execute("DELETE FROM auth_attempts WHERE attempt_key=?", (key,))
     db.commit()
+
+
+def client_login_ip_key(request, scope):
+    """Build a per-IP throttle key without trusting forwarded headers."""
+    ip = request.remote_addr or "unknown"
+    return f"{scope}:ip:{ip}"
 
 
 def client_login_key(request, scope, identity):
