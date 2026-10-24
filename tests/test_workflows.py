@@ -299,12 +299,20 @@ def test_message_rate_limit_blocks_excessive_sends(app):
     seed_student(app)
     seed_employer(app)
     client = app.test_client()
-    login(client, "student", "student@example.com", "student-password-123")
-    token = csrf(client, "/messages")
     with app.app_context():
-        employer_id = get_db().execute(
+        db = get_db()
+        student = db.execute(
+            "SELECT id, name, auth_version FROM users WHERE email='student@example.com'"
+        ).fetchone()
+        employer_id = db.execute(
             "SELECT id FROM users WHERE email='employer@example.com'"
         ).fetchone()["id"]
+    with client.session_transaction() as session:
+        session["user_id"] = student["id"]
+        session["name"] = student["name"]
+        session["role"] = "student"
+        session["auth_version"] = student["auth_version"]
+    token = csrf(client, "/messages")
 
     for index in range(11):
         response = client.post(
