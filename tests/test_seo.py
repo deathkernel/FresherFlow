@@ -88,4 +88,4 @@ def test_unverified_employers_are_hidden_from_public_jobs_and_sitemap(app):
     assert b"Junior Python Developer" not in listing.data
     assert detail.status_code == 404
     assert f"/jobs/{jid}" not in sitemap
-    assert "SEO Company" not in sitemap
+    assert "/company/" not in sitemap
