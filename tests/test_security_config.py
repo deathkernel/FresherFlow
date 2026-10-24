@@ -5,7 +5,9 @@ from werkzeug.security import generate_password_hash
 
 
 def test_admin_credentials_require_explicit_configuration(monkeypatch):
-    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
+    # Development intentionally has a loopback-only demo account.
+    # Other environments must always require explicit administrator credentials.
+    monkeypatch.setenv("FRESHERFLOW_ENV", "staging")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
