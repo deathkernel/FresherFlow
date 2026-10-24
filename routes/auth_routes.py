@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 
 from database.database import get_db
 from security import (
+    client_login_ip_key,
     client_login_key,
     clear_login_failures,
     login_is_locked,
@@ -61,7 +62,8 @@ def login():
         password = request.form.get("password", "")
         db = get_db()
         login_key = client_login_key(request, "user", email)
-        if login_is_locked(db, login_key):
+        ip_key = client_login_ip_key(request, "user")
+        if login_is_locked(db, login_key) or login_is_locked(db, ip_key):
             flash("Too many failed attempts. Please try again in a few minutes.", "error")
             return render_template("login.html", login_context=login_context)
         user = db.execute(
@@ -94,6 +96,7 @@ def login():
             return redirect(url_for(login_target(user["role"])))
 
         record_login_failure(db, login_key)
+        record_login_failure(db, ip_key, max_failures=20)
         flash("Invalid email or password.", "error")
         return render_template("login.html", login_context=login_context)
 
