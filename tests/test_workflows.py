@@ -293,3 +293,37 @@ def test_getting_message_thread_does_not_mark_messages_read(app):
         assert get_db().execute(
             "SELECT is_read FROM messages WHERE body='Unread message'"
         ).fetchone()["is_read"] == 1
+
+
+def test_message_rate_limit_blocks_excessive_sends(app):
+    seed_student(app)
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    token = csrf(client, "/messages")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+
+    for index in range(11):
+        response = client.post(
+            "/messages",
+            data={
+                "csrf_token": token,
+                "recipient_id": employer_id,
+                "body": f"Message {index}",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    with app.app_context():
+        sender_id = get_db().execute(
+            "SELECT id FROM users WHERE email='student@example.com'"
+        ).fetchone()["id"]
+        count = get_db().execute(
+            "SELECT COUNT(*) FROM messages WHERE sender_id=?",
+            (sender_id,),
+        ).fetchone()[0]
+        assert count == 10
