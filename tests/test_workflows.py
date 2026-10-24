@@ -327,3 +327,49 @@ def test_message_rate_limit_blocks_excessive_sends(app):
             (sender_id,),
         ).fetchone()[0]
         assert count == 10
+
+
+def test_admin_can_change_employer_verification_status(app, monkeypatch):
+    from werkzeug.security import generate_password_hash
+
+    password = "strong-admin-password-123"
+    monkeypatch.setenv("FRESHERFLOW_ENV", "production")
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash(password))
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending' WHERE user_id=?",
+            (employer_id,),
+        )
+        db.commit()
+
+    client = app.test_client()
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={"csrf_token": token, "email": "admin@example.com", "password": password},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with client.session_transaction() as session:
+        token = session["csrf_token"]
+    response = client.post(
+        f"/admin/companies/{employer_id}/verification",
+        data={"csrf_token": token, "decision": "verified", "note": "Reviewed"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        profile = get_db().execute(
+            "SELECT verification_status, verification_note, verified_at "
+            "FROM employer_profiles WHERE user_id=?",
+            (employer_id,),
+        ).fetchone()
+        assert profile["verification_status"] == "verified"
+        assert profile["verification_note"] == "Reviewed"
+        assert profile["verified_at"]
