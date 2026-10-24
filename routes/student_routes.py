@@ -214,7 +214,8 @@ def jobs():
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
         "ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
+        "AND ep.account_status='active' AND ep.verification_status='verified' "
+        "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
     )
     args = [uid, uid]
     if q:
@@ -263,6 +264,7 @@ def job_details(vacancy_id):
         "SELECT v.*,ep.organization_name,ep.website,ep.location employer_location "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "AND ep.verification_status='verified' "
         "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
         (vacancy_id,),
     ).fetchone()
