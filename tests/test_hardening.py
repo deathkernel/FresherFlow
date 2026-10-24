@@ -136,3 +136,76 @@ def test_employer_can_change_password_after_admin_provisioning(app):
     )
     assert response.status_code == 200
     assert b"Current password is incorrect." in response.data
+
+
+def test_authenticated_admin_root_redirects_to_dashboard(app, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("a-strong-test-password"))
+    client = app.test_client()
+
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={
+            "csrf_token": token,
+            "email": "admin@example.com",
+            "password": "a-strong-test-password",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin/")
+
+    response = client.get("/admin", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin/")
+
+
+def test_admin_job_pagination_uses_filtered_match_count(app, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("a-strong-test-password"))
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("employer@example.com",)
+        ).fetchone()["id"]
+        for index in range(21):
+            db.execute(
+                """INSERT INTO vacancies
+                   (employer_id, title, vacancy_type, description, location, status, moderation_status)
+                   VALUES (?, ?, 'Entry-level Job', 'A test role', 'Pune', 'active', 'pending')""",
+                (employer_id, f"Match role {index:02d}"),
+            )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id, title, vacancy_type, description, location, status, moderation_status)
+               VALUES (?, 'Unrelated role', 'Entry-level Job', 'A test role', 'Pune', 'active', 'pending')""",
+            (employer_id,),
+        )
+        db.commit()
+
+    client = app.test_client()
+    token = csrf(client, "/admin/login")
+    login_response = client.post(
+        "/admin/login",
+        data={
+            "csrf_token": token,
+            "email": "admin@example.com",
+            "password": "a-strong-test-password",
+        },
+        follow_redirects=False,
+    )
+    assert login_response.status_code == 302
+
+    first_page = client.get("/admin/jobs?q=Match")
+    assert first_page.status_code == 200
+    assert b"21 matching vacancies" in first_page.data
+    assert b"Next" in first_page.data
+
+    last_page = client.get("/admin/jobs?q=Match&page=2")
+    assert last_page.status_code == 200
+    assert b"21 matching vacancies" in last_page.data
+    assert b"Previous" in last_page.data
+    assert b"Next" not in last_page.data
+
