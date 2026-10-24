@@ -153,6 +153,18 @@ def jobs():
         clauses.append("v.moderation_status=?")
         args.append(moderation)
 
+    total_matching = db.execute(
+        """SELECT COUNT(*)
+           FROM vacancies v
+           LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+           LEFT JOIN users u ON u.id=v.employer_id
+           WHERE """ + " AND ".join(clauses),
+        args,
+    ).fetchone()[0]
+    total_pages = max(1, (total_matching + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
+
     rows = db.execute(
         """SELECT v.*, COALESCE(ep.organization_name, 'Unknown company') AS organization_name,
                   COALESCE(u.email, '—') AS employer_email,
@@ -180,7 +192,8 @@ def jobs():
         moderation=moderation,
         page=page,
         per_page=per_page,
-        total_matching=counts["total"],
+        total_matching=total_matching,
+        total_pages=total_pages,
     )
 
 
@@ -200,6 +213,19 @@ def applications():
         )
         term = f"%{q}%"
         args += [term] * 4
+
+    total_matching = db.execute(
+        """SELECT COUNT(*)
+           FROM applications a
+           JOIN vacancies v ON v.id=a.vacancy_id
+           LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+           JOIN users u ON u.id=a.student_id
+           WHERE """ + " AND ".join(clauses),
+        args,
+    ).fetchone()[0]
+    total_pages = max(1, (total_matching + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
 
     rows = db.execute(
         """SELECT a.id, a.status, a.applied_at, v.id AS vacancy_id, v.title,
@@ -222,6 +248,8 @@ def applications():
         "admin/applications.html",
         applications=rows,
         total=total,
+        total_matching=total_matching,
+        total_pages=total_pages,
         q=q,
         page=page,
         per_page=per_page,
@@ -249,6 +277,17 @@ def companies():
         clauses.append("ep.account_status=?")
         args.append(account)
 
+    total_matching = db.execute(
+        """SELECT COUNT(*)
+           FROM employer_profiles ep
+           JOIN users u ON u.id=ep.user_id
+           WHERE """ + " AND ".join(clauses),
+        args,
+    ).fetchone()[0]
+    total_pages = max(1, (total_matching + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
+
     rows = db.execute(
         """SELECT ep.*, u.name contact_name, u.email
            FROM employer_profiles ep
@@ -271,6 +310,8 @@ def companies():
         account=account,
         page=page,
         per_page=per_page,
+        total_matching=total_matching,
+        total_pages=total_pages,
     )
 
 

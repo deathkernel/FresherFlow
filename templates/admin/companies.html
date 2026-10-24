@@ -38,13 +38,13 @@
         {% if q or account %}<a class="btn btn-light" href="{{ url_for('admin.companies') }}">Clear</a>{% endif %}
       </form>
       <div class="section-head admin-section-head">
-        <div><span class="eyebrow">COMPANIES</span><h2>{{ companies|length }} matching companies</h2><p>{{ counts.total }} registered companies in total.</p></div>
+        <div><span class="eyebrow">COMPANIES</span><h2>{{ total_matching }} matching companies</h2><p>{{ counts.total }} registered companies in total.</p></div>
         <a class="btn btn-primary" href="{{ url_for('admin.add_company_page') }}">+ Add New Employer</a>
       </div>
       <div class="content-card reveal">
         <div class="table-wrap">
           <table class="table align-middle">
-            <th scope="col"ead><tr><th scope="col">Company</th><th scope="col">Company ID</th><th scope="col">Contact</th><th scope="col">Location</th><th scope="col">Account</th><th scope="col">Action</th></tr></thead>
+            <thead><tr><th scope="col">Company</th><th scope="col">Company ID</th><th scope="col">Contact</th><th scope="col">Location</th><th scope="col">Account</th><th scope="col">Action</th></tr></thead>
             <tbody>
               {% for company in companies %}
                 <tr data-admin-row>
@@ -71,7 +71,7 @@
           </table>
         </div>
       </div>
-      {% if page > 1 or companies|length == per_page %}
+      {% if total_pages > 1 %}
         <nav class="pagination-bar" aria-label="Company pages">
           {% if page > 1 %}<a class="btn btn-sm btn-light" href="{{ url_for('admin.companies', q=q, account=account, page=page-1) }}">← Previous</a>{% endif %}
           <span>Page {{ page }}</span>
