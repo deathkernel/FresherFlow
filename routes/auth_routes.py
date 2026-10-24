@@ -17,6 +17,7 @@ from werkzeug.utils import secure_filename
 from database.database import get_db
 from security import (
     client_login_ip_key,
+    calculate_profile_strength,
     client_login_key,
     clear_login_failures,
     login_is_locked,
@@ -158,6 +159,19 @@ def register():
             resume_path = upload_dir / resume_filename
             resume.save(resume_path)
 
+        profile_strength = calculate_profile_strength(
+            [
+                form.get("phone", "").strip(),
+                form.get("education", "").strip(),
+                form.get("college", "").strip(),
+                form.get("graduation_year", "").strip(),
+                form.get("skills", "").strip(),
+                form.get("certifications", "").strip(),
+                form.get("preferred_job_type", "Both").strip(),
+                form.get("preferred_location", "").strip(),
+            ],
+            bool(resume_filename),
+        )
         db.execute(
             """INSERT INTO student_profiles
             (user_id,phone,education,college,graduation_year,skills,certifications,
@@ -174,7 +188,7 @@ def register():
                 form.get("preferred_job_type", "Both"),
                 form.get("preferred_location", "").strip(),
                 resume_filename,
-                100 if resume_filename else 80,
+                profile_strength,
             ),
         )
         db.commit()
