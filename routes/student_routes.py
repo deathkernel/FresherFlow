@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 
 from database.database import get_db
 from routes.decorators import role_required
-from security import valid_resume_upload
+from security import calculate_profile_strength, valid_resume_upload
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -124,8 +124,7 @@ def profile():
                 flash("The resume could not be saved. Please try again.", "error")
                 return redirect(url_for("student.profile"))
 
-        filled = sum(bool(value) for value in fields)
-        strength = min(100, 20 + filled * 10 + (10 if resume_filename else 0))
+        strength = calculate_profile_strength(fields, bool(resume_filename))
         try:
             db.execute(
                 "UPDATE student_profiles SET "
