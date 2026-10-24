@@ -356,8 +356,7 @@ def test_admin_can_change_employer_verification_status(app, monkeypatch):
         follow_redirects=False,
     )
     assert response.status_code == 302
-    with client.session_transaction() as session:
-        token = session["csrf_token"]
+    token = csrf(client, f"/admin/companies/{employer_id}")
     response = client.post(
         f"/admin/companies/{employer_id}/verification",
         data={"csrf_token": token, "decision": "verified", "note": "Reviewed"},
