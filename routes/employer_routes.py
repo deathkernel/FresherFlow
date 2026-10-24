@@ -5,7 +5,17 @@ import sqlite3
 from datetime import date, datetime
 from zipfile import BadZipFile, LargeZipFile, ZipFile
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
@@ -697,6 +707,31 @@ def applications():
         per_page=per_page,
         total=total,
     )
+
+
+@employer_bp.get("/applications/<int:application_id>/resume")
+@role_required("employer")
+def application_resume(application_id):
+    db = get_db()
+    row = db.execute(
+        """SELECT sp.resume_filename
+           FROM applications a
+           JOIN vacancies v ON v.id=a.vacancy_id
+           JOIN student_profiles sp ON sp.user_id=a.student_id
+           WHERE a.id=? AND v.employer_id=?""",
+        (application_id, session["user_id"]),
+    ).fetchone()
+    if not row or not row["resume_filename"]:
+        return render_template("404.html"), 404
+
+    response = send_from_directory(
+        current_app.config["UPLOAD_FOLDER"],
+        row["resume_filename"],
+        as_attachment=True,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @employer_bp.post("/applications/<int:application_id>/status")
