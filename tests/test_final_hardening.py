@@ -3,7 +3,7 @@ from flask import Flask, request
 
 from config import Config
 from database.database import get_db
-from security import client_login_key, login_is_locked, record_login_failure
+from security import client_login_ip_key, client_login_key, login_is_locked, record_login_failure
 
 
 @pytest.fixture
@@ -133,3 +133,21 @@ def test_trusted_proxy_hops_enable_client_ip_and_https_detection(app, monkeypatc
     )
     assert response.data == b"198.51.100.42|True|localhost"
     assert response.headers["Strict-Transport-Security"].startswith("max-age=")
+
+
+def test_per_ip_login_throttle_counts_failures_across_identities(app):
+    from flask import Flask, request
+
+    flask_app = Flask(__name__)
+    with flask_app.test_request_context(
+        "/login", environ_base={"REMOTE_ADDR": "198.51.100.25"}
+    ):
+        ip_key = client_login_ip_key(request, "user")
+
+    with app.app_context():
+        db = get_db()
+        for _ in range(19):
+            record_login_failure(db, ip_key, max_failures=20)
+            assert not login_is_locked(db, ip_key)
+        record_login_failure(db, ip_key, max_failures=20)
+        assert login_is_locked(db, ip_key)
