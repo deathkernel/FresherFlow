@@ -676,6 +676,9 @@ def applications():
         "SELECT COUNT(*) FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
         (uid,),
     ).fetchone()[0]
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
     rows = db.execute("""
         SELECT a.*, v.title, u.name, u.email,
                sp.phone, sp.education, sp.college, sp.graduation_year,
@@ -696,6 +699,7 @@ def applications():
         page=page,
         per_page=per_page,
         total=total,
+        total_pages=total_pages,
     )
 
 
