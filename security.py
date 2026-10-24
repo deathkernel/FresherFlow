@@ -155,6 +155,12 @@ def client_login_key(request, scope, identity):
     return f"{scope}:{ip}:{normalized}"
 
 
+def calculate_profile_strength(fields, has_resume):
+    """Return one consistent profile-strength score for registration and edits."""
+    filled_fields = sum(bool(str(value or "").strip()) for value in fields)
+    return min(100, 20 + filled_fields * 10 + (10 if has_resume else 0))
+
+
 def valid_website_url(value):
     """Return True only for absolute HTTP(S) URLs."""
     value = (value or "").strip()
