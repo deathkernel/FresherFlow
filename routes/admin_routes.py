@@ -19,6 +19,7 @@ from config import get_admin_credentials
 from database.database import get_db
 from routes.decorators import role_required
 from security import (
+    client_login_ip_key,
     client_login_key,
     clear_login_failures,
     login_is_locked,
@@ -72,7 +73,8 @@ def login():
         login_email = email
         db = get_db()
         login_key = client_login_key(request, "admin", login_email)
-        if login_is_locked(db, login_key):
+        ip_key = client_login_ip_key(request, "admin")
+        if login_is_locked(db, login_key) or login_is_locked(db, ip_key):
             flash("Too many failed attempts. Please try again in a few minutes.", "error")
             return render_template("admin/login.html")
         if admin_credentials_valid(login_email, password):
@@ -88,6 +90,7 @@ def login():
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
         record_login_failure(db, login_key)
+        record_login_failure(db, ip_key, max_failures=20)
         flash("Invalid admin credentials.", "error")
     return render_template("admin/login.html")
 
