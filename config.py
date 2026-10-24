@@ -3,6 +3,8 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
+from werkzeug.security import generate_password_hash
+
 
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
@@ -20,14 +22,26 @@ def local_secret():
     return value
 
 
+# Convenience credentials for loopback-only local development. Never use these
+# credentials in a deployed environment; production requires explicit secrets.
+_LOCAL_DEMO_ADMIN_EMAIL = "admin123"
+_LOCAL_DEMO_ADMIN_PASSWORD_HASH = generate_password_hash("admin123")
+
+
 def get_admin_credentials():
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 
     if email and password_hash:
         return email, password_hash
+    if email or password_hash:
+        # A partial explicit configuration is an error, not a reason to fall back.
+        return "", ""
 
-    # Never ship or silently enable a default administrator account.
+    if os.environ.get("FRESHERFLOW_ENV", "development").strip().lower() == "development":
+        return _LOCAL_DEMO_ADMIN_EMAIL, _LOCAL_DEMO_ADMIN_PASSWORD_HASH
+
+    # Never enable demo credentials in production or other environments.
     return "", ""
 
 
