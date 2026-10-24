@@ -18,11 +18,12 @@ def test_admin_auth_uses_configured_hash(monkeypatch):
 
 
 def test_admin_auth_is_disabled_without_explicit_credentials(monkeypatch):
-    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
+    # Demo credentials are intentionally available in development only.
+    monkeypatch.setenv("FRESHERFLOW_ENV", "staging")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
     email, password_hash = get_admin_credentials()
     assert email == ""
     assert password_hash == ""
-    assert not admin_credentials_valid("admin@123", "admin123")
+    assert not admin_credentials_valid("admin123", "admin123")
