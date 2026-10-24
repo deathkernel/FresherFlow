@@ -293,3 +293,85 @@ def test_getting_message_thread_does_not_mark_messages_read(app):
         assert get_db().execute(
             "SELECT is_read FROM messages WHERE body='Unread message'"
         ).fetchone()["is_read"] == 1
+
+def test_vacancy_moderation_change_notifies_employer(app):
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','pending')""",
+            (employer_id, "Notification Role", "Entry-level Job", "A test role.", "Pune"),
+        )
+        vacancy_id = db.execute(
+            "SELECT id FROM vacancies WHERE title='Notification Role'"
+        ).fetchone()["id"]
+        db.commit()
+
+        db.execute(
+            "UPDATE vacancies SET moderation_status='approved', status='active' WHERE id=?",
+            (vacancy_id,),
+        )
+        db.commit()
+        notice = db.execute(
+            "SELECT title,body,kind FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 1",
+            (employer_id,),
+        ).fetchone()
+        assert notice is not None
+        assert notice["title"] == "Vacancy approved"
+        assert "approved" in notice["body"].lower()
+        assert notice["kind"] == "vacancy"
+
+
+def test_employer_can_download_only_resume_of_own_applicant(app, tmp_path):
+    seed_student(app)
+    seed_employer(app)
+    seed_employer(app, email="other-employer@example.com")
+    resume_content = b"Test resume content"
+    resume_path = tmp_path / "uploads" / "test-resume.pdf"
+    resume_path.parent.mkdir(parents=True, exist_ok=True)
+    resume_path.write_bytes(resume_content)
+
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email='student@example.com'"
+        ).fetchone()["id"]
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        other_employer_id = db.execute(
+            "SELECT id FROM users WHERE email='other-employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE student_profiles SET resume_filename='test-resume.pdf' WHERE user_id=?",
+            (student_id,),
+        )
+        cur = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','approved')""",
+            (employer_id, "Applicant Role", "Entry-level Job", "A test role.", "Pune"),
+        )
+        application_id = db.execute(
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
+            (cur.lastrowid, student_id),
+        ).lastrowid
+        db.commit()
+
+    own_client = app.test_client()
+    login(own_client, "employer", "employer@example.com", "employer-password-123")
+    response = own_client.get(f"/employer/applications/{application_id}/resume")
+    assert response.status_code == 200
+    assert response.data == resume_content
+    assert response.headers["Cache-Control"] == "private, no-store"
+
+    other_client = app.test_client()
+    login(other_client, "employer", "other-employer@example.com", "employer-password-123")
+    response = other_client.get(f"/employer/applications/{application_id}/resume")
+    assert response.status_code == 404
+
