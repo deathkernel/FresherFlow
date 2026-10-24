@@ -118,6 +118,13 @@ def send_message():
     if not body or len(body) > 2000:
         flash("Message must contain 1–2000 characters.", "error")
         return redirect(url_for("platform.messages", **{"with": recipient_id}))
+    recent_count = db.execute(
+        "SELECT COUNT(*) FROM messages WHERE sender_id=? AND created_at >= datetime('now','-1 minute')",
+        (session["user_id"],),
+    ).fetchone()[0]
+    if recent_count >= 10:
+        flash("You have sent too many messages. Please wait a minute before sending more.", "error")
+        return redirect(url_for("platform.messages", **{"with": recipient_id}))
     db.execute(
         "INSERT INTO messages(sender_id,recipient_id,body) VALUES(?,?,?)",
         (session["user_id"], recipient_id, body),
@@ -139,7 +146,7 @@ def company(employer_id):
     db = get_db()
     company = db.execute(
         "SELECT ep.*, u.name FROM employer_profiles ep JOIN users u ON u.id=ep.user_id "
-        "WHERE ep.user_id=? AND ep.account_status='active'", (employer_id,)
+        "WHERE ep.user_id=? AND ep.account_status='active' AND ep.verification_status='verified'", (employer_id,)
     ).fetchone()
     if not company:
         return render_template("404.html"), 404
