@@ -380,3 +380,48 @@ def test_admin_can_change_employer_verification_status(app, monkeypatch):
         assert profile["verification_status"] == "verified"
         assert profile["verification_note"] == "Reviewed"
         assert profile["verified_at"]
+
+
+def test_unverified_employer_jobs_cannot_be_applied_to_or_saved(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        student = db.execute(
+            "SELECT id, name, auth_version FROM users WHERE email='student@example.com'"
+        ).fetchone()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (employer_id,),
+        )
+        vacancy_id = db.execute(
+            "INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,status,moderation_status) "
+            "VALUES(?,?,?,?,?,'active','approved')",
+            (employer_id, "Hidden Role", "Entry-level Job", "A hidden role", "Pune"),
+        ).lastrowid
+        db.commit()
+    client = app.test_client()
+    with client.session_transaction() as session:
+        session["user_id"] = student["id"]
+        session["name"] = student["name"]
+        session["role"] = "student"
+        session["auth_version"] = student["auth_version"]
+    token = csrf(client, "/student/jobs")
+    for action in ("apply", "save"):
+        response = client.post(
+            f"/student/jobs/{vacancy_id}/{action}",
+            data={"csrf_token": token},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+    with app.app_context():
+        db = get_db()
+        assert db.execute(
+            "SELECT COUNT(*) FROM applications WHERE vacancy_id=?", (vacancy_id,)
+        ).fetchone()[0] == 0
+        assert db.execute(
+            "SELECT COUNT(*) FROM saved_jobs WHERE vacancy_id=?", (vacancy_id,)
+        ).fetchone()[0] == 0
