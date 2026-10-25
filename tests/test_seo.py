@@ -70,6 +70,20 @@ def test_robots_txt_excludes_private_workspaces_and_links_sitemap(app):
     assert "Disallow: /student/" in content and "Disallow: /settings" in content
 
 
+def test_public_company_job_links_use_public_job_detail_route(app):
+    jid=seed_job(app)
+    with app.app_context():
+        employer_id=get_db().execute(
+            "SELECT employer_id FROM vacancies WHERE id=?", (jid,)
+        ).fetchone()["employer_id"]
+
+    response=app.test_client().get(f"/company/{employer_id}")
+    content=response.get_data(as_text=True)
+    assert response.status_code==200
+    assert f'href="/jobs/{jid}"' in content
+    assert f'href="/student/jobs/{jid}"' not in content
+
+
 def test_private_login_page_is_noindex(app):
     response=app.test_client().get("/login")
     assert response.status_code==200
