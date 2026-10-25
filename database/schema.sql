@@ -77,5 +77,6 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_employer_account_status ON employer_profiles(account_status);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(sender_id, recipient_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_created_at ON messages(sender_id, created_at);
 
 
