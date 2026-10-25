@@ -12,7 +12,10 @@
 <div class="landing-progress" data-scroll-progress aria-hidden="true"></div>
 <nav class="topbar landing-nav">
   <a class="brand" href="{{ url_for('index') }}" aria-label="FresherFlow home">Fresher<span>Flow</span></a>
-  <div class="nav-actions">
+  <button class="landing-menu-toggle" type="button" data-landing-menu-toggle aria-controls="landing-nav-actions" aria-expanded="false">
+    <span class="landing-menu-icon" aria-hidden="true"></span><span>Menu</span>
+  </button>
+  <div class="nav-actions" id="landing-nav-actions">
     <a href="{{ url_for('seo.public_jobs') }}" class="btn btn-ghost">Browse jobs</a>
     <a href="#features" class="btn btn-ghost">Features</a>
     <a href="#how-it-works" class="btn btn-ghost">How it works</a>
