@@ -422,3 +422,119 @@ def test_message_sender_is_rate_limited_to_reduce_spam(app):
             "SELECT COUNT(*) FROM messages WHERE sender_id=?", (student_id,)
         ).fetchone()[0] == 20
 
+def seed_application_relationship(
+    app,
+    student_email="student@example.com",
+    employer_email="employer@example.com",
+):
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email=?", (student_email,)
+        ).fetchone()["id"]
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email=?", (employer_email,)
+        ).fetchone()["id"]
+        cursor = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?)""",
+            (
+                employer_id,
+                "Applicant Contact Role",
+                "Entry-level Job",
+                "A role for messaging authorization tests.",
+                "Pune",
+                "active",
+                "approved",
+            ),
+        )
+        db.execute(
+            "INSERT INTO applications(vacancy_id,student_id,status) VALUES(?,?,?)",
+            (cursor.lastrowid, student_id, "Applied"),
+        )
+        db.commit()
+
+
+def test_user_cannot_start_message_conversation_without_application(app):
+    seed_student(app)
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT id FROM users WHERE email=?", ("employer@example.com",)
+        ).fetchone()["id"]
+    token = csrf(client, "/messages")
+    response = client.post(
+        "/messages",
+        data={
+            "csrf_token": token,
+            "recipient_id": str(employer_id),
+            "body": "Hello, please contact me.",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert b"after applying to one of their jobs" in response.data
+    with app.app_context():
+        assert get_db().execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 0
+
+
+def test_student_can_start_message_after_applying_to_verified_employer(app):
+    seed_student(app)
+    seed_employer(app)
+    seed_application_relationship(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT id FROM users WHERE email=?", ("employer@example.com",)
+        ).fetchone()["id"]
+    token = csrf(client, "/messages")
+    response = client.post(
+        "/messages",
+        data={
+            "csrf_token": token,
+            "recipient_id": str(employer_id),
+            "body": "Hello, I applied for your role.",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        row = get_db().execute(
+            "SELECT sender_id, recipient_id, body FROM messages"
+        ).fetchone()
+        assert row["body"] == "Hello, I applied for your role."
+        assert row["recipient_id"] == employer_id
+
+
+def test_employer_can_message_student_who_applied_to_its_job(app):
+    seed_student(app)
+    seed_employer(app)
+    seed_application_relationship(app)
+    client = app.test_client()
+    login(client, "employer", "employer@example.com", "employer-password-123")
+    with app.app_context():
+        student_id = get_db().execute(
+            "SELECT id FROM users WHERE email=?", ("student@example.com",)
+        ).fetchone()["id"]
+    token = csrf(client, "/messages")
+    response = client.post(
+        "/messages",
+        data={
+            "csrf_token": token,
+            "recipient_id": str(student_id),
+            "body": "Thanks for applying. We will review your profile.",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        row = get_db().execute(
+            "SELECT sender_id, recipient_id, body FROM messages"
+        ).fetchone()
+        assert row["body"] == "Thanks for applying. We will review your profile."
+        assert row["sender_id"] != row["recipient_id"]
+
