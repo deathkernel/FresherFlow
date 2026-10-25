@@ -278,6 +278,75 @@ body[data-theme="dark"] .table-empty {
     --bs-table-hover-bg: #292c3c;
     --bs-table-hover-color: #f3f4fb;
   }
+
+  body[data-theme="system"] .workspace-head h1,
+  body[data-theme="system"] .content-card h1,
+  body[data-theme="system"] .content-card h2,
+  body[data-theme="system"] .content-card h3,
+  body[data-theme="system"] .dashboard-card h1,
+  body[data-theme="system"] .dashboard-card h2,
+  body[data-theme="system"] .dashboard-card h3,
+  body[data-theme="system"] .job-card h1,
+  body[data-theme="system"] .job-card h2,
+  body[data-theme="system"] .job-card h3,
+  body[data-theme="system"] .profile-card h1,
+  body[data-theme="system"] .profile-card h2,
+  body[data-theme="system"] .profile-card h3,
+  body[data-theme="system"] .employer-form-card h1,
+  body[data-theme="system"] .employer-form-card h2,
+  body[data-theme="system"] .employer-form-card h3,
+  body[data-theme="system"] .detail-card h1,
+  body[data-theme="system"] .detail-card h2,
+  body[data-theme="system"] .detail-card h3 {
+    color: #f3f4fb;
+  }
+  body[data-theme="system"] .workspace p,
+  body[data-theme="system"] .workspace small,
+  body[data-theme="system"] .simple-page p,
+  body[data-theme="system"] .simple-page small,
+  body[data-theme="system"] .content-card p,
+  body[data-theme="system"] .content-card small,
+  body[data-theme="system"] .job-card p,
+  body[data-theme="system"] .job-card small,
+  body[data-theme="system"] .profile-card p,
+  body[data-theme="system"] .profile-card small,
+  body[data-theme="system"] .employer-form-card p,
+  body[data-theme="system"] .employer-form-card small,
+  body[data-theme="system"] .detail-card p,
+  body[data-theme="system"] .detail-card small {
+    color: #b4bacb;
+  }
+  body[data-theme="system"] .sidebar,
+  body[data-theme="system"] .sidebar nav a,
+  body[data-theme="system"] .message-bubbles {
+    background-color: #171a24;
+    border-color: #343848;
+    color: #cbd1df;
+  }
+  body[data-theme="system"] .sidebar nav a.active,
+  body[data-theme="system"] .sidebar nav a:hover {
+    background-color: #302d52;
+    color: #e2dfff;
+  }
+  body[data-theme="system"] .form-control::placeholder,
+  body[data-theme="system"] .form-select:disabled,
+  body[data-theme="system"] .form-control:disabled,
+  body[data-theme="system"] textarea::placeholder {
+    color: #b4bacb;
+    opacity: 1;
+  }
+  body[data-theme="system"] .table thead th,
+  body[data-theme="system"] label,
+  body[data-theme="system"] .form-label {
+    color: #cbd1df;
+  }
+  body[data-theme="system"] .btn-light:hover,
+  body[data-theme="system"] .btn-outline:hover,
+  body[data-theme="system"] .btn-ghost:hover,
+  body[data-theme="system"] .btn-primary-soft:hover {
+    background-color: #30344a;
+    color: #fff;
+  }
   body[data-theme="system"] .btn-light,
   body[data-theme="system"] .btn-outline,
   body[data-theme="system"] .btn-ghost,
