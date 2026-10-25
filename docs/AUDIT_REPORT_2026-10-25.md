@@ -33,8 +33,13 @@ The audit found and addressed the public-visibility and deployment URL issues be
 **Fix:** Limit a sender to 20 messages per 10-minute window, with user-facing feedback when the limit is reached. The existing messages index supports the sender/time lookup.  
 **Regression coverage:** Test verifies the 21st message is rejected and no extra message is persisted.
 
+### High — New message threads could be started with unrelated accounts
+**Risk:** Any authenticated student could send a first message to any employer, and any employer could initiate contact with any student, without an application relationship. The thread view also accepted arbitrary user IDs.  
+**Fix:** New conversations now require an application connecting the student to an active, verified employer. Existing conversations can continue. The message thread route applies the same access rule before exposing a recipient/thread.  
+**Regression coverage:** Tests cover blocking unrelated first contact and allowing both student-to-employer and employer-to-applicant messaging when an application exists.
+
 ### Regression coverage — Cross-employer access boundaries
-Added tests that one employer cannot edit another employer's vacancy or change the status of an application belonging to another employer, and that a student cannot enter the employer dashboard.
+Added tests that one employer cannot edit another employer's vacancy or change the status of an application belonging to another employer, that a student cannot enter the employer dashboard, and that messaging is limited to applicant-employer relationships.
 
 ## Existing controls reviewed
 
