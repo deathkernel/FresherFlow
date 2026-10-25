@@ -4,7 +4,6 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
 
-
 from flask import abort, session
 
 CSRF_SESSION_KEY = "csrf_token"
@@ -16,7 +15,6 @@ LOGIN_MAX_FAILURES = 5
 LOGIN_LOCK_SECONDS = 300
 LOGIN_WINDOW_SECONDS = 900
 
-
 def csrf_token():
     token = session.get(CSRF_SESSION_KEY)
     if token:
@@ -26,12 +24,10 @@ def csrf_token():
     session[CSRF_SESSION_KEY] = token
     return token
 
-
 def validate_csrf(token):
     expected = session.get(CSRF_SESSION_KEY)
     if not expected or not token or not secrets.compare_digest(token, expected):
         abort(400, description="Invalid form token.")
-
 
 def valid_resume_upload(file_storage):
     """Validate resume size, extension and container/file signatures."""
@@ -87,7 +83,6 @@ def valid_resume_upload(file_storage):
 
     return True
 
-
 def login_is_locked(db, key):
     now = int(time.time())
     row = db.execute(
@@ -105,10 +100,9 @@ def login_is_locked(db, key):
         return False
     return locked_until > now
 
-
 def record_login_failure(db, key):
     now = int(time.time())
-    
+
     db.execute(
         "DELETE FROM auth_attempts WHERE updated_at < ?",
         (now - LOGIN_WINDOW_SECONDS,),
@@ -130,11 +124,9 @@ def record_login_failure(db, key):
     )
     db.commit()
 
-
 def clear_login_failures(db, key):
     db.execute("DELETE FROM auth_attempts WHERE attempt_key=?", (key,))
     db.commit()
-
 
 def client_login_key(request, scope, identity):
     """Build a rate-limit key from the direct peer address and identity.
@@ -147,7 +139,6 @@ def client_login_key(request, scope, identity):
     ip = request.remote_addr or "unknown"
     normalized = (identity or "").strip().lower()
     return f"{scope}:{ip}:{normalized}"
-
 
 def valid_website_url(value):
     """Return True only for absolute HTTP(S) URLs."""
