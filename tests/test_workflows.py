@@ -51,8 +51,8 @@ def seed_employer(
         )
         db.execute(
             """INSERT INTO employer_profiles
-            (company_id,user_id,organization_name,account_status,verification_status)
-            VALUES(?,?,?,?,?)""",
+            (company_id,user_id,organization_name,account_status,verification_status,verified_at)
+            VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)""",
             (f"FF-CMP-{cur.lastrowid:06d}", cur.lastrowid, "Test Company", "active", "verified"),
         )
         db.commit()
@@ -358,8 +358,7 @@ def test_messages_require_an_application_relationship(app):
         employer_id = get_db().execute(
             "SELECT id FROM users WHERE email='employer@example.com'"
         ).fetchone()["id"]
-    with client.session_transaction() as session:
-        token = session["csrf_token"]
+    token = csrf(client, "/messages")
 
     response = client.post(
         "/messages",
