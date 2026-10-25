@@ -347,8 +347,8 @@ def applications():
     db = get_db()
     uid = session["user_id"]
     rows = db.execute(
-        "SELECT a.id,a.title,a.vacancy_type,a.location,a.organization_name,a.applied_at,a.status,a.is_external "
-        "FROM (SELECT a.id,v.title,v.vacancy_type,v.location,ep.organization_name,a.applied_at,a.status,0 is_external "
+        "SELECT a.id,a.title,a.vacancy_type,a.location,a.organization_name,a.employer_id,a.applied_at,a.status,a.is_external "
+        "FROM (SELECT a.id,v.title,v.vacancy_type,v.location,ep.organization_name,v.employer_id,a.applied_at,a.status,0 is_external "
         "FROM applications a JOIN vacancies v ON v.id=a.vacancy_id JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE a.student_id=?) a ORDER BY a.applied_at DESC",
         (uid,),
