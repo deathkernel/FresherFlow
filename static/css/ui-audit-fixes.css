@@ -70,3 +70,70 @@ html { scroll-behavior: smooth; }
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid #554ddd; outline-offset: 3px; }
 :where(.landing, .workspace) a:not(.btn):not(.brand) { text-underline-offset: .18em; }
 @media (forced-colors: active) { :where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid Highlight; } }
+
+/* Button label visibility fix across Student, Employer and Admin panels.
+   Keep readable foreground/background pairs even when Bootstrap or page-level
+   styles override a button's inherited text color. */
+.btn,
+button.btn,
+a.btn,
+input.btn {
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: none;
+  -webkit-text-fill-color: currentColor;
+}
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary:visited {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+.btn-light,
+.btn-light:hover,
+.btn-light:focus,
+.btn-light:active,
+.btn-outline,
+.btn-outline:hover,
+.btn-outline:focus,
+.btn-outline:active,
+.btn-ghost,
+.btn-ghost:hover,
+.btn-ghost:focus,
+.btn-ghost:active,
+.btn-primary-soft,
+.btn-primary-soft:hover,
+.btn-primary-soft:focus,
+.btn-primary-soft:active {
+  color: #252a38 !important;
+  -webkit-text-fill-color: #252a38;
+}
+.btn-danger,
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active {
+  color: #b42318 !important;
+  -webkit-text-fill-color: #b42318;
+}
+.btn-success,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+  color: #087443 !important;
+  -webkit-text-fill-color: #087443;
+}
+.btn-warning,
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active {
+  color: #252a38 !important;
+  -webkit-text-fill-color: #252a38;
+}
+.btn:disabled,
+.btn.disabled,
+button:disabled {
+  -webkit-text-fill-color: currentColor;
+}
+
