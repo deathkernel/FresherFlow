@@ -80,9 +80,9 @@ label { font-weight: 700; color: #424958; margin-bottom: 7px; }
 @media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: relative; width: 100%; height: auto; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); } .sidebar nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; } .sidebar nav a { flex: 0 0 auto; } .sidebar nav a::before, .side-nav-label, .side-label { display: none; } .side-bottom { display: flex; align-items: center; gap: 12px; margin-top: 12px; } .side-bottom form { margin-left: auto; } .workspace { padding: 26px 16px 45px; } .workspace-head { flex-direction: column; margin-bottom: 22px; } .workspace-head-actions { width: 100%; } .workspace-head-actions .btn { flex: 1; } .section-head { align-items: flex-start; gap: 12px; } .stat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .job-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .form-grid .full { grid-column: auto; } .candidate-actions form { align-items: stretch; flex-direction: column; } .candidate-actions .form-select, .candidate-actions .btn { width: 100%; } .detail-meta { grid-template-columns: 1fr; } }
 @media (max-width: 460px) { .stat-grid { grid-template-columns: 1fr; } .side-bottom .user-chip { min-width: 0; } .side-bottom .user-chip div:last-child { display: none; } .section-head { flex-direction: column; } .section-actions, .form-actions { width: 100%; } .section-actions .btn, .form-actions .btn { width: 100%; } .detail-actions form, .detail-actions .btn { width: 100%; } .process-section { padding: 72px 5vw 25px; } }
 
-/* -------------------------------------------------------------------------- */
-/* FresherFlow interaction + design-system hardening                           */
-/* -------------------------------------------------------------------------- */
+ 
+ 
+ 
 
 :root {
   --ff-brand: var(--brand, #625bf5);
@@ -211,7 +211,7 @@ textarea:focus-visible {
 
 
 
-/* Accessible shared interactions and the vacancy stepper. */
+ 
 .skip-link { position: fixed; z-index: 2000; top: 10px; left: 10px; padding: 12px 16px; border-radius: 10px; background: #171b2b; color: #fff; font-weight: 800; transform: translateY(-160%); }
 .skip-link:focus { transform: translateY(0); color: #fff; }
 .toast-stack { width: min(420px, calc(100vw - 32px)); right: 16px; top: 16px; }

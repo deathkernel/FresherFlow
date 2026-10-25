@@ -1,4 +1,4 @@
-/* UI audit fixes — targeted polish without changing the established brand. */
+ 
 :root {
   --ff-text-body: #454c5b;
   --ff-text-muted: #687183;
@@ -63,7 +63,7 @@ body { -webkit-text-size-adjust: 100%; }
 }
 
 
-/* Combined audit: accessible focus and reduced-motion-safe anchor behavior. */
+ 
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 .landing-nav { padding-top: max(12px, env(safe-area-inset-top)); }

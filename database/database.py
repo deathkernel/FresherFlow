@@ -198,7 +198,7 @@ def apply_migrations(db):
 
 
     if 5 not in applied:
-        # Cover the public job feeds and the most common dashboard sort/filter paths.
+        
         db.executescript("""
         CREATE INDEX IF NOT EXISTS idx_vacancies_public_listing
             ON vacancies(status, moderation_status, deadline, id DESC);

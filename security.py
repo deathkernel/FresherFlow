@@ -108,7 +108,7 @@ def login_is_locked(db, key):
 
 def record_login_failure(db, key):
     now = int(time.time())
-    # Bound auth_attempts growth when attackers rotate email/IP combinations.
+    
     db.execute(
         "DELETE FROM auth_attempts WHERE updated_at < ?",
         (now - LOGIN_WINDOW_SECONDS,),

@@ -196,8 +196,8 @@ def excel_vacancy_forms(file_storage):
 
     raw_file = file_storage.read()
     try:
-        # XLSX is a ZIP container. Check expanded sizes before XML parsing so a
-        # small compressed upload cannot expand into an unbounded workbook.
+        
+        
         with ZipFile(io.BytesIO(raw_file)) as archive:
             infos = archive.infolist()
             if (
@@ -764,7 +764,7 @@ def change_password():
             (generate_password_hash(new_password), new_auth_version, uid),
         )
         db.commit()
-        # Keep this browser signed in while invalidating all other sessions.
+        
         session["auth_version"] = new_auth_version
         flash("Password changed successfully.", "success")
         return redirect(url_for("employer.profile"))

@@ -33,7 +33,7 @@ def role_required(*roles):
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
 
-            # Admin sessions are invalidated when the configured password hash changes.
+            
             if session_role == "admin":
                 _, configured_hash = get_admin_credentials()
                 expected_version = (
@@ -49,7 +49,7 @@ def role_required(*roles):
                     flash("Admin credentials changed. Please sign in again.", "error")
                     return redirect(url_for("admin.login"))
 
-            # Random per-user versions revoke other browser sessions after password changes.
+            
             if session_role in {"student", "employer"}:
                 user = get_db().execute(
                     "SELECT role, auth_version FROM users WHERE id=?",

@@ -1,4 +1,4 @@
-/* Account-level customization preferences */
+ 
 .settings-page{width:min(100% - 32px,940px);margin:0 auto;padding:32px 0 56px;color:var(--ff-ink,#292e3c)}
 .settings-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;padding:26px;border:1px solid var(--ff-line,#e6e8f0);border-radius:20px;background:linear-gradient(135deg,#fff,#f8f7ff)}
 .settings-hero h1{margin:6px 0;font-size:clamp(1.7rem,4vw,2.2rem);letter-spacing:-.05em}
