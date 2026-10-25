@@ -87,7 +87,7 @@ def sitemap_xml():
       WHERE v.status='active' AND v.moderation_status='approved'
       AND ep.account_status='active' AND ep.verification_status='verified'
       AND (v.deadline IS NULL OR v.deadline>=date('now','localtime')) ORDER BY v.id DESC""").fetchall()
-    companies=db.execute("SELECT user_id FROM employer_profiles WHERE account_status='active' ORDER BY organization_name").fetchall()
+    companies=db.execute("SELECT user_id FROM employer_profiles WHERE account_status='active' AND verification_status='verified' ORDER BY organization_name").fetchall()
     urls=[{"loc":base+url_for("index"),"changefreq":"weekly","priority":"1.0"},
           {"loc":base+url_for("seo.public_jobs"),"changefreq":"daily","priority":"0.9"}]
     urls += [{"loc":base+url_for("seo.public_job_detail",vacancy_id=r["id"]),"changefreq":"daily","priority":"0.8"} for r in jobs]
