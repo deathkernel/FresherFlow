@@ -21,12 +21,16 @@ def seed_job(app, *, status="active", moderation="approved", deadline=None, veri
         email=f"seo-{db.execute('SELECT COUNT(*) FROM users').fetchone()[0]}@example.com"
         eid=db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
           ("SEO Employer",email,generate_password_hash("seo-employer-password-123"),"employer")).lastrowid
-        db.execute("""INSERT INTO employer_profiles(company_id,user_id,organization_name,account_status,verification_status,location,description)
-          VALUES(?,?,?,?,?,?,?)""",(f"FF-CMP-{eid:06d}",eid,"SEO Company","active",verification,"Pune","Hiring fresh graduates."))
         db.execute(
-            "UPDATE employer_profiles SET verified_at=CURRENT_TIMESTAMP "
-            "WHERE user_id=? AND verification_status='verified'",
-            (eid,),
+            """INSERT INTO employer_profiles
+               (company_id,user_id,organization_name,account_status,verification_status,
+                location,description,verified_at)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (
+                f"FF-CMP-{eid:06d}", eid, "SEO Company", "active", verification,
+                "Pune", "Hiring fresh graduates.",
+                "2026-10-25 00:00:00" if verification == "verified" else None,
+            ),
         )
         jid=db.execute("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,skills,deadline,status,moderation_status)
           VALUES(?,?,?,?,?,?,?,?,?)""",(eid,"Junior Python Developer","Entry-level Job","Build applications with Python and Flask.","Pune","Python, Flask",deadline,status,moderation)).lastrowid
