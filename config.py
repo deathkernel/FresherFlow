@@ -3,13 +3,11 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
 
 INSTANCE_DIR.mkdir(exist_ok=True)
-
 
 def local_secret():
     if SECRET_FILE.exists():
@@ -19,7 +17,6 @@ def local_secret():
     SECRET_FILE.write_text(value, encoding="utf-8")
     return value
 
-
 def get_admin_credentials():
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
@@ -27,9 +24,7 @@ def get_admin_credentials():
     if email and password_hash:
         return email, password_hash
 
-    
     return "", ""
-
 
 class Config:
     ENVIRONMENT = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
@@ -50,13 +45,11 @@ class Config:
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
-    
     SEND_FILE_MAX_AGE_DEFAULT = 3600
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    
-    
+
     SESSION_COOKIE_SECURE = (
         ENVIRONMENT == "production"
         or os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
