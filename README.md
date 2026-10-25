@@ -97,7 +97,9 @@ FresherFlow currently includes:
 - HttpOnly and SameSite session cookies
 - Secure cookies in production
 - production SECRET_KEY enforcement
-- security response headers and CSP
+- security response headers and CSP, including cross-origin isolation hints
+- production-only `__Host-` session cookie naming with Secure, HttpOnly, SameSite=Lax, host-only scope
+- bounded request bodies and in-memory form parsing to reduce oversized-form resource abuse
 - password hashing with Werkzeug
 - login throttling after repeated failures
 - per-user authentication versions that revoke other sessions after password changes
