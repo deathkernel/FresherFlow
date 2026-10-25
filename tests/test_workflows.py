@@ -404,7 +404,7 @@ def test_message_sender_is_rate_limited_to_reduce_spam(app):
 
     client = app.test_client()
     login(client, "student", "student@example.com", "student-password-123")
-    token = csrf(client, "/messages")
+    token = csrf(client, f"/messages?with={employer_id}")
     response = client.post(
         "/messages",
         data={
