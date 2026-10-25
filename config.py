@@ -26,13 +26,21 @@ def local_secret():
 def get_admin_credentials():
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
 
-    if email and password_hash:
+    # Legacy local placeholder values are not real credentials. Ignore them
+    # outside production so first-time local registration can take precedence.
+    legacy_local_placeholder = (
+        environment != "production"
+        and email == "admin123"
+        and password_hash == "admin123"
+    )
+
+    if email and password_hash and not legacy_local_placeholder:
         return email, password_hash
-    if email or password_hash:
+    if (email or password_hash) and not legacy_local_placeholder:
         return "", ""
 
-    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
     if environment != "production":
         # A locally registered account takes precedence over the demo fallback.
         try:
