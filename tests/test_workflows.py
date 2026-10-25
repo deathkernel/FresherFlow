@@ -465,7 +465,7 @@ def test_user_cannot_start_message_conversation_without_application(app):
         employer_id = get_db().execute(
             "SELECT id FROM users WHERE email=?", ("employer@example.com",)
         ).fetchone()["id"]
-    token = csrf(client, "/messages")
+    token = csrf(client, "/notifications")
     response = client.post(
         "/messages",
         data={
@@ -491,7 +491,7 @@ def test_student_can_start_message_after_applying_to_verified_employer(app):
         employer_id = get_db().execute(
             "SELECT id FROM users WHERE email=?", ("employer@example.com",)
         ).fetchone()["id"]
-    token = csrf(client, "/messages")
+    token = csrf(client, "/notifications")
     response = client.post(
         "/messages",
         data={
@@ -520,7 +520,7 @@ def test_employer_can_message_student_who_applied_to_its_job(app):
         student_id = get_db().execute(
             "SELECT id FROM users WHERE email=?", ("student@example.com",)
         ).fetchone()["id"]
-    token = csrf(client, "/messages")
+    token = csrf(client, "/notifications")
     response = client.post(
         "/messages",
         data={
