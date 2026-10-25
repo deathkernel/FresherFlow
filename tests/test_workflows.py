@@ -307,6 +307,17 @@ def test_message_rate_limit_blocks_excessive_sends(app):
         employer_id = db.execute(
             "SELECT id FROM users WHERE email='employer@example.com'"
         ).fetchone()["id"]
+        vacancy_id = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','approved')""",
+            (employer_id, "Messaging Role", "Entry-level Job", "A test role", "Pune"),
+        ).lastrowid
+        db.execute(
+            "INSERT INTO applications(vacancy_id,student_id) VALUES(?,?)",
+            (vacancy_id, student["id"]),
+        )
+        db.commit()
     with client.session_transaction() as session:
         session["user_id"] = student["id"]
         session["name"] = student["name"]
@@ -336,6 +347,57 @@ def test_message_rate_limit_blocks_excessive_sends(app):
             (sender_id,),
         ).fetchone()[0]
         assert count == 10
+
+
+def test_messages_require_an_application_relationship(app):
+    seed_student(app)
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+    with client.session_transaction() as session:
+        token = session["csrf_token"]
+
+    response = client.post(
+        "/messages",
+        data={"csrf_token": token, "recipient_id": employer_id, "body": "Hello"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 0
+
+
+def test_editing_verified_employer_profile_resets_verification(app):
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "employer", "employer@example.com", "employer-password-123")
+    token = csrf(client, "/employer/profile")
+    response = client.post(
+        "/employer/profile",
+        data={
+            "csrf_token": token,
+            "organization_name": "Changed Company Name",
+            "organization_type": "Company",
+            "website": "",
+            "location": "Pune",
+            "description": "Updated company details",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        profile = get_db().execute(
+            "SELECT organization_name, verification_status, verification_note, verified_at "
+            "FROM employer_profiles WHERE organization_name='Changed Company Name'"
+        ).fetchone()
+        assert profile is not None
+        assert profile["verification_status"] == "pending"
+        assert profile["verified_at"] is None
+        assert "re-verification" in profile["verification_note"]
 
 
 def test_admin_can_change_employer_verification_status(app, monkeypatch):
