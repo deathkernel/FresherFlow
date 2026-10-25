@@ -118,6 +118,17 @@ def send_message():
     if not body or len(body) > 2000:
         flash("Message must contain 1–2000 characters.", "error")
         return redirect(url_for("platform.messages", **{"with": recipient_id}))
+
+    # Bound message/notification growth from compromised or abusive accounts.
+    recent_messages = db.execute(
+        """SELECT COUNT(*) FROM messages
+           WHERE sender_id=? AND created_at >= datetime('now', '-10 minutes')""",
+        (session["user_id"],),
+    ).fetchone()[0]
+    if recent_messages >= 20:
+        flash("You have sent too many messages. Please try again in 10 minutes.", "error")
+        return redirect(url_for("platform.messages", **{"with": recipient_id}))
+
     db.execute(
         "INSERT INTO messages(sender_id,recipient_id,body) VALUES(?,?,?)",
         (session["user_id"], recipient_id, body),
