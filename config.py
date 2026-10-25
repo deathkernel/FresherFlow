@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
+_LOCAL_DEMO_ADMIN_PASSWORD_HASH = generate_password_hash("admin123")
 
 INSTANCE_DIR.mkdir(exist_ok=True)
 
@@ -43,7 +44,7 @@ def get_admin_credentials():
         except (ImportError, OSError, ValueError):
             pass
         # Local development convenience only. Never enable in production.
-        return "admin123", generate_password_hash("admin123")
+        return "admin123", _LOCAL_DEMO_ADMIN_PASSWORD_HASH
 
     return "", ""
 
