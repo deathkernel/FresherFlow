@@ -9,6 +9,50 @@ from routes.decorators import role_required
 platform_bp = Blueprint("platform", __name__)
 
 
+def _has_application_relationship(db, user_id, user_role, other_id, other_role):
+    """Allow first contact only between a student and an employer connected by an application."""
+    if {user_role, other_role} != {"student", "employer"}:
+        return False
+
+    student_id = user_id if user_role == "student" else other_id
+    employer_id = user_id if user_role == "employer" else other_id
+    row = db.execute(
+        """
+        SELECT 1
+        FROM applications a
+        JOIN vacancies v ON v.id=a.vacancy_id
+        JOIN employer_profiles ep ON ep.user_id=v.employer_id
+        WHERE a.student_id=? AND v.employer_id=?
+          AND ep.account_status='active'
+          AND ep.verification_status='verified'
+        LIMIT 1
+        """,
+        (student_id, employer_id),
+    ).fetchone()
+    return row is not None
+
+
+def _has_existing_conversation(db, user_id, other_id):
+    row = db.execute(
+        """
+        SELECT 1 FROM messages
+        WHERE (sender_id=? AND recipient_id=?)
+           OR (sender_id=? AND recipient_id=?)
+        LIMIT 1
+        """,
+        (user_id, other_id, other_id, user_id),
+    ).fetchone()
+    return row is not None
+
+
+def _can_access_conversation(db, user_id, user_role, other_id, other_role):
+    if other_id == user_id or other_role == user_role:
+        return False
+    return _has_application_relationship(
+        db, user_id, user_role, other_id, other_role
+    ) or _has_existing_conversation(db, user_id, other_id)
+
+
 @platform_bp.get("/notifications")
 @role_required("student", "employer")
 def notifications():
@@ -71,6 +115,10 @@ def messages():
         recipient = db.execute(
             "SELECT id,name,role FROM users WHERE id=?", (selected,)
         ).fetchone()
+        if recipient and not _can_access_conversation(
+            db, uid, session["role"], recipient["id"], recipient["role"]
+        ):
+            recipient = None
         if recipient:
             thread = db.execute(
                 """
@@ -112,8 +160,13 @@ def send_message():
     recipient = db.execute(
         "SELECT id, role FROM users WHERE id=?", (recipient_id,)
     ).fetchone() if recipient_id else None
-    if not recipient or recipient["id"] == session["user_id"] or recipient["role"] == session.get("role"):
-        flash("Messages can only be sent to the other user role.", "error")
+    if not recipient or not _can_access_conversation(
+        db, session["user_id"], session.get("role"), recipient["id"], recipient["role"]
+    ):
+        flash(
+            "You can message an employer after applying to one of their jobs, or continue an existing conversation.",
+            "error",
+        )
         return redirect(url_for("platform.messages"))
     if not body or len(body) > 2000:
         flash("Message must contain 1–2000 characters.", "error")
