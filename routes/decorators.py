@@ -7,7 +7,6 @@ from flask import flash, redirect, session, url_for
 from config import get_admin_credentials
 from database.database import get_db
 
-
 def role_required(*roles):
     """Require an authenticated user with one of the allowed roles.
 
@@ -33,7 +32,6 @@ def role_required(*roles):
                 flash("You do not have access to this panel.", "error")
                 return redirect(url_for("dashboard_redirect"))
 
-            
             if session_role == "admin":
                 _, configured_hash = get_admin_credentials()
                 expected_version = (
@@ -49,7 +47,6 @@ def role_required(*roles):
                     flash("Admin credentials changed. Please sign in again.", "error")
                     return redirect(url_for("admin.login"))
 
-            
             if session_role in {"student", "employer"}:
                 user = get_db().execute(
                     "SELECT role, auth_version FROM users WHERE id=?",
