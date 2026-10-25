@@ -152,3 +152,18 @@ def test_trusted_proxy_hops_enable_client_ip_and_https_detection(app, monkeypatc
     )
     assert response.data == b"198.51.100.42|True|localhost"
     assert response.headers["Strict-Transport-Security"].startswith("max-age=")
+
+def test_message_rate_limit_index_is_created_and_migration_recorded(app):
+    with app.app_context():
+        db = get_db()
+        migration = db.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=6"
+        ).fetchone()
+        indexes = {
+            row["name"]
+            for row in db.execute("PRAGMA index_list(messages)").fetchall()
+        }
+
+    assert migration is not None
+    assert "idx_messages_sender_created_at" in indexes
+
