@@ -10,7 +10,7 @@ def public_vacancy_query():
     ep.organization_type,ep.website,ep.location AS employer_location
     FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id
     WHERE v.status='active' AND v.moderation_status='approved'
-    AND ep.account_status='active'
+    AND ep.account_status='active' AND ep.verification_status='verified'
     AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"""
 
 
@@ -84,7 +84,8 @@ def sitemap_xml():
     base=canonical_base()
     db=get_db()
     jobs=db.execute("""SELECT v.id FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id
-      WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active'
+      WHERE v.status='active' AND v.moderation_status='approved'
+      AND ep.account_status='active' AND ep.verification_status='verified'
       AND (v.deadline IS NULL OR v.deadline>=date('now','localtime')) ORDER BY v.id DESC""").fetchall()
     companies=db.execute("SELECT user_id FROM employer_profiles WHERE account_status='active' ORDER BY organization_name").fetchall()
     urls=[{"loc":base+url_for("index"),"changefreq":"weekly","priority":"1.0"},
