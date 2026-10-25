@@ -293,3 +293,92 @@ def test_getting_message_thread_does_not_mark_messages_read(app):
         assert get_db().execute(
             "SELECT is_read FROM messages WHERE body='Unread message'"
         ).fetchone()["is_read"] == 1
+
+
+def test_employer_cannot_edit_another_employers_vacancy(app):
+    seed_employer(app, email="owner@example.com")
+    seed_employer(app, email="other-owner@example.com")
+    with app.app_context():
+        db = get_db()
+        other_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("other-owner@example.com",)
+        ).fetchone()["id"]
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?)""",
+            (other_id, "Private Vacancy", "Entry-level Job", "Private description",
+             "Pune", "active", "approved"),
+        )
+        db.commit()
+        vacancy_id = db.execute(
+            "SELECT id FROM vacancies WHERE employer_id=?", (other_id,)
+        ).fetchone()["id"]
+
+    client = app.test_client()
+    login(client, "employer", "owner@example.com", "employer-password-123")
+    response = client.get(f"/employer/vacancies/{vacancy_id}/edit")
+    assert response.status_code == 404
+
+    with app.app_context():
+        row = get_db().execute(
+            "SELECT title FROM vacancies WHERE id=?", (vacancy_id,)
+        ).fetchone()
+        assert row["title"] == "Private Vacancy"
+
+
+def test_employer_cannot_change_another_employers_application_status(app):
+    seed_student(app)
+    seed_employer(app, email="owner@example.com")
+    seed_employer(app, email="other-owner@example.com")
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("student@example.com",)
+        ).fetchone()["id"]
+        other_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("other-owner@example.com",)
+        ).fetchone()["id"]
+        cursor = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?)""",
+            (other_id, "Other Company's Role", "Entry-level Job", "Description",
+             "Pune", "active", "approved"),
+        )
+        db.execute(
+            "INSERT INTO applications(vacancy_id,student_id,status) VALUES(?,?,?)",
+            (cursor.lastrowid, student_id, "Applied"),
+        )
+        db.commit()
+        application_id = db.execute(
+            "SELECT id FROM applications WHERE vacancy_id=?", (cursor.lastrowid,)
+        ).fetchone()["id"]
+
+    client = app.test_client()
+    login(client, "employer", "owner@example.com", "employer-password-123")
+    token = csrf(client, "/employer/applications")
+    response = client.post(
+        f"/employer/applications/{application_id}/status",
+        data={"csrf_token": token, "status": "Selected"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+
+    with app.app_context():
+        row = get_db().execute(
+            "SELECT status FROM applications WHERE id=?", (application_id,)
+        ).fetchone()
+        assert row["status"] == "Applied"
+
+
+def test_student_cannot_access_employer_dashboard(app):
+    seed_student(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+
+    response = client.get("/employer/dashboard", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert "/dashboard" in response.headers["Location"]
+
