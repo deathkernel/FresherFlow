@@ -445,6 +445,34 @@ def test_admin_can_change_employer_verification_status(app, monkeypatch):
         assert profile["verified_at"]
 
 
+def test_unverified_employer_jobs_are_hidden_from_student_dashboard(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (employer_id,),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','approved')""",
+            (employer_id, "Unverified Dashboard Role", "Entry-level Job", "A hidden role", "Pune"),
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    response = client.get("/student/dashboard")
+    assert response.status_code == 200
+    assert b"Unverified Dashboard Role" not in response.data
+    assert b"Unverified Dashboard Role" not in response.data
+
+
 def test_unverified_employer_jobs_cannot_be_applied_to_or_saved(app):
     seed_student(app)
     seed_employer(app)
