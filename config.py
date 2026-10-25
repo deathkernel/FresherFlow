@@ -75,9 +75,18 @@ class Config:
     SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "").strip().rstrip("/")
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+    # Bound in-memory form parsing as well as the total request body. The part
+    # count stays high enough for the supported 100-vacancy bulk form workflow.
+    MAX_FORM_MEMORY_SIZE = 500_000
+    MAX_FORM_PARTS = 1000
 
     SEND_FILE_MAX_AGE_DEFAULT = 3600
 
+    # The __Host- prefix requires Secure, Path=/ and no Domain attribute.
+    # It prevents sibling subdomains from setting an overriding session cookie.
+    SESSION_COOKIE_NAME = "__Host-fresherflow_session" if ENVIRONMENT == "production" else "session"
+    SESSION_COOKIE_PATH = "/"
+    SESSION_COOKIE_DOMAIN = None
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = (
