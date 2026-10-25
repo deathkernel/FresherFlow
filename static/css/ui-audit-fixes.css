@@ -70,3 +70,48 @@ html { scroll-behavior: smooth; }
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid #554ddd; outline-offset: 3px; }
 :where(.landing, .workspace) a:not(.btn):not(.brand) { text-underline-offset: .18em; }
 @media (forced-colors: active) { :where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid Highlight; } }
+
+
+/* Frontend accessibility and responsive fixes */
+@media (max-width: 900px) {
+  .app-shell > .sidebar .side-label { display: none; }
+  .app-shell > .sidebar .side-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+    min-width: 0;
+  }
+  .app-shell > .sidebar .side-bottom .user-chip { display: none; }
+  .app-shell > .sidebar .side-bottom form { width: auto; flex: 0 0 auto; }
+  .app-shell > .sidebar .side-bottom .logout { width: auto; min-width: 120px; }
+}
+@media (max-width: 460px) {
+  .app-shell > .sidebar { padding: 14px; }
+  .app-shell > .sidebar .side-bottom { margin-top: 8px; }
+  .app-shell > .sidebar .side-bottom .logout { width: 100%; }
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 2000;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #171a2a;
+  color: #fff;
+  font-weight: 700;
+  transform: translateY(-160%);
+  transition: transform .15s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+:where(.workspace, .landing) :where(.form-text, .text-secondary, .table td small,
+  .dash-stat span, .dash-stat small, .profile-form-field small,
+  .auth-heading p, .auth-foot, .candidate-detail-grid span,
+  .candidate-text-block > span, .candidate-resume-card span) {
+  color: #596273;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
+}
