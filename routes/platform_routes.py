@@ -115,6 +115,37 @@ def send_message():
     if not recipient or recipient["id"] == session["user_id"] or recipient["role"] == session.get("role"):
         flash("Messages can only be sent to the other user role.", "error")
         return redirect(url_for("platform.messages"))
+
+    # Keep messaging tied to a real hiring relationship so the endpoint cannot
+    # be used to cold-message arbitrary users or unrelated employers/students.
+    if session.get("role") == "student":
+        eligible = db.execute(
+            """SELECT 1
+               FROM applications a
+               JOIN vacancies v ON v.id=a.vacancy_id
+               JOIN employer_profiles ep ON ep.user_id=v.employer_id
+               WHERE a.student_id=? AND v.employer_id=?
+                 AND ep.account_status='active'
+                 AND ep.verification_status='verified'
+               LIMIT 1""",
+            (session["user_id"], recipient_id),
+        ).fetchone()
+    else:
+        eligible = db.execute(
+            """SELECT 1
+               FROM applications a
+               JOIN vacancies v ON v.id=a.vacancy_id
+               JOIN employer_profiles ep ON ep.user_id=v.employer_id
+               WHERE a.student_id=? AND v.employer_id=?
+                 AND ep.account_status='active'
+                 AND ep.verification_status='verified'
+               LIMIT 1""",
+            (recipient_id, session["user_id"]),
+        ).fetchone()
+    if not eligible:
+        flash("Messaging is available after a student applies to one of the employer's vacancies.", "error")
+        return redirect(url_for("platform.messages"))
+
     if not body or len(body) > 2000:
         flash("Message must contain 1–2000 characters.", "error")
         return redirect(url_for("platform.messages", **{"with": recipient_id}))
