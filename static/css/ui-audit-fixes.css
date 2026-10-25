@@ -137,3 +137,34 @@ button:disabled {
   -webkit-text-fill-color: currentColor;
 }
 
+
+
+/* Readability pass: muted supporting copy and table labels should remain legible. */
+.table thead th,
+.table tbody td > small,
+.dash-stat > span,
+.detail-meta small,
+.empty-state,
+.table-empty,
+.section-head p,
+.content-card > p,
+.info-note {
+  color: #626b7b;
+}
+.table thead th { font-size: .72rem; }
+.table tbody td > small,
+.detail-meta small,
+.dash-stat > span {
+  font-size: max(.72rem, 0.72em);
+  line-height: 1.45;
+}
+
+/* Disabled controls are intentionally subdued, but their text must still be readable. */
+.form-control:disabled,
+.form-select:disabled,
+textarea:disabled,
+button:disabled,
+.btn:disabled,
+.btn.disabled {
+  opacity: .72;
+}
