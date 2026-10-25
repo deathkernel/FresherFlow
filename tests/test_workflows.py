@@ -382,3 +382,43 @@ def test_student_cannot_access_employer_dashboard(app):
     assert response.status_code == 302
     assert "/dashboard" in response.headers["Location"]
 
+def test_message_sender_is_rate_limited_to_reduce_spam(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("student@example.com",)
+        ).fetchone()["id"]
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("employer@example.com",)
+        ).fetchone()["id"]
+        db.executemany(
+            "INSERT INTO messages(sender_id,recipient_id,body) VALUES(?,?,?)",
+            [
+                (student_id, employer_id, f"Existing message {index}")
+                for index in range(20)
+            ],
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    token = csrf(client, "/messages")
+    response = client.post(
+        "/messages",
+        data={
+            "csrf_token": token,
+            "recipient_id": str(employer_id),
+            "body": "This message should be rate limited.",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert b"too many messages" in response.data.lower()
+
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT COUNT(*) FROM messages WHERE sender_id=?", (student_id,)
+        ).fetchone()[0] == 20
+
