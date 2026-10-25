@@ -101,8 +101,27 @@ def test_production_forces_secure_session_cookies(app, monkeypatch):
     monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("test-admin-password"))
     monkeypatch.setattr(Config, "ENVIRONMENT", "production")
     monkeypatch.setattr(Config, "SESSION_COOKIE_SECURE", False)
+    monkeypatch.setattr(Config, "SEO_BASE_URL", "https://fresherflow.example")
     production_app = create_app()
     assert production_app.config["SESSION_COOKIE_SECURE"] is True
+
+
+@pytest.mark.parametrize(
+    "canonical_url",
+    [
+        "",
+        "http://fresherflow.example",
+        "https://fresherflow.example/path",
+        "https://user:pass@fresherflow.example",
+    ],
+)
+def test_production_rejects_untrusted_canonical_url(app, monkeypatch, canonical_url):
+    from app import create_app
+
+    monkeypatch.setattr(Config, "ENVIRONMENT", "production")
+    monkeypatch.setattr(Config, "SEO_BASE_URL", canonical_url)
+    with pytest.raises(RuntimeError, match="SEO_BASE_URL"):
+        create_app()
 
 
 def test_dynamic_responses_are_not_cacheable(app):
