@@ -15,14 +15,14 @@ def app(tmp_path, monkeypatch):
     return application
 
 
-def seed_job(app, *, status="active", moderation="approved", deadline=None):
+def seed_job(app, *, status="active", moderation="approved", deadline=None, verification="verified"):
     with app.app_context():
         db=get_db()
         email=f"seo-{db.execute('SELECT COUNT(*) FROM users').fetchone()[0]}@example.com"
         eid=db.execute("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
           ("SEO Employer",email,generate_password_hash("seo-employer-password-123"),"employer")).lastrowid
         db.execute("""INSERT INTO employer_profiles(company_id,user_id,organization_name,account_status,verification_status,location,description)
-          VALUES(?,?,?,?,?,?,?)""",(f"FF-CMP-{eid:06d}",eid,"SEO Company","active","verified","Pune","Hiring fresh graduates."))
+          VALUES(?,?,?,?,?,?,?)""",(f"FF-CMP-{eid:06d}",eid,"SEO Company","active",verification,"Pune","Hiring fresh graduates."))
         jid=db.execute("""INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,skills,deadline,status,moderation_status)
           VALUES(?,?,?,?,?,?,?,?,?)""",(eid,"Junior Python Developer","Entry-level Job","Build applications with Python and Flask.","Pune","Python, Flask",deadline,status,moderation)).lastrowid
         db.commit()
@@ -87,3 +87,19 @@ def test_company_page_job_links_use_public_job_detail(app):
     assert response.status_code == 200
     assert f'href="/jobs/{jid}"'.encode() in response.data
     assert f'href="/student/jobs/{jid}"'.encode() not in response.data
+
+
+def test_public_pages_exclude_unverified_employers(app):
+    jid = seed_job(app, verification="pending")
+    client = app.test_client()
+
+    listing = client.get("/jobs")
+    detail = client.get(f"/jobs/{jid}")
+    sitemap = client.get("/sitemap.xml")
+    company = client.get(f"/company/1")
+
+    assert listing.status_code == 200
+    assert b"Junior Python Developer" not in listing.data
+    assert detail.status_code == 404
+    assert f"https://fresherflow.example/jobs/{jid}".encode() not in sitemap.data
+    assert company.status_code == 404
