@@ -18,7 +18,7 @@
         <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
       </div>
     </aside>
-    <section class="workspace">
+    <section class="workspace" id="main-content" tabindex="-1">
       <header class="workspace-head">
         <div><span class="eyebrow">STUDENT MANAGEMENT</span><h1>Applications</h1><p>Review student applications without mixing them with company or job management.</p></div>
       </header>
