@@ -4,7 +4,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 
-def test_admin_credentials_require_explicit_configuration(monkeypatch):
+def test_admin_credentials_default_only_in_local_development(monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "development")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
@@ -12,7 +12,9 @@ def test_admin_credentials_require_explicit_configuration(monkeypatch):
     import config
     importlib.reload(config)
 
-    assert config.get_admin_credentials() == ("", "")
+    email, password_hash = config.get_admin_credentials()
+    assert email == "admin123"
+    assert password_hash
 
 
 def test_admin_credentials_load_hashed_password(monkeypatch):
@@ -43,6 +45,7 @@ def test_admin_credentials_are_disabled_outside_development(monkeypatch):
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
     import config
+    importlib.reload(config)
     assert config.get_admin_credentials() == ("", "")
 
 
