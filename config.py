@@ -1,8 +1,9 @@
 import os
 import secrets
-from werkzeug.security import generate_password_hash
 from datetime import timedelta
 from pathlib import Path
+
+from werkzeug.security import generate_password_hash
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,11 +28,21 @@ def get_admin_credentials():
 
     if email and password_hash:
         return email, password_hash
+    if email or password_hash:
+        return "", ""
 
-    # Local development convenience only. Production must always configure
-    # explicit credentials; never enable this known default in production.
     environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
     if environment != "production":
+        # A locally registered account takes precedence over the demo fallback.
+        try:
+            from routes.admin_setup_routes import local_admin_credentials
+
+            registered = local_admin_credentials()
+            if registered:
+                return registered
+        except (ImportError, OSError, ValueError):
+            pass
+        # Local development convenience only. Never enable in production.
         return "admin123", generate_password_hash("admin123")
 
     return "", ""
@@ -56,13 +67,10 @@ class Config:
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
-    # Assets are not fingerprinted; keep cache short to limit stale deployments.
     SEND_FILE_MAX_AGE_DEFAULT = 3600
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    # Production cookies must always be HTTPS-only; an env override must not
-    # silently weaken this setting.
     SESSION_COOKIE_SECURE = (
         ENVIRONMENT == "production"
         or os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
