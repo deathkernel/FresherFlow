@@ -53,9 +53,9 @@ The application creates its SQLite database under `instance/` on first start. Ru
 
 ### Development
 
-Development can use the generated local secret, but administrator credentials must be configured explicitly. No default administrator account is shipped.
+For a fresh local development copy, open `http://127.0.0.1:5000/admin/register` to create the first administrator account. Registration is loopback-only, requires a password of at least 12 characters, and closes after the first account is created. The password is stored as a Werkzeug hash in the ignored local file `instance/admin_credentials.json`; do not copy that file into source control or a deployment.
 
-On PowerShell, configure an administrator email and a Werkzeug password hash before starting the app:
+If you prefer environment-based credentials, configure an administrator ID and Werkzeug password hash before starting the app:
 
 ```powershell
 $env:ADMIN_EMAIL = "admin@example.com"
@@ -63,7 +63,7 @@ $env:ADMIN_PASSWORD_HASH = python -c "from werkzeug.security import generate_pas
 python app.py
 ```
 
-Use a unique password. Keep the hash in your local environment or a deployment secret manager, never in source control.
+Use a unique password. Keep the hash in your local environment or a deployment secret manager, never in source control. The built-in `admin123 / admin123` convenience login is for local development only and must never be exposed in production.
 
 ### Production
 
