@@ -21,8 +21,6 @@ from routes.decorators import role_required
 from security import (
     client_login_key,
     clear_login_failures,
-    login_is_locked,
-    record_login_failure,
     valid_website_url,
 )
 
@@ -84,9 +82,6 @@ def login():
         login_email = email
         db = get_db()
         login_key = client_login_key(request, "admin", login_email)
-        if login_is_locked(db, login_key):
-            flash("Too many failed attempts. Please try again in a few minutes.", "error")
-            return render_template("admin/login.html")
         if admin_credentials_valid(login_email, password):
             clear_login_failures(db, login_key)
             session.clear()
@@ -99,7 +94,6 @@ def login():
             ).hexdigest()
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
-        record_login_failure(db, login_key)
         flash("Invalid admin credentials.", "error")
     return render_template("admin/login.html")
 
