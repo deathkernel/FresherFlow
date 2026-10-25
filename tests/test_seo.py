@@ -96,7 +96,11 @@ def test_public_pages_exclude_unverified_employers(app):
     listing = client.get("/jobs")
     detail = client.get(f"/jobs/{jid}")
     sitemap = client.get("/sitemap.xml")
-    company = client.get(f"/company/1")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT employer_id FROM vacancies WHERE id=?", (jid,)
+        ).fetchone()["employer_id"]
+    company = client.get(f"/company/{employer_id}")
 
     assert listing.status_code == 200
     assert b"Junior Python Developer" not in listing.data
