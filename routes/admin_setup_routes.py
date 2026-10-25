@@ -5,7 +5,7 @@ from pathlib import Path
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from werkzeug.security import generate_password_hash
 
-from config import INSTANCE_DIR, get_admin_credentials
+from config import INSTANCE_DIR
 from database.database import get_db
 from security import clear_login_failures, client_login_key
 
@@ -23,8 +23,13 @@ def _loopback_only():
 def _setup_available():
     if current_app.config.get("ENVIRONMENT") == "production":
         return False
-    if os.environ.get("ADMIN_EMAIL", "").strip() or os.environ.get("ADMIN_PASSWORD_HASH", "").strip():
+
+    email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    legacy_local_placeholder = email == "admin123" and password_hash == "admin123"
+    if (email or password_hash) and not legacy_local_placeholder:
         return False
+
     return not _credentials_file().exists()
 
 
@@ -65,7 +70,7 @@ def register():
                 # local requests arrive at nearly the same time.
                 with path.open("x", encoding="utf-8") as handle:
                     json.dump(payload, handle)
-                    handle.write("\n")
+                    handle.write("\\n")
             except FileExistsError:
                 flash("Administrator registration has already been completed.", "error")
                 return redirect(url_for("admin.login"))
