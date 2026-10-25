@@ -74,3 +74,16 @@ def test_private_login_page_is_noindex(app):
     response=app.test_client().get("/login")
     assert response.status_code==200
     assert b'<meta name="robots" content="noindex, nofollow">' in response.data
+
+
+def test_company_page_job_links_use_public_job_detail(app):
+    jid = seed_job(app)
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT employer_id FROM vacancies WHERE id=?", (jid,)
+        ).fetchone()["employer_id"]
+
+    response = app.test_client().get(f"/company/{employer_id}")
+    assert response.status_code == 200
+    assert f'href="/jobs/{jid}"'.encode() in response.data
+    assert f'href="/student/jobs/{jid}"'.encode() not in response.data
