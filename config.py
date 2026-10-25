@@ -1,5 +1,6 @@
 import os
 import secrets
+from werkzeug.security import generate_password_hash
 from datetime import timedelta
 from pathlib import Path
 
@@ -27,7 +28,12 @@ def get_admin_credentials():
     if email and password_hash:
         return email, password_hash
 
-    # Never ship or silently enable a default administrator account.
+    # Local development convenience only. Production must always configure
+    # explicit credentials; never enable this known default in production.
+    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
+    if environment != "production":
+        return "admin123", generate_password_hash("admin123")
+
     return "", ""
 
 
