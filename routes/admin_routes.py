@@ -56,6 +56,18 @@ def admin_credentials_valid(email, password):
     configured_email, configured_password_hash = get_admin_credentials()
     if not configured_email or not configured_password_hash:
         return False
+
+    explicit_credentials = bool(
+        os.environ.get("ADMIN_EMAIL", "").strip()
+        and os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    )
+    if (
+        not explicit_credentials
+        and current_app.config.get("ENVIRONMENT") != "production"
+        and request.remote_addr not in {"127.0.0.1", "::1"}
+    ):
+        return False
+
     try:
         return email == configured_email and check_password_hash(
             configured_password_hash, password
