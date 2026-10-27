@@ -20,9 +20,24 @@ def local_secret():
 def get_admin_credentials():
     email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+    environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
 
     if email and password_hash:
         return email, password_hash
+    if email or password_hash:
+        return "", ""
+
+    # Local setup is one-time and stores a unique password hash per install.
+    # Never fall back to a shared/default administrator credential.
+    if environment != "production":
+        try:
+            from routes.admin_setup_routes import local_admin_credentials
+
+            registered = local_admin_credentials()
+            if registered:
+                return registered
+        except (ImportError, OSError, ValueError):
+            pass
 
     return "", ""
 
@@ -47,6 +62,9 @@ class Config:
 
     SEND_FILE_MAX_AGE_DEFAULT = 3600
 
+    SESSION_COOKIE_NAME = "__Host-fresherflow_session" if ENVIRONMENT == "production" else "session"
+    SESSION_COOKIE_PATH = "/"
+    SESSION_COOKIE_DOMAIN = None
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
