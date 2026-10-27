@@ -44,6 +44,11 @@ def create_app():
     if app.config.get("ENVIRONMENT") == "production":
         # Enforce the production cookie invariant even if a caller overrides Config.
         app.config["SESSION_COOKIE_SECURE"] = True
+        # Enforce the __Host- cookie invariants at app creation too, including
+        # tests and deployments that override Config attributes at runtime.
+        app.config["SESSION_COOKIE_NAME"] = "__Host-fresherflow_session"
+        app.config["SESSION_COOKIE_PATH"] = "/"
+        app.config["SESSION_COOKIE_DOMAIN"] = None
         canonical_url = app.config.get("SEO_BASE_URL", "").strip()
         try:
             parsed_canonical_url = urlparse(canonical_url)
