@@ -14,6 +14,8 @@ test("public landing page exposes a working skip link", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
   await expect(page.locator("#main-content")).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
 });
 
 test("public entry routes load successfully", async ({ page }) => {
