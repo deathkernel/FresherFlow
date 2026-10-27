@@ -112,7 +112,7 @@ def record_login_failure(db, key):
         (key,),
     ).fetchone()
     failures = 1 if not row or int(row["updated_at"]) + LOGIN_WINDOW_SECONDS < now else int(row["failed_count"]) + 1
-    locked_until = now + LOGIN_LOCK_SECONDS if failures >= LOGIN_MAX_FAILURES else 0
+    locked_until = now + LOGIN_LOCK_SECONDS if failures >= max_failures else 0
     db.execute(
         """INSERT INTO auth_attempts(attempt_key, failed_count, locked_until, updated_at)
            VALUES(?,?,?,?)
