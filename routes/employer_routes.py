@@ -319,10 +319,11 @@ def dashboard():
     uid = session["user_id"]
 
     stats = {
-        "vacancies": db.execute(
+        "live_jobs": db.execute(
             "SELECT COUNT(*) c FROM vacancies "
             "WHERE employer_id=? AND status='active' "
-            "AND moderation_status='approved'",
+            "AND moderation_status='approved' "
+            "AND (deadline IS NULL OR deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()["c"],
         "applications": db.execute(
