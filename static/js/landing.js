@@ -9,7 +9,35 @@ document.addEventListener("DOMContentLoaded", () => {
   ).matches;
   const progress = document.querySelector("[data-scroll-progress]");
   const nav = document.querySelector(".landing-nav");
+  const menuToggle = document.querySelector("[data-landing-menu-toggle]");
+  const navActions = nav?.querySelector(".nav-actions");
   let ticking = false;
+
+  const closeMenu = () => {
+    if (!menuToggle || !navActions) return;
+    menuToggle.setAttribute("aria-expanded", "false");
+    navActions.classList.remove("is-open");
+  };
+
+  if (menuToggle && navActions) {
+    menuToggle.addEventListener("click", () => {
+      const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+      menuToggle.setAttribute("aria-expanded", String(!isOpen));
+      navActions.classList.toggle("is-open", !isOpen);
+    });
+    navActions.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", closeMenu);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
+        menuToggle.focus();
+      }
+    });
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 560) closeMenu();
+    });
+  }
 
   const updateScrollState = () => {
     const scrollTop =

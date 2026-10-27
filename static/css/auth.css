@@ -60,7 +60,7 @@
   min-height: 43px;
   border-radius: 9px;
   border-color: #dfe3ea;
-  font-size: 13px;
+  font-size: 16px;
   transition:
     border-color 0.18s,
     box-shadow 0.18s,
@@ -247,4 +247,11 @@
   .auth-shortcuts {
     grid-template-columns: 1fr;
   }
+}
+
+/* Keep auth controls readable and prevent mobile browser focus zoom. */
+.auth-compact-form .form-control,
+.auth-compact-form .form-select,
+.auth-compact-form textarea {
+  font-size: 16px;
 }
