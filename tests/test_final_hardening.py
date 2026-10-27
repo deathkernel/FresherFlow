@@ -101,8 +101,27 @@ def test_production_forces_secure_session_cookies(app, monkeypatch):
     monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("test-admin-password"))
     monkeypatch.setattr(Config, "ENVIRONMENT", "production")
     monkeypatch.setattr(Config, "SESSION_COOKIE_SECURE", False)
+    monkeypatch.setattr(Config, "SEO_BASE_URL", "https://fresherflow.example")
     production_app = create_app()
     assert production_app.config["SESSION_COOKIE_SECURE"] is True
+
+
+def test_production_requires_a_canonical_https_origin(app, monkeypatch):
+    from app import create_app
+
+    monkeypatch.setattr(Config, "ENVIRONMENT", "production")
+    monkeypatch.setattr(Config, "SEO_BASE_URL", "")
+    with pytest.raises(RuntimeError, match="SEO_BASE_URL must be a valid HTTPS origin"):
+        create_app()
+
+
+def test_production_rejects_non_origin_seo_urls(app, monkeypatch):
+    from app import create_app
+
+    monkeypatch.setattr(Config, "ENVIRONMENT", "production")
+    monkeypatch.setattr(Config, "SEO_BASE_URL", "https://example.com/path")
+    with pytest.raises(RuntimeError, match="SEO_BASE_URL must be a valid HTTPS origin"):
+        create_app()
 
 
 def test_dynamic_responses_are_not_cacheable(app):

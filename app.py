@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -39,6 +40,28 @@ def create_app():
     if app.config.get("ENVIRONMENT") == "production":
 
         app.config["SESSION_COOKIE_SECURE"] = True
+    if app.config.get("ENVIRONMENT") == "production":
+        canonical_url = app.config.get("SEO_BASE_URL", "").strip()
+        try:
+            parsed_canonical_url = urlparse(canonical_url)
+            parsed_canonical_url.port
+        except ValueError as exc:
+            raise RuntimeError(
+                "SEO_BASE_URL must be a valid HTTPS origin in production"
+            ) from exc
+        if (
+            parsed_canonical_url.scheme != "https"
+            or not parsed_canonical_url.hostname
+            or parsed_canonical_url.username is not None
+            or parsed_canonical_url.password is not None
+            or parsed_canonical_url.path not in {"", "/"}
+            or parsed_canonical_url.query
+            or parsed_canonical_url.fragment
+        ):
+            raise RuntimeError(
+                "SEO_BASE_URL must be a valid HTTPS origin in production"
+            )
+
     if app.config.get("ENVIRONMENT") == "production":
         admin_email, admin_password_hash = get_admin_credentials()
         if not admin_email or not admin_password_hash:
