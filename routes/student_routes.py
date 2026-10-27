@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 
 from database.database import get_db
 from routes.decorators import role_required
-from security import valid_resume_upload
+from security import calculate_profile_strength, valid_resume_upload
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -124,8 +124,7 @@ def profile():
                 flash("The resume could not be saved. Please try again.", "error")
                 return redirect(url_for("student.profile"))
 
-        filled = sum(bool(value) for value in fields)
-        strength = min(100, 20 + filled * 10 + (10 if resume_filename else 0))
+        strength = calculate_profile_strength(fields, bool(resume_filename))
         try:
             db.execute(
                 "UPDATE student_profiles SET "
@@ -214,7 +213,7 @@ def jobs():
         "a.vacancy_id=v.id AND a.student_id=?) applied,0 is_external,NULL apply_url,"
         "NULL source,NULL source_url FROM vacancies v JOIN employer_profiles ep "
         "ON ep.user_id=v.employer_id WHERE v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
+        "AND ep.account_status='active' AND ep.verification_status='verified' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))"
     )
     args = [uid, uid]
     if q:
@@ -262,7 +261,7 @@ def job_details(vacancy_id):
     job = db.execute(
         "SELECT v.*,ep.organization_name,ep.website,ep.location employer_location "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' AND ep.verification_status='verified' "
         "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
         (vacancy_id,),
     ).fetchone()
@@ -318,7 +317,7 @@ def save(vacancy_id):
     job = db.execute(
         "SELECT v.id FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
         "WHERE v.id=? AND v.status='active' AND v.moderation_status='approved' "
-        "AND ep.account_status='active' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
+        "AND ep.account_status='active' AND ep.verification_status='verified' AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
         (vacancy_id,),
     ).fetchone()
     if not job:
