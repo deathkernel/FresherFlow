@@ -787,3 +787,128 @@
   .landing-nav .nav-actions .btn-ghost { display: inline-flex; justify-content: flex-start; }
   .landing-nav .nav-actions .btn { width: 100%; min-height: 44px; }
 }
+
+
+/* Landing-page typography, alignment and text-scale refinements.
+   Keep the existing visual direction while improving wrapping across viewports. */
+.landing .hero-copy {
+  min-width: 0;
+  max-width: 700px;
+}
+
+.landing .hero-copy h1 {
+  max-width: 13ch;
+  font-size: clamp(2.75rem, 5.7vw, 5.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.landing :is(.process-head h2, .principles-intro h2, .home-cta h2,
+  .feature-card h3, .process-card h3, .role-card h2) {
+  line-height: 1.18;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.landing :is(.process-head p, .principles-intro p, .home-cta p,
+  .feature-card p, .process-card p, .role-card p) {
+  line-height: 1.65;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+.landing :is(.feature-card, .process-card, .role-card,
+  .home-principles .principle-grid > div) {
+  min-width: 0;
+}
+
+.landing .hero-actions,
+.landing .home-cta-actions {
+  align-items: stretch;
+}
+
+.landing .hero-actions .btn,
+.landing .home-cta-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.landing .home-proof-strip > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body[data-font-scale="large"] .landing {
+  font-size: 1.0625rem;
+}
+
+body[data-font-scale="large"] .landing .hero-copy h1 {
+  font-size: clamp(3rem, 6.3vw, 6.2rem);
+  line-height: 1.06;
+}
+
+body[data-font-scale="large"] .landing :is(.process-head h2, .principles-intro h2, .home-cta h2, .role-card h2) {
+  font-size: clamp(1.5rem, 2.7vw, 2.2rem);
+  line-height: 1.22;
+}
+
+body[data-font-scale="large"] .landing :is(.hero-copy p, .process-head p,
+  .principles-intro p, .home-cta p, .feature-card p, .process-card p, .role-card p) {
+  font-size: 1.0625em;
+  line-height: 1.75;
+}
+
+@media (max-width: 760px) {
+  .landing .hero-copy h1 {
+    max-width: 14ch;
+    font-size: clamp(2.5rem, 9.5vw, 3.6rem);
+    line-height: 1.04;
+    letter-spacing: -0.06em;
+  }
+
+  .landing .hero-copy p {
+    max-width: 58ch;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .landing .hero-actions .btn,
+  .landing .home-cta-actions .btn {
+    min-width: 0;
+  }
+
+  .landing .home-cta-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  body[data-font-scale="large"] .landing .hero-copy h1 {
+    font-size: clamp(2.75rem, 10vw, 4rem);
+    line-height: 1.08;
+  }
+}
+
+@media (max-width: 420px) {
+  .landing .hero-copy h1 {
+    max-width: 12ch;
+    font-size: clamp(2.35rem, 10vw, 2.75rem);
+  }
+
+  .landing .hero-actions,
+  .landing .home-cta-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing .hero-actions .btn,
+  .landing .home-cta-actions .btn {
+    width: 100%;
+  }
+
+  body[data-font-scale="large"] .landing .hero-copy h1 {
+    font-size: clamp(2.55rem, 10.5vw, 3rem);
+  }
+}
