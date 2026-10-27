@@ -20,6 +20,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
 from database.database import get_db
+from database.vacancy_deduplication import find_duplicate_vacancy, new_vacancy_code, vacancy_fingerprint
 from routes.decorators import role_required
 from security import valid_website_url
 
@@ -349,7 +350,7 @@ def dashboard():
     }
 
     posted_vacancies = db.execute(
-        "SELECT id,title,vacancy_type,location,status,moderation_status,deadline "
+        "SELECT id,title,vacancy_type,location,status,moderation_status,deadline,vacancy_code "
         "FROM vacancies WHERE employer_id=? ORDER BY id DESC LIMIT 8",
         (uid,),
     ).fetchall()
@@ -465,28 +466,18 @@ def new_vacancy():
             return render_template("employer/post-vacancy.html")
 
         db = get_db()
+        uid = session["user_id"]
+        duplicate = find_duplicate_vacancy(db, uid, data)
+        if duplicate:
+            flash(f"This looks like a duplicate of {duplicate['vacancy_code']} ({duplicate['title']}). No second vacancy was created.", "warning")
+            return redirect(url_for("employer.vacancies"))
         publish = request.form.get("publish") == "1"
         try:
             status = "active" if publish else "draft"
             moderation_status = "pending"
             db.execute(
-                "INSERT INTO vacancies("
-                "employer_id,title,vacancy_type,description,location,salary,"
-                "skills,eligibility,deadline,status,moderation_status"
-                ") VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    session["user_id"],
-                    data["title"],
-                    data["vacancy_type"],
-                    data["description"],
-                    data["location"],
-                    data["salary"],
-                    data["skills"],
-                    data["eligibility"],
-                    data["deadline"],
-                    status,
-                    moderation_status,
-                ),
+                "INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status,vacancy_code,dedupe_fingerprint) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (uid, data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], status, moderation_status, new_vacancy_code(), vacancy_fingerprint(uid, data)),
             )
             db.commit()
         except sqlite3.IntegrityError:
@@ -521,27 +512,23 @@ def bulk_new_vacancies():
     db = get_db()
     uid = session["user_id"]
 
+    inserted = 0
+    skipped = []
+    batch_fingerprints = set()
     try:
         for data in vacancies:
+            fingerprint = vacancy_fingerprint(uid, data)
+            duplicate = find_duplicate_vacancy(db, uid, data)
+            if duplicate or fingerprint in batch_fingerprints:
+                code = duplicate["vacancy_code"] if duplicate else "another row in this upload"
+                skipped.append(f"{data['title']} ({code})")
+                continue
             db.execute(
-                "INSERT INTO vacancies("
-                "employer_id,title,vacancy_type,description,location,salary,"
-                "skills,eligibility,deadline,status,moderation_status"
-                ") VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    uid,
-                    data["title"],
-                    data["vacancy_type"],
-                    data["description"],
-                    data["location"],
-                    data["salary"],
-                    data["skills"],
-                    data["eligibility"],
-                    data["deadline"],
-                    "active",
-                    "pending",
-                ),
+                "INSERT INTO vacancies(employer_id,title,vacancy_type,description,location,salary,skills,eligibility,deadline,status,moderation_status,vacancy_code,dedupe_fingerprint) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (uid, data["title"], data["vacancy_type"], data["description"], data["location"], data["salary"], data["skills"], data["eligibility"], data["deadline"], "active", "pending", new_vacancy_code(), fingerprint),
             )
+            inserted += 1
+            batch_fingerprints.add(fingerprint)
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback()
@@ -552,10 +539,12 @@ def bulk_new_vacancies():
         )
         return render_template("employer/bulk-vacancies.html"), 400
 
-    flash(
-        f"{len(vacancies)} vacancies submitted for admin approval.",
-        "success",
-    )
+    message = f"{inserted} new vacancies submitted for admin approval."
+    if skipped:
+        message += f" Skipped {len(skipped)} duplicate(s): " + "; ".join(skipped[:5])
+        if len(skipped) > 5:
+            message += f"; and {len(skipped) - 5} more"
+    flash(message, "success" if not skipped else "warning")
     return redirect(url_for("employer.vacancies"))
 
 
@@ -604,10 +593,14 @@ def edit_vacancy(vacancy_id):
         if error:
             flash(error, "error")
             return render_template("employer/edit-vacancy.html", job=job)
+        duplicate = find_duplicate_vacancy(db, session["user_id"], data, exclude_id=vacancy_id)
+        if duplicate:
+            flash(f"This edit matches existing vacancy {duplicate['vacancy_code']}. Edit that vacancy instead or change these details.", "warning")
+            return render_template("employer/edit-vacancy.html", job=job)
         try:
             db.execute(
                 "UPDATE vacancies SET title=?, vacancy_type=?, description=?, "
-                "location=?, salary=?, skills=?, eligibility=?, deadline=?, "
+                "location=?, salary=?, skills=?, eligibility=?, deadline=?, dedupe_fingerprint=?, "
                 "status='draft', moderation_status='pending', "
                 "moderation_note=NULL, moderated_at=NULL "
                 "WHERE id=? AND employer_id=?",
@@ -620,6 +613,7 @@ def edit_vacancy(vacancy_id):
                     data["skills"],
                     data["eligibility"],
                     data["deadline"],
+                    vacancy_fingerprint(session["user_id"], data),
                     vacancy_id,
                     session["user_id"],
                 ),

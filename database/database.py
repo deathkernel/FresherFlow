@@ -1,3 +1,6 @@
+import hashlib
+import json
+import re
 import secrets
 import sqlite3
 from pathlib import Path
@@ -246,6 +249,34 @@ def apply_migrations(db):
             "ON messages(sender_id, created_at)"
         )
         db.execute("INSERT INTO schema_migrations(version) VALUES(7)")
+
+    if 8 not in applied:
+        vacancy_columns = {row[1] for row in db.execute("PRAGMA table_info(vacancies)").fetchall()}
+        if "vacancy_code" not in vacancy_columns:
+            db.execute("ALTER TABLE vacancies ADD COLUMN vacancy_code TEXT")
+        if "dedupe_fingerprint" not in vacancy_columns:
+            db.execute("ALTER TABLE vacancies ADD COLUMN dedupe_fingerprint TEXT")
+        def normalized(value):
+            return re.sub(r"[^a-z0-9]+", " ", str(value or "").casefold()).strip()
+        seen = {}
+        for row in db.execute("SELECT * FROM vacancies ORDER BY id ASC").fetchall():
+            identity = {"employer_id": row["employer_id"], "title": normalized(row["title"]), "vacancy_type": normalized(row["vacancy_type"]), "location": normalized(row["location"]), "description": normalized(row["description"])}
+            fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, ensure_ascii=True).encode("utf-8")).hexdigest()
+            code = row["vacancy_code"] or f"FF-JOB-{secrets.token_hex(6).upper()}"
+            duplicate_of = seen.get(fingerprint)
+            db.execute("UPDATE vacancies SET vacancy_code=?, dedupe_fingerprint=? WHERE id=?", (code, fingerprint, row["id"]))
+            if duplicate_of is None:
+                seen[fingerprint] = {"id": row["id"], "code": code}
+                continue
+            has_history = db.execute("SELECT EXISTS(SELECT 1 FROM applications WHERE vacancy_id=?) OR EXISTS(SELECT 1 FROM saved_jobs WHERE vacancy_id=?)", (row["id"], row["id"])).fetchone()[0]
+            if has_history:
+                db.execute("UPDATE vacancies SET status='closed', moderation_status='rejected', moderation_note=?, moderated_at=CURRENT_TIMESTAMP WHERE id=?", (f"Duplicate of {duplicate_of['code']}; retained to preserve application history.", row["id"]))
+            else:
+                db.execute("DELETE FROM vacancies WHERE id=?", (row["id"],))
+        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_vacancies_vacancy_code ON vacancies(vacancy_code)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_vacancies_dedupe_fingerprint ON vacancies(employer_id, dedupe_fingerprint)")
+        db.execute("INSERT INTO schema_migrations(version) VALUES(8)")
+
 
 def init_db(database_path):
     path = Path(database_path)
