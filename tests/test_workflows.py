@@ -358,7 +358,11 @@ def test_messages_require_an_application_relationship(app):
         employer_id = get_db().execute(
             "SELECT id FROM users WHERE email='employer@example.com'"
         ).fetchone()["id"]
-    token = csrf(client, "/messages")
+    # This negative test does not need to render a page containing a form;
+    # seed the CSRF token directly so it tests the messaging authorization rule.
+    token = "test-csrf-token"
+    with client.session_transaction() as session:
+        session["csrf_token"] = token
 
     response = client.post(
         "/messages",
