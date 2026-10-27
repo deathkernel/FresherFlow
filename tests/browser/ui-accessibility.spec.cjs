@@ -27,6 +27,56 @@ test("public entry routes load successfully", async ({ page }) => {
   }
 });
 
+test("landing typography stays within the viewport at common responsive widths", async ({ page }) => {
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const layout = await page.evaluate(() => {
+      const viewport = document.documentElement.clientWidth;
+      const documentWidth = document.documentElement.scrollWidth;
+      const heading = document.querySelector(".hero-copy h1");
+      const headingRect = heading?.getBoundingClientRect();
+      const sectionHeadings = [...document.querySelectorAll(
+        ".process-head h2, .principles-intro h2, .home-cta h2"
+      )].filter((element) => element.getClientRects().length > 0);
+      return {
+        viewport,
+        documentWidth,
+        headingVisible: Boolean(heading && headingRect && headingRect.width > 0),
+        headingLeft: headingRect?.left ?? -1,
+        headingRight: headingRect?.right ?? viewport + 1,
+        sectionHeadingsVisible: sectionHeadings.length >= 2,
+      };
+    });
+
+    expect(
+      layout.documentWidth,
+      `Horizontal overflow at ${width}px: document=${layout.documentWidth}px`,
+    ).toBeLessThanOrEqual(layout.viewport + 1);
+    expect(layout.headingVisible, `Hero heading missing at ${width}px`).toBe(true);
+    expect(layout.headingLeft, `Hero heading starts outside viewport at ${width}px`).toBeGreaterThanOrEqual(0);
+    expect(layout.headingRight, `Hero heading extends outside viewport at ${width}px`).toBeLessThanOrEqual(width + 1);
+    expect(layout.sectionHeadingsVisible, `Section headings missing at ${width}px`).toBe(true);
+  }
+});
+
+test("landing page increases heading and body text for the large-text preference", async ({ page }) => {
+  await page.goto("/");
+  const normal = await page.locator(".hero-copy h1").evaluate((element) => ({
+    heading: parseFloat(getComputedStyle(element).fontSize),
+    body: parseFloat(getComputedStyle(document.querySelector(".hero-copy p")).fontSize),
+  }));
+
+  await page.locator("body").evaluate((body) => body.setAttribute("data-font-scale", "large"));
+  const large = await page.locator(".hero-copy h1").evaluate((element) => ({
+    heading: parseFloat(getComputedStyle(element).fontSize),
+    body: parseFloat(getComputedStyle(document.querySelector(".hero-copy p")).fontSize),
+  }));
+
+  expect(large.heading).toBeGreaterThan(normal.heading);
+  expect(large.body).toBeGreaterThan(normal.body);
+});
+
 test("landing page fits a narrow mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
