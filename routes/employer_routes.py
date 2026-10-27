@@ -404,7 +404,7 @@ def profile():
                 ("organization_name", "organization_type", "website", "location", "description")
             )
         )
-        if identity_changed and existing["verification_status"] == "verified":
+        if identity_changed:
             db.execute(
                 "UPDATE employer_profiles SET organization_name=?, organization_type=?, website=?, location=?, "
                 "description=?, verification_status='pending', verification_note=?, verified_at=NULL WHERE user_id=?",
