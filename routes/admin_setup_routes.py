@@ -54,8 +54,8 @@ def register():
 
         if not admin_id or len(admin_id) > 64 or any(ch.isspace() for ch in admin_id):
             flash("Admin ID is required and must be 1–64 characters without spaces.", "error")
-        elif len(password) < 12:
-            flash("Choose a password with at least 12 characters.", "error")
+        elif len(password) < 8:
+            flash("Choose a password with at least 8 characters.", "error")
         elif password != confirm_password:
             flash("Passwords do not match.", "error")
         else:
