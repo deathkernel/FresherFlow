@@ -111,7 +111,7 @@ def test_admin_registration_page_loads_auth_styles_and_centered_layout(tmp_path,
 
     css_response = app.test_client().get("/static/css/auth.css")
     assert css_response.status_code == 200
-    css = css_response.get_data(as_text=True)
+    css = css_response.get_data(as_text=True).replace("\r\n", "\n")
     assert ".admin-auth-shell" in css
     assert ".admin-auth-card" in css
     assert "@media (max-width: 520px)" in css
