@@ -61,7 +61,7 @@ def dashboard():
             "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
             "WHERE v.status='active' "
             "AND v.moderation_status='approved' "
-            "AND ep.account_status='active' "
+            "AND ep.account_status='active' AND ep.verification_status='verified' "
             "AND (v.deadline IS NULL OR "
             "v.deadline>=date('now','localtime'))"
         ).fetchone()["c"],
@@ -69,7 +69,8 @@ def dashboard():
     jobs = db.execute(
         "SELECT v.*,ep.organization_name,0 is_external,NULL apply_url "
         "FROM vacancies v JOIN employer_profiles ep ON ep.user_id=v.employer_id "
-        "WHERE v.status='active' AND v.moderation_status='approved' AND ep.account_status='active' "
+        "WHERE v.status='active' AND v.moderation_status='approved' "
+        "AND ep.account_status='active' AND ep.verification_status='verified' "
         "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime')) "
         "ORDER BY v.id DESC LIMIT 6"
     ).fetchall()
