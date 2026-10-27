@@ -33,7 +33,7 @@ def test_startup_migration_assigns_codes_and_deduplicates_legacy_rows(tmp_path):
     db = sqlite3.connect(path)
     db.executescript("""
         CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT UNIQUE, password_hash TEXT, role TEXT);
-        CREATE TABLE employer_profiles (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, company_id TEXT UNIQUE, organization_name TEXT);
+        CREATE TABLE employer_profiles (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, company_id TEXT UNIQUE, organization_name TEXT, account_status TEXT, verification_status TEXT, verification_note TEXT, verified_at TEXT);
         CREATE TABLE vacancies (
             id INTEGER PRIMARY KEY AUTOINCREMENT, employer_id INTEGER NOT NULL, title TEXT NOT NULL,
             vacancy_type TEXT NOT NULL, description TEXT NOT NULL, location TEXT NOT NULL, salary TEXT,
