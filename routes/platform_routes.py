@@ -203,8 +203,20 @@ def analytics():
         """, (uid,)
     ).fetchone()
     jobs = db.execute(
-        "SELECT COUNT(*) total, SUM(status='active' AND moderation_status='approved') live, "
-        "SUM(status='draft') drafts FROM vacancies WHERE employer_id=?", (uid,)
+        """
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN v.status='active'
+                         AND v.moderation_status='approved'
+                         AND ep.account_status='active'
+                         AND ep.verification_status='verified'
+                         AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))
+                        THEN 1 ELSE 0 END) AS live,
+               SUM(CASE WHEN v.status='draft' THEN 1 ELSE 0 END) AS drafts
+        FROM vacancies v
+        JOIN employer_profiles ep ON ep.user_id=v.employer_id
+        WHERE v.employer_id=?
+        """,
+        (uid,),
     ).fetchone()
     return render_template("employer/analytics.html", counts=counts, jobs=jobs)
 
