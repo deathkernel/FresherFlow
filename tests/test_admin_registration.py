@@ -41,7 +41,7 @@ def test_admin_registration_is_local_and_one_time(tmp_path, monkeypatch):
     assert client.get("/admin/register").status_code == 302
 
 
-def test_admin_registration_rejects_short_or_mismatched_passwords(tmp_path, monkeypatch):
+def test_admin_registration_rejects_passwords_shorter_than_eight_characters(tmp_path, monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "development")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
