@@ -390,12 +390,32 @@ def profile():
         if not valid_website_url(data[2]):
             flash("Website must be a valid http:// or https:// URL.","error")
             return redirect(url_for("employer.profile"))
-        db.execute(
-            "UPDATE employer_profiles SET organization_name=?, "
-            "organization_type=?, website=?, location=?, description=? "
-            "WHERE user_id=?",
-            (*data, uid),
+        existing = db.execute(
+            "SELECT organization_name, organization_type, website, location, description, verification_status "
+            "FROM employer_profiles WHERE user_id=?",
+            (uid,),
+        ).fetchone()
+        if not existing:
+            return render_template("404.html"), 404
+
+        identity_changed = any(
+            data[index] != (existing[field] or "")
+            for index, field in enumerate(
+                ("organization_name", "organization_type", "website", "location", "description")
+            )
         )
+        if identity_changed and existing["verification_status"] == "verified":
+            db.execute(
+                "UPDATE employer_profiles SET organization_name=?, organization_type=?, website=?, location=?, "
+                "description=?, verification_status='pending', verification_note=?, verified_at=NULL WHERE user_id=?",
+                (*data, "Employer details changed; re-verification required.", uid),
+            )
+            flash("Profile updated. Employer verification is pending review again.", "info")
+        else:
+            db.execute(
+                "UPDATE employer_profiles SET organization_name=?, organization_type=?, website=?, location=?, description=? WHERE user_id=?",
+                (*data, uid),
+            )
         db.commit()
         flash("Organization profile updated.", "success")
         return redirect(url_for("employer.profile"))
