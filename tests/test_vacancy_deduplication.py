@@ -41,7 +41,7 @@ def test_startup_migration_assigns_codes_and_deduplicates_legacy_rows(tmp_path):
             moderation_status TEXT NOT NULL DEFAULT 'pending', moderation_note TEXT, moderated_at TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        CREATE TABLE applications (id INTEGER PRIMARY KEY, vacancy_id INTEGER, student_id INTEGER);
+        CREATE TABLE applications (id INTEGER PRIMARY KEY, vacancy_id INTEGER, student_id INTEGER, status TEXT, applied_at TEXT);
         CREATE TABLE saved_jobs (id INTEGER PRIMARY KEY, vacancy_id INTEGER, student_id INTEGER);
         INSERT INTO users VALUES(1,'A','a@example.com','x','employer');
         INSERT INTO vacancies(employer_id,title,vacancy_type,description,location) VALUES
