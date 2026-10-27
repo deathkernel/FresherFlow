@@ -19,6 +19,7 @@ This change adds a browser-based regression layer for public-facing pages. It in
 - Verify the landing page skip link is the first keyboard focus target and points to the main content.
 - Check the landing page for horizontal overflow at a 390px viewport width.
 - Run axe-core against WCAG 2.0/2.1 A and AA tags on representative public pages. The workflow fails on serious or critical violations and prints all detected violations for review.
+- The first browser run identified low-contrast secondary text and a landing-page brand accessible-name mismatch. Targeted text-color overrides and a matching brand accessible name were added; the updated scan must confirm these changes.
 
 ## Validation status
 
