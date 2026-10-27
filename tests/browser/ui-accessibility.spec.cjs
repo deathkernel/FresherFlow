@@ -78,3 +78,20 @@ for (const route of publicRoutes) {
     ).toEqual([]);
   });
 }
+
+
+test("landing page keeps serious and critical accessibility checks clear in dark theme", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("body").evaluate((body) => body.setAttribute("data-theme", "dark"));
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  const serious = results.violations.filter(
+    (violation) => violation.impact === "serious" || violation.impact === "critical",
+  );
+
+  expect(
+    serious,
+    `Serious/critical dark-theme accessibility violations: ${serious.map((item) => item.id).join(", ")}`,
+  ).toEqual([]);
+});
