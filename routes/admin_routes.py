@@ -19,6 +19,7 @@ from config import get_admin_credentials
 from database.database import get_db
 from routes.decorators import role_required
 from security import (
+    client_login_ip_key,
     client_login_key,
     clear_login_failures,
     login_is_locked,
@@ -72,7 +73,8 @@ def login():
         login_email = email
         db = get_db()
         login_key = client_login_key(request, "admin", login_email)
-        if login_is_locked(db, login_key):
+        ip_key = client_login_ip_key(request, "admin")
+        if login_is_locked(db, login_key) or login_is_locked(db, ip_key):
             flash("Too many failed attempts. Please try again in a few minutes.", "error")
             return render_template("admin/login.html")
         if admin_credentials_valid(login_email, password):
@@ -88,6 +90,7 @@ def login():
             session.permanent = True
             return redirect(url_for("admin.dashboard"))
         record_login_failure(db, login_key)
+        record_login_failure(db, ip_key, max_failures=20)
         flash("Invalid admin credentials.", "error")
     return render_template("admin/login.html")
 
@@ -433,6 +436,37 @@ def company_status(user_id):
     db.commit()
     flash(f"Company account marked {status}.", "success")
     return redirect(url_for("admin.companies"))
+
+
+@admin_bp.post("/companies/<int:user_id>/verification")
+@admin_required
+def company_verification(user_id):
+    decision = request.form.get("decision", "").strip().lower()
+    note = request.form.get("note", "").strip()[:500] or None
+    if decision not in {"verified", "pending", "rejected"}:
+        flash("Choose a valid employer verification status.", "error")
+        return redirect(url_for("admin.company_detail", user_id=user_id))
+
+    db = get_db()
+    company = db.execute(
+        "SELECT organization_name FROM employer_profiles ep "
+        "JOIN users u ON u.id=ep.user_id "
+        "WHERE ep.user_id=? AND u.role='employer'",
+        (user_id,),
+    ).fetchone()
+    if not company:
+        return render_template("404.html"), 404
+
+    db.execute(
+        "UPDATE employer_profiles SET verification_status=?, verification_note=?, "
+        "verified_at=CASE WHEN ?='verified' THEN CURRENT_TIMESTAMP ELSE NULL END "
+        "WHERE user_id=?",
+        (decision, note, decision, user_id),
+    )
+    audit("change_employer_verification", "employer", user_id, decision)
+    db.commit()
+    flash(f"Employer verification marked {decision}.", "success")
+    return redirect(url_for("admin.company_detail", user_id=user_id))
 
 
 @admin_bp.post("/vacancies/<int:vacancy_id>/moderate")
