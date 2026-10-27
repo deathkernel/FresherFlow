@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Create Admin Account — FresherFlow{% endblock %}
+{% block body %}
+  <div class="auth-simple-shell admin-auth-shell">
+    <main id="main-content" tabindex="-1" class="auth-simple-card admin-auth-card reveal">
+      <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
+      <div class="admin-auth-badge">ADMIN CONSOLE</div>
+      <div class="auth-heading">
+        <div class="eyebrow">FIRST-TIME LOCAL SETUP</div>
+        <h1>Create admin account</h1>
+        <p>Create the local administrator account for this development copy of FresherFlow.</p>
+      </div>
+      <div class="admin-auth-note"><strong>One-time setup</strong><span>This page works only on this computer and closes after the first account is created.</span></div>
+      <form method="post" class="auth-compact-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="admin-id">Admin ID</label>
+        <input id="admin-id" class="form-control" type="text" name="admin_id" required maxlength="64" autocomplete="username" autofocus>
+        <label for="admin-password">Password (at least 12 characters)</label>
+        <input id="admin-password" class="form-control" type="password" name="password" required minlength="12" autocomplete="new-password">
+        <label for="admin-confirm-password">Confirm password</label>
+        <input id="admin-confirm-password" class="form-control" type="password" name="confirm_password" required minlength="12" autocomplete="new-password">
+        <button class="btn btn-primary w-100" type="submit">Create admin account</button>
+      </form>
+      <p class="auth-foot"><a href="{{ url_for('admin.login') }}">← Back to admin sign in</a></p>
+    </main>
+    <div class="auth-page-note">FresherFlow · Local administrator setup</div>
+  </div>
+{% endblock %}

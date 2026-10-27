@@ -7,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config, get_admin_credentials
 from database.database import close_db, init_db
 from routes.admin_routes import admin_bp
+from routes.admin_setup_routes import admin_setup_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.platform_routes import platform_bp
@@ -38,8 +39,11 @@ def create_app():
             x_prefix=0,
         )
     if app.config.get("ENVIRONMENT") == "production":
-
+        # Enforce __Host- cookie invariants even if Config is overridden at runtime.
         app.config["SESSION_COOKIE_SECURE"] = True
+        app.config["SESSION_COOKIE_NAME"] = "__Host-fresherflow_session"
+        app.config["SESSION_COOKIE_PATH"] = "/"
+        app.config["SESSION_COOKIE_DOMAIN"] = None
     if app.config.get("ENVIRONMENT") == "production":
         canonical_url = app.config.get("SEO_BASE_URL", "").strip()
         try:
@@ -86,6 +90,9 @@ def create_app():
             response.headers.setdefault("Cache-Control", "no-store")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+        response.headers.setdefault("X-DNS-Prefetch-Control", "off")
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         response.headers.setdefault(
@@ -125,6 +132,7 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(employer_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_setup_bp)
     app.register_blueprint(platform_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(seo_bp)

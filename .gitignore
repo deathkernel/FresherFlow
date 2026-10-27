@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .env
 instance/*.db
+instance/admin_credentials.json
 instance/.secret_key
 uploads/resumes/*
 # Local database

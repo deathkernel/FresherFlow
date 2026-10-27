@@ -16,6 +16,8 @@ from werkzeug.utils import secure_filename
 
 from database.database import get_db
 from security import (
+    calculate_profile_strength,
+    client_login_ip_key,
     client_login_key,
     clear_login_failures,
     login_is_locked,
@@ -61,7 +63,8 @@ def login():
         password = request.form.get("password", "")
         db = get_db()
         login_key = client_login_key(request, "user", email)
-        if login_is_locked(db, login_key):
+        ip_key = client_login_ip_key(request, "user")
+        if login_is_locked(db, login_key) or login_is_locked(db, ip_key):
             flash("Too many failed attempts. Please try again in a few minutes.", "error")
             return render_template("login.html", login_context=login_context)
         user = db.execute(
@@ -94,6 +97,7 @@ def login():
             return redirect(url_for(login_target(user["role"])))
 
         record_login_failure(db, login_key)
+        record_login_failure(db, ip_key, max_failures=20)
         flash("Invalid email or password.", "error")
         return render_template("login.html", login_context=login_context)
 
@@ -155,6 +159,19 @@ def register():
             resume_path = upload_dir / resume_filename
             resume.save(resume_path)
 
+        profile_strength = calculate_profile_strength(
+            [
+                form.get("phone", "").strip(),
+                form.get("education", "").strip(),
+                form.get("college", "").strip(),
+                form.get("graduation_year", "").strip(),
+                form.get("skills", "").strip(),
+                form.get("certifications", "").strip(),
+                form.get("preferred_job_type", "Both").strip(),
+                form.get("preferred_location", "").strip(),
+            ],
+            bool(resume_filename),
+        )
         db.execute(
             """INSERT INTO student_profiles
             (user_id,phone,education,college,graduation_year,skills,certifications,
@@ -171,7 +188,7 @@ def register():
                 form.get("preferred_job_type", "Both"),
                 form.get("preferred_location", "").strip(),
                 resume_filename,
-                100 if resume_filename else 80,
+                profile_strength,
             ),
         )
         db.commit()
