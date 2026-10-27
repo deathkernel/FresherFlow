@@ -57,6 +57,18 @@
                 <span>About the company</span>
                 <p>{{ company.description or 'No company description provided.' }}</p>
               </div>
+              <form class="admin-company-action" method="post" action="{{ url_for('admin.company_verification', user_id=company.user_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="verificationDecision">Employer verification</label>
+                <select id="verificationDecision" class="form-select" name="decision" required>
+                  <option value="verified" {% if company.verification_status == 'verified' %}selected{% endif %}>Verified</option>
+                  <option value="pending" {% if company.verification_status == 'pending' %}selected{% endif %}>Pending review</option>
+                  <option value="rejected" {% if company.verification_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+                <label for="verificationNote">Review note (optional)</label>
+                <textarea id="verificationNote" class="form-control" name="note" maxlength="500" rows="2">{{ company.verification_note or '' }}</textarea>
+                <button class="btn btn-primary" type="submit">Save verification</button>
+              </form>
               <form class="admin-company-action" method="post" action="{{ url_for('admin.company_status', user_id=company.user_id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="status" value="{{ 'suspended' if company.account_status == 'active' else 'active' }}">
