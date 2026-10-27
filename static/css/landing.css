@@ -1,5 +1,4 @@
-/* Landing page motion + visual system
-   Kept isolated so the shared workspace styles remain untouched. */
+
 
 .landing {
   position: relative;
@@ -37,7 +36,6 @@
   background: rgba(77, 205, 169, 0.07);
   animation: landingFloat 17s ease-in-out infinite reverse;
 }
-
 
 .home-ambient {
   position: absolute;

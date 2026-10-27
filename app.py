@@ -14,10 +14,8 @@ from routes.settings_routes import settings_bp
 from routes.seo_routes import seo_bp
 from security import csrf_token, validate_csrf, valid_website_url
 
-
 def safe_website(value):
     return value if valid_website_url(value) else ""
-
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -29,8 +27,7 @@ def create_app():
     if trusted_proxy_hops < 0:
         raise RuntimeError("TRUSTED_PROXY_HOPS must be a non-negative integer")
     if trusted_proxy_hops:
-        # Trust only the explicitly configured number of proxy hops. Do not
-        # trust forwarded host/port/prefix headers from clients.
+
         app.wsgi_app = ProxyFix(
             app.wsgi_app,
             x_for=trusted_proxy_hops,
@@ -40,7 +37,7 @@ def create_app():
             x_prefix=0,
         )
     if app.config.get("ENVIRONMENT") == "production":
-        # Enforce the production cookie invariant even if a caller overrides Config.
+
         app.config["SESSION_COOKIE_SECURE"] = True
     if app.config.get("ENVIRONMENT") == "production":
         admin_email, admin_password_hash = get_admin_credentials()
@@ -61,7 +58,7 @@ def create_app():
 
     @app.after_request
     def security_headers(response):
-        # Avoid replaying dynamic pages, including authenticated pages, from caches.
+
         if request.endpoint != "static":
             response.headers.setdefault("Cache-Control", "no-store")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -148,7 +145,6 @@ def create_app():
         return redirect(url_for(targets.get(role, "auth.login")))
 
     return app
-
 
 app = create_app()
 

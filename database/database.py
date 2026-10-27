@@ -4,7 +4,6 @@ from pathlib import Path
 
 from flask import current_app, g
 
-
 def get_db():
     if "db" in g:
         return g.db
@@ -14,12 +13,10 @@ def get_db():
     g.db = db
     return db
 
-
 def close_db(_error=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
-
 
 def migrate_student_profile(db):
     existing = {row[1] for row in db.execute("PRAGMA table_info(student_profiles)").fetchall()}
@@ -30,7 +27,6 @@ def migrate_student_profile(db):
     for column, definition in additions.items():
         if column not in existing:
             db.execute(f"ALTER TABLE student_profiles ADD COLUMN {column} {definition}")
-
 
 def migrate_employer_data(db):
     employer_columns = {row[1] for row in db.execute("PRAGMA table_info(employer_profiles)").fetchall()}
@@ -54,7 +50,6 @@ def migrate_employer_data(db):
     for column, definition in vacancy_additions.items():
         if column not in vacancy_columns:
             db.execute(f"ALTER TABLE vacancies ADD COLUMN {column} {definition}")
-
 
 def apply_migrations(db):
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
@@ -147,7 +142,6 @@ def apply_migrations(db):
             )
         db.execute("INSERT INTO schema_migrations(version) VALUES(3)")
 
-
     if 4 not in applied:
         db.executescript("""
         CREATE TABLE IF NOT EXISTS user_preferences (
@@ -195,10 +189,8 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(4)")
 
-
-
     if 5 not in applied:
-        # Cover the public job feeds and the most common dashboard sort/filter paths.
+
         db.executescript("""
         CREATE INDEX IF NOT EXISTS idx_vacancies_public_listing
             ON vacancies(status, moderation_status, deadline, id DESC);
