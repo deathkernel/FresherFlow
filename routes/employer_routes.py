@@ -370,14 +370,42 @@ def profile():
         if not valid_website_url(data[2]):
             flash("Website must be a valid http:// or https:// URL.","error")
             return redirect(url_for("employer.profile"))
-        db.execute(
-            "UPDATE employer_profiles SET organization_name=?, "
-            "organization_type=?, website=?, location=?, description=? "
-            "WHERE user_id=?",
-            (*data, uid),
+
+        existing = db.execute(
+            "SELECT organization_name, organization_type, website, location, description, "
+            "verification_status FROM employer_profiles WHERE user_id=?",
+            (uid,),
+        ).fetchone()
+        if not existing:
+            return render_template("404.html"), 404
+
+        identity_changed = any(
+            data[index] != (existing[field] or "")
+            for index, field in enumerate(
+                ("organization_name", "organization_type", "website", "location", "description")
+            )
         )
+        if identity_changed and existing["verification_status"] == "verified":
+            db.execute(
+                "UPDATE employer_profiles SET organization_name=?, organization_type=?, "
+                "website=?, location=?, description=?, verification_status='pending', "
+                "verification_note='Company details changed; re-verification required.', "
+                "verified_at=NULL WHERE user_id=?",
+                (*data, uid),
+            )
+            flash(
+                "Organization profile updated. Your company verification is pending review because details changed.",
+                "success",
+            )
+        else:
+            db.execute(
+                "UPDATE employer_profiles SET organization_name=?, "
+                "organization_type=?, website=?, location=?, description=? "
+                "WHERE user_id=?",
+                (*data, uid),
+            )
+            flash("Organization profile updated.", "success")
         db.commit()
-        flash("Organization profile updated.", "success")
         return redirect(url_for("employer.profile"))
 
     profile = db.execute(
@@ -659,6 +687,9 @@ def applications():
         "SELECT COUNT(*) FROM applications a JOIN vacancies v ON v.id=a.vacancy_id WHERE v.employer_id=?",
         (uid,),
     ).fetchone()[0]
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
     rows = db.execute("""
         SELECT a.*, v.title, u.name, u.email,
                sp.phone, sp.education, sp.college, sp.graduation_year,
