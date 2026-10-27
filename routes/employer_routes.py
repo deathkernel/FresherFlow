@@ -169,7 +169,7 @@ def bulk_vacancy_forms(form):
                 if index < len(eligibilities)
                 else ""
             ),
-            "deadline": deadlines[index] if index < len(deadlines) else None,
+            "deadline": (deadlines[index].strip() or None) if index < len(deadlines) else None,
         }
 
         number = index + 1
@@ -325,7 +325,7 @@ def dashboard():
             "WHERE v.employer_id=? AND v.status='active' "
             "AND v.moderation_status='approved' AND ep.account_status='active' "
             "AND ep.verification_status='verified' "
-            "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
+            "AND (v.deadline IS NULL OR trim(v.deadline)='' OR v.deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()["c"],
         "applications": db.execute(
@@ -436,7 +436,7 @@ def profile():
             "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
             "WHERE v.employer_id=? AND v.status='active' AND v.moderation_status='approved' "
             "AND ep.account_status='active' AND ep.verification_status='verified' "
-            "AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))",
+            "AND (v.deadline IS NULL OR trim(v.deadline)='' OR v.deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()[0],
         "pending_jobs": db.execute(
