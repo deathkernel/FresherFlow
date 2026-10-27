@@ -87,3 +87,24 @@ def test_admin_registration_rejects_non_loopback_client(tmp_path, monkeypatch):
     response = client.get("/admin/register")
     assert response.status_code == 403
     assert not (tmp_path / "admin_credentials.json").exists()
+
+def test_admin_registration_page_loads_auth_styles_and_centered_layout(tmp_path, monkeypatch):
+    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
+    monkeypatch.delenv("ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
+    monkeypatch.setattr(admin_setup_routes, "INSTANCE_DIR", tmp_path)
+    monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "registration-ui.db"))
+    monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+
+    from app import create_app
+
+    app = create_app()
+    app.config.update(TESTING=True)
+    response = app.test_client().get("/admin/register")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="/static/css/auth.css"' in html
+    assert 'class="auth-simple-shell admin-auth-shell"' in html
+    assert 'class="auth-simple-card admin-auth-card reveal"' in html
+    assert "Create admin account" in html
