@@ -209,7 +209,7 @@ def analytics():
                          AND v.moderation_status='approved'
                          AND ep.account_status='active'
                          AND ep.verification_status='verified'
-                         AND (v.deadline IS NULL OR v.deadline>=date('now','localtime'))
+                         AND (v.deadline IS NULL OR trim(v.deadline)='' OR v.deadline>=date('now','localtime'))
                         THEN 1 ELSE 0 END) AS live,
                SUM(CASE WHEN v.status='draft' THEN 1 ELSE 0 END) AS drafts
         FROM vacancies v
