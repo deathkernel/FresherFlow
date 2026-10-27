@@ -240,6 +240,13 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(6)")
 
+    if 7 not in applied:
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_messages_sender_created_at "
+            "ON messages(sender_id, created_at)"
+        )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(7)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
