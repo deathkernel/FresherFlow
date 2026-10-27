@@ -53,7 +53,7 @@ The application creates its SQLite database under `instance/` on first start. Ru
 
 ### Development
 
-Development can use the generated local secret, but administrator credentials must be configured explicitly. No default administrator account is shipped.
+For a fresh local development copy, open `http://127.0.0.1:5000/admin/register` to create the first administrator account. Registration is loopback-only, requires a password of at least 12 characters, and closes after the first account is created. The password is stored as a Werkzeug hash in the ignored local file `instance/admin_credentials.json`; do not copy that file into source control or a deployment. No shared/default administrator password is shipped.
 
 On Windows PowerShell, you can use the helper script to enter credentials interactively and start the app. The password is hidden while typing, hashed locally, and not written to the repository:
 
@@ -80,7 +80,7 @@ TRUSTED_PROXY_HOPS=0
 SEO_BASE_URL=https://your-domain.example
 ```
 
-Production requires a `SECRET_KEY` of at least 32 characters. Set `SEO_BASE_URL` to the canonical HTTPS origin of your deployed site (without a trailing slash) so canonical metadata, `robots.txt`, and `sitemap.xml` use the correct domain. Secure session cookies are enforced in production even if `SESSION_COOKIE_SECURE=0` is supplied. Do not enable Flask debug mode in production. If TLS is terminated at a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact trusted proxy hop count (for example, `1` for one trusted proxy); leave it at `0` when no trusted proxy is configured.
+Production requires a `SECRET_KEY` of at least 32 characters. Request bodies and form parsing are bounded, and production uses a host-only `__Host-` session cookie. Set `SEO_BASE_URL` to the canonical HTTPS origin of your deployed site (without a trailing slash) so canonical metadata, `robots.txt`, and `sitemap.xml` use the correct domain. Secure session cookies are enforced in production even if `SESSION_COOKIE_SECURE=0` is supplied. Do not enable Flask debug mode in production. If TLS is terminated at a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact trusted proxy hop count (for example, `1` for one trusted proxy); leave it at `0` when no trusted proxy is configured.
 
 Never commit administrator credentials or password hashes. Rotate the admin password hash and `SECRET_KEY` if exposure is suspected.
 

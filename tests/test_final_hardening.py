@@ -66,6 +66,9 @@ def test_security_headers_are_present(app):
     response = app.test_client().get("/")
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["X-Permitted-Cross-Domain-Policies"] == "none"
+    assert response.headers["X-DNS-Prefetch-Control"] == "off"
+    assert response.headers["Cross-Origin-Opener-Policy"] == "same-origin"
     assert "Content-Security-Policy" in response.headers
 
 
@@ -106,27 +109,47 @@ def test_production_forces_secure_session_cookies(app, monkeypatch):
     assert production_app.config["SESSION_COOKIE_SECURE"] is True
 
 
-def test_production_requires_a_canonical_https_origin(app, monkeypatch):
+@pytest.mark.parametrize(
+    "canonical_url",
+    [
+        "",
+        "http://fresherflow.example",
+        "https://fresherflow.example/path",
+        "https://user:pass@fresherflow.example",
+    ],
+)
+def test_production_rejects_untrusted_canonical_url(app, monkeypatch, canonical_url):
     from app import create_app
 
     monkeypatch.setattr(Config, "ENVIRONMENT", "production")
-    monkeypatch.setattr(Config, "SEO_BASE_URL", "")
-    with pytest.raises(RuntimeError, match="SEO_BASE_URL must be a valid HTTPS origin"):
-        create_app()
-
-
-def test_production_rejects_non_origin_seo_urls(app, monkeypatch):
-    from app import create_app
-
-    monkeypatch.setattr(Config, "ENVIRONMENT", "production")
-    monkeypatch.setattr(Config, "SEO_BASE_URL", "https://example.com/path")
-    with pytest.raises(RuntimeError, match="SEO_BASE_URL must be a valid HTTPS origin"):
+    monkeypatch.setattr(Config, "SEO_BASE_URL", canonical_url)
+    with pytest.raises(RuntimeError, match="SEO_BASE_URL"):
         create_app()
 
 
 def test_dynamic_responses_are_not_cacheable(app):
     response = app.test_client().get("/")
     assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_request_and_form_limits_are_configured(app):
+    assert app.config["MAX_CONTENT_LENGTH"] == 5 * 1024 * 1024
+    assert app.config["MAX_FORM_MEMORY_SIZE"] == 500_000
+    assert app.config["MAX_FORM_PARTS"] >= 800
+
+
+def test_production_session_cookie_uses_host_prefix(app, monkeypatch):
+    from app import create_app
+    monkeypatch.setattr(Config, "ENVIRONMENT", "production")
+    monkeypatch.setattr(Config, "SEO_BASE_URL", "https://fresherflow.example")
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    from werkzeug.security import generate_password_hash
+    monkeypatch.setenv("ADMIN_PASSWORD_HASH", generate_password_hash("a-long-test-password"))
+    production_app = create_app()
+    assert production_app.config["SESSION_COOKIE_NAME"].startswith("__Host-")
+    assert production_app.config["SESSION_COOKIE_SECURE"] is True
+    assert production_app.config["SESSION_COOKIE_PATH"] == "/"
+    assert production_app.config["SESSION_COOKIE_DOMAIN"] is None
 
 
 
@@ -152,3 +175,18 @@ def test_trusted_proxy_hops_enable_client_ip_and_https_detection(app, monkeypatc
     )
     assert response.data == b"198.51.100.42|True|localhost"
     assert response.headers["Strict-Transport-Security"].startswith("max-age=")
+
+def test_message_rate_limit_index_is_created_and_migration_recorded(app):
+    with app.app_context():
+        db = get_db()
+        migration = db.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=6"
+        ).fetchone()
+        indexes = {
+            row["name"]
+            for row in db.execute("PRAGMA index_list(messages)").fetchall()
+        }
+
+    assert migration is not None
+    assert "idx_messages_sender_created_at" in indexes
+
