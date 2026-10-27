@@ -178,3 +178,7 @@ body main.container .text-primary {
 body main.container .text-secondary {
   color: #596273 !important;
 }
+
+body main.container a:not(.btn) {
+  color: #0b5ed7 !important;
+}
