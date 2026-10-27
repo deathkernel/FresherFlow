@@ -508,7 +508,7 @@ def test_unverified_employer_cannot_receive_direct_job_application(app):
 
     client = app.test_client()
     login(client, "student", "student@example.com", "student-password-123")
-    token = csrf(client, f"/student/jobs/{vacancy_id}")
+    token = csrf(client, "/student/jobs")
     response = client.post(
         f"/student/jobs/{vacancy_id}/apply",
         data={"csrf_token": token},
