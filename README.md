@@ -53,7 +53,7 @@ The application creates its SQLite database under `instance/` on first start. Ru
 
 ### Development
 
-For a fresh local development copy, open `http://127.0.0.1:5000/admin/register` to create the first administrator account. Registration is loopback-only, requires a password of at least 12 characters, and closes after the first account is created. The password is stored as a Werkzeug hash in the ignored local file `instance/admin_credentials.json`; do not copy that file into source control or a deployment. No shared/default administrator password is shipped.
+For a fresh local development copy, open `http://127.0.0.1:5000/admin/register` to create the first administrator account. Registration is loopback-only, requires a password of at least 8 characters, and closes after the first account is created. The password is stored as a Werkzeug hash in the ignored local file `instance/admin_credentials.json`; do not copy that file into source control or a deployment. No shared/default administrator password is shipped.
 
 On Windows PowerShell, you can use the helper script to enter credentials interactively and start the app. The password is hidden while typing, hashed locally, and not written to the repository:
 

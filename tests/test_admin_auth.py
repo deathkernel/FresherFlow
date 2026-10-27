@@ -22,6 +22,9 @@ def test_admin_auth_is_disabled_without_explicit_credentials(monkeypatch):
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
+    from routes import admin_setup_routes
+    monkeypatch.setattr(admin_setup_routes, "local_admin_credentials", lambda: None)
+
     email, password_hash = get_admin_credentials()
     assert email == ""
     assert password_hash == ""

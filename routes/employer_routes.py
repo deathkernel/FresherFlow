@@ -169,7 +169,7 @@ def bulk_vacancy_forms(form):
                 if index < len(eligibilities)
                 else ""
             ),
-            "deadline": deadlines[index] if index < len(deadlines) else None,
+            "deadline": (deadlines[index].strip() or None) if index < len(deadlines) else None,
         }
 
         number = index + 1
@@ -319,10 +319,13 @@ def dashboard():
     uid = session["user_id"]
 
     stats = {
-        "vacancies": db.execute(
-            "SELECT COUNT(*) c FROM vacancies "
-            "WHERE employer_id=? AND status='active' "
-            "AND moderation_status='approved'",
+        "live_jobs": db.execute(
+            "SELECT COUNT(*) c FROM vacancies v "
+            "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+            "WHERE v.employer_id=? AND v.status='active' "
+            "AND v.moderation_status='approved' AND ep.account_status='active' "
+            "AND ep.verification_status='verified' "
+            "AND (v.deadline IS NULL OR trim(v.deadline)='' OR v.deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()["c"],
         "applications": db.execute(
@@ -429,9 +432,11 @@ def profile():
             "SELECT COUNT(*) FROM vacancies WHERE employer_id=?", (uid,)
         ).fetchone()[0],
         "live_jobs": db.execute(
-            "SELECT COUNT(*) FROM vacancies "
-            "WHERE employer_id=? AND status='active' AND moderation_status='approved' "
-            "AND (deadline IS NULL OR deadline>=date('now','localtime'))",
+            "SELECT COUNT(*) FROM vacancies v "
+            "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+            "WHERE v.employer_id=? AND v.status='active' AND v.moderation_status='approved' "
+            "AND ep.account_status='active' AND ep.verification_status='verified' "
+            "AND (v.deadline IS NULL OR trim(v.deadline)='' OR v.deadline>=date('now','localtime'))",
             (uid,),
         ).fetchone()[0],
         "pending_jobs": db.execute(

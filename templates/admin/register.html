@@ -15,10 +15,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="admin-id">Admin ID</label>
         <input id="admin-id" class="form-control" type="text" name="admin_id" required maxlength="64" autocomplete="username" autofocus>
-        <label for="admin-password">Password (at least 12 characters)</label>
-        <input id="admin-password" class="form-control" type="password" name="password" required minlength="12" autocomplete="new-password">
+        <label for="admin-password">Password (at least 8 characters)</label>
+        <input id="admin-password" class="form-control" type="password" name="password" required minlength="8" autocomplete="new-password">
         <label for="admin-confirm-password">Confirm password</label>
-        <input id="admin-confirm-password" class="form-control" type="password" name="confirm_password" required minlength="12" autocomplete="new-password">
+        <input id="admin-confirm-password" class="form-control" type="password" name="confirm_password" required minlength="8" autocomplete="new-password">
         <button class="btn btn-primary w-100" type="submit">Create admin account</button>
       </form>
       <p class="auth-foot"><a href="{{ url_for('admin.login') }}">← Back to admin sign in</a></p>
