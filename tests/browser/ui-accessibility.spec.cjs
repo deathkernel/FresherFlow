@@ -16,12 +16,12 @@ test("public landing page exposes a working skip link", async ({ page }) => {
   await expect(page.locator("#main-content")).toHaveCount(1);
 });
 
-test("public entry routes load without server errors", async ({ page }) => {
+test("public entry routes load successfully", async ({ page }) => {
   for (const route of publicRoutes) {
     const response = await page.goto(route);
     expect(response, `No response for ${route}`).not.toBeNull();
-    expect(response.status(), `Unexpected status for ${route}`).toBeLessThan(500);
-    await expect(page.locator("body")).not.toBeEmpty();
+    expect(response.status(), `Unexpected status for ${route}`).toBe(200);
+    await expect(page.locator("body")).toBeVisible();
   }
 });
 
@@ -39,7 +39,7 @@ test("landing page fits a narrow mobile viewport", async ({ page }) => {
   ).toBeLessThanOrEqual(dimensions.viewport + 1);
 });
 
-for (const route of ["/", "/login", "/register", "/jobs"]) {
+for (const route of publicRoutes) {
   test(`axe accessibility scan: ${route}`, async ({ page }) => {
     await page.goto(route);
     const results = await new AxeBuilder({ page })
