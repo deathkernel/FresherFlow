@@ -150,3 +150,95 @@ html { scroll-behavior: smooth; }
 .table thead th { font-size: .72rem; }
 .table tbody td > small, .detail-meta small, .dash-stat > span { line-height: 1.45; }
 
+
+
+/* Contrast fixes confirmed by automated axe scans.
+   Keep the light palette scoped to light surfaces so theme preferences remain effective. */
+body[data-theme="light"] .footer span:not(:first-child),
+body[data-theme="light"] .auth-simple-shell .auth-heading .eyebrow,
+body[data-theme="light"] .auth-simple-shell .auth-heading p,
+body[data-theme="light"] .auth-simple-shell .auth-foot,
+body[data-theme="light"] .auth-simple-shell .auth-page-note,
+body[data-theme="light"] .auth-simple-shell .auth-shortcuts small,
+body[data-theme="light"] .auth-simple-shell .upload-box small,
+body[data-theme="light"] .auth-simple-shell .student-register-note span,
+body[data-theme="light"] .auth-simple-shell .role-choice,
+body[data-theme="light"] main.container .text-secondary {
+  color: #596273 !important;
+}
+body[data-theme="light"] .auth-simple-shell .form-control::placeholder {
+  color: #626b7b;
+  opacity: 1;
+}
+body[data-theme="light"] main.container .text-primary,
+body[data-theme="light"] main.container a:not(.btn) {
+  color: #0b5ed7 !important;
+}
+
+/* Match the light palette when System follows a light operating-system appearance. */
+@media (prefers-color-scheme: light) {
+  body[data-theme="system"] .footer span:not(:first-child),
+  body[data-theme="system"] .auth-simple-shell .auth-heading .eyebrow,
+  body[data-theme="system"] .auth-simple-shell .auth-heading p,
+  body[data-theme="system"] .auth-simple-shell .auth-foot,
+  body[data-theme="system"] .auth-simple-shell .auth-page-note,
+  body[data-theme="system"] .auth-simple-shell .auth-shortcuts small,
+  body[data-theme="system"] .auth-simple-shell .upload-box small,
+  body[data-theme="system"] .auth-simple-shell .student-register-note span,
+  body[data-theme="system"] .auth-simple-shell .role-choice,
+  body[data-theme="system"] main.container .text-secondary {
+    color: #596273 !important;
+  }
+  body[data-theme="system"] .auth-simple-shell .form-control::placeholder {
+    color: #626b7b;
+    opacity: 1;
+  }
+  body[data-theme="system"] main.container .text-primary,
+  body[data-theme="system"] main.container a:not(.btn) {
+    color: #0b5ed7 !important;
+  }
+}
+
+/* Follow the system's dark appearance without letting light-theme contrast fixes leak through. */
+@media (prefers-color-scheme: dark) {
+  body[data-theme="system"] .footer span:not(:first-child),
+  body[data-theme="system"] .auth-simple-shell .auth-heading .eyebrow,
+  body[data-theme="system"] .auth-simple-shell .auth-heading p,
+  body[data-theme="system"] .auth-simple-shell .auth-foot,
+  body[data-theme="system"] .auth-simple-shell .auth-page-note,
+  body[data-theme="system"] .auth-simple-shell .auth-shortcuts small,
+  body[data-theme="system"] .auth-simple-shell .upload-box small,
+  body[data-theme="system"] .auth-simple-shell .student-register-note span,
+  body[data-theme="system"] .auth-simple-shell .role-choice,
+  body[data-theme="system"] main.container .text-secondary {
+    color: #cbd1df !important;
+  }
+  body[data-theme="system"] .auth-simple-shell .form-control::placeholder {
+    color: #b4bacb;
+    opacity: 1;
+  }
+  body[data-theme="system"] main.container .text-primary,
+  body[data-theme="system"] main.container a:not(.btn) {
+    color: #9bbcff !important;
+  }
+}
+body[data-theme="dark"] .footer span:not(:first-child),
+body[data-theme="dark"] .auth-simple-shell .auth-heading .eyebrow,
+body[data-theme="dark"] .auth-simple-shell .auth-heading p,
+body[data-theme="dark"] .auth-simple-shell .auth-foot,
+body[data-theme="dark"] .auth-simple-shell .auth-page-note,
+body[data-theme="dark"] .auth-simple-shell .auth-shortcuts small,
+body[data-theme="dark"] .auth-simple-shell .upload-box small,
+body[data-theme="dark"] .auth-simple-shell .student-register-note span,
+body[data-theme="dark"] .auth-simple-shell .role-choice,
+body[data-theme="dark"] main.container .text-secondary {
+  color: #cbd1df !important;
+}
+body[data-theme="dark"] .auth-simple-shell .form-control::placeholder {
+  color: #b4bacb;
+  opacity: 1;
+}
+body[data-theme="dark"] main.container .text-primary,
+body[data-theme="dark"] main.container a:not(.btn) {
+  color: #9bbcff !important;
+}

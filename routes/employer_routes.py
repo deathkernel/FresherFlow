@@ -623,7 +623,11 @@ def edit_vacancy(vacancy_id):
             db.rollback()
             flash("The vacancy could not be updated.", "error")
             return render_template("employer/edit-vacancy.html", job=job)
-        flash("Vacancy updated and saved as a draft. Publish it from My Vacancies when ready.","success"); return redirect(url_for("employer.vacancies"))
+        flash(
+            "Vacancy updated and saved as a draft. Publish it from My Vacancies when ready.",
+            "success",
+        )
+        return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html",job=job)
 
 
