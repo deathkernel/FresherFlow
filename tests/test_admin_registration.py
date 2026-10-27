@@ -115,6 +115,25 @@ def test_admin_registration_page_loads_auth_styles_and_centered_layout(tmp_path,
     assert ".admin-auth-shell" in css
     assert ".admin-auth-card" in css
     assert "@media (max-width: 520px)" in css
+    assert """@media (max-width: 520px) {
+  .admin-auth-shell {
+    align-content: start;
+    gap: 14px;
+    padding: 18px 12px;
+  }
+  .admin-auth-card {
+    padding: 22px 18px;
+    border-radius: 17px;
+  }
+  .admin-auth-card .admin-auth-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .admin-auth-card .admin-auth-note strong {
+    flex-basis: auto;
+  }
+}""" in css
 
 def test_admin_registration_accepts_eight_character_password(tmp_path, monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "development")
