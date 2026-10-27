@@ -17,17 +17,14 @@ def test_admin_auth_uses_configured_hash(monkeypatch):
     assert not admin_credentials_valid("admin@example.com", "wrong-password")
 
 
-def test_local_development_has_default_admin_credentials(monkeypatch):
+def test_local_development_has_no_default_admin_credentials(monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "development")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
     email, password_hash = get_admin_credentials()
-    assert email == "admin123"
-    assert password_hash
-    assert admin_credentials_valid("admin123", "admin123")
-    assert not admin_credentials_valid("admin123", "wrong-password")
-
+    assert email == ""
+    assert password_hash == ""
 
 def test_admin_auth_is_disabled_without_explicit_credentials_in_production(monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "production")
