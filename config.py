@@ -3,14 +3,9 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
-from werkzeug.security import generate_password_hash
-
-
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
 SECRET_FILE = INSTANCE_DIR / ".secret_key"
-_LOCAL_DEMO_ADMIN_PASSWORD_HASH = generate_password_hash("admin123")
-
 INSTANCE_DIR.mkdir(exist_ok=True)
 
 
@@ -28,21 +23,14 @@ def get_admin_credentials():
     password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
     environment = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
 
-    # Legacy local placeholder values are not real credentials. Ignore them
-    # outside production so first-time local registration can take precedence.
-    legacy_local_placeholder = (
-        environment != "production"
-        and email == "admin123"
-        and password_hash == "admin123"
-    )
-
-    if email and password_hash and not legacy_local_placeholder:
+    if email and password_hash:
         return email, password_hash
-    if (email or password_hash) and not legacy_local_placeholder:
+    if email or password_hash:
         return "", ""
 
+    # Local setup registration is one-time and stores a per-install password
+    # hash. Never ship a shared/default administrator credential.
     if environment != "production":
-        # A locally registered account takes precedence over the demo fallback.
         try:
             from routes.admin_setup_routes import local_admin_credentials
 
@@ -51,11 +39,8 @@ def get_admin_credentials():
                 return registered
         except (ImportError, OSError, ValueError):
             pass
-        # Local development convenience only. Never enable in production.
-        return "admin123", _LOCAL_DEMO_ADMIN_PASSWORD_HASH
 
     return "", ""
-
 
 class Config:
     ENVIRONMENT = os.environ.get("FRESHERFLOW_ENV", "development").strip().lower()
