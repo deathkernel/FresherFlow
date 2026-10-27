@@ -255,3 +255,94 @@
 .auth-compact-form textarea {
   font-size: 16px;
 }
+
+/* Admin setup uses the same centered, constrained authentication layout. */
+.admin-auth-shell {
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: clamp(20px, 4vw, 44px) 20px;
+}
+.admin-auth-card {
+  box-sizing: border-box;
+  width: min(100%, 500px);
+  min-width: 0;
+  margin-inline: auto;
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid #e4e6f0;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(31, 37, 72, .11);
+}
+.admin-auth-card > .auth-logo {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto 20px;
+}
+.admin-auth-card .auth-heading h1 {
+  font-size: clamp(1.8rem, 4vw, 2.35rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.admin-auth-card .auth-heading p {
+  max-width: 42ch;
+  font-size: .95rem;
+  line-height: 1.6;
+}
+.admin-auth-card .admin-auth-note {
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 13px 14px;
+}
+.admin-auth-card .admin-auth-note strong {
+  flex: 0 0 76px;
+  font-size: .75rem;
+}
+.admin-auth-card .admin-auth-note span {
+  font-size: .75rem;
+  line-height: 1.5;
+}
+.admin-auth-card .auth-compact-form {
+  gap: 9px;
+  margin-top: 18px;
+}
+.admin-auth-card .auth-compact-form label {
+  margin-top: 3px;
+  font-size: .88rem;
+}
+.admin-auth-card .auth-compact-form .form-control {
+  min-height: 48px;
+}
+.admin-auth-card .auth-compact-form .btn {
+  min-height: 49px;
+  margin-top: 8px;
+  font-size: .95rem;
+}
+.admin-auth-shell .auth-page-note {
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+@media (max-width: 520px) {
+  .admin-auth-shell {
+    align-content: start;
+    gap: 14px;
+    padding: 18px 12px;
+  }
+  .admin-auth-card {
+    padding: 22px 18px;
+    border-radius: 17px;
+  }
+  .admin-auth-card .admin-auth-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .admin-auth-card .admin-auth-note strong {
+    flex-basis: auto;
+  }
+}
