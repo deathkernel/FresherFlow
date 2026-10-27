@@ -1,4 +1,4 @@
-
+/* Account-level customization preferences */
 .settings-page{width:min(100% - 32px,940px);margin:0 auto;padding:32px 0 56px;color:var(--ff-ink,#292e3c)}
 .settings-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;padding:26px;border:1px solid var(--ff-line,#e6e8f0);border-radius:20px;background:linear-gradient(135deg,#fff,#f8f7ff)}
 .settings-hero h1{margin:6px 0;font-size:clamp(1.7rem,4vw,2.2rem);letter-spacing:-.05em}
@@ -63,3 +63,296 @@ body[data-theme="system"] .form-control::placeholder,body[data-theme="system"] t
 body[data-theme="system"] .table{--bs-table-bg:#1b1e29;--bs-table-color:#e8eaf2;--bs-table-border-color:#343848}
 }
 @media(max-width:640px){.settings-page{width:min(100% - 22px,940px);padding-top:20px}.settings-hero{flex-direction:column;padding:20px}.settings-card{padding:18px}.settings-control{align-items:flex-start;flex-direction:column;gap:10px}.settings-control .form-select{max-width:none;width:100%}.settings-savebar{align-items:stretch;flex-direction:column}.settings-savebar .btn{width:100%}.settings-security-card .btn{margin-left:0}}
+
+
+/* Cross-panel theme and contrast audit follow-up.
+   Keep shared surfaces readable in Student, Employer and Admin workspaces. */
+:root {
+  --ff-text-muted-accessible: #626b7b;
+  --ff-border-accessible: #d7dbe5;
+}
+.table thead th { color: #626b7b; }
+.settings-hero p,
+.settings-card-head p,
+.settings-control small,
+.settings-toggle small,
+.settings-savebar > span { color: #626b7b; }
+
+/* Explicit dark theme: cover common shared and panel-specific surfaces,
+   not just the settings screen. */
+body[data-theme="dark"] {
+  --ink: #eef0f7;
+  --muted: #b4bacb;
+  --line: #343848;
+  --surface: #1b1e29;
+  --bg: #11131b;
+}
+body[data-theme="dark"] .content-card,
+body[data-theme="dark"] .dashboard-card,
+body[data-theme="dark"] .stat-card,
+body[data-theme="dark"] .dash-stat,
+body[data-theme="dark"] .job-card,
+body[data-theme="dark"] .candidate-card,
+body[data-theme="dark"] .vacancy-row,
+body[data-theme="dark"] .profile-card,
+body[data-theme="dark"] .profile-editor,
+body[data-theme="dark"] .profile-save-bar,
+body[data-theme="dark"] .employer-info-card,
+body[data-theme="dark"] .employer-edit-card,
+body[data-theme="dark"] .employer-form-card,
+body[data-theme="dark"] .bulk-import-card,
+body[data-theme="dark"] .bulk-manual-card,
+body[data-theme="dark"] .notification-card,
+body[data-theme="dark"] .message-layout,
+body[data-theme="dark"] .message-list,
+body[data-theme="dark"] .message-thread,
+body[data-theme="dark"] .message-compose,
+body[data-theme="dark"] .detail-card,
+body[data-theme="dark"] .settings-hero,
+body[data-theme="dark"] .settings-card,
+body[data-theme="dark"] .settings-savebar,
+body[data-theme="dark"] .empty-state,
+body[data-theme="dark"] .table-empty {
+  color: #e8eaf2;
+  background-color: #1b1e29;
+  border-color: #343848;
+  box-shadow: none;
+}
+body[data-theme="dark"] .workspace-head h1,
+body[data-theme="dark"] .content-card h1,
+body[data-theme="dark"] .content-card h2,
+body[data-theme="dark"] .content-card h3,
+body[data-theme="dark"] .dashboard-card h1,
+body[data-theme="dark"] .dashboard-card h2,
+body[data-theme="dark"] .dashboard-card h3,
+body[data-theme="dark"] .job-card h1,
+body[data-theme="dark"] .job-card h2,
+body[data-theme="dark"] .job-card h3,
+body[data-theme="dark"] .profile-card h1,
+body[data-theme="dark"] .profile-card h2,
+body[data-theme="dark"] .profile-card h3,
+body[data-theme="dark"] .employer-form-card h1,
+body[data-theme="dark"] .employer-form-card h2,
+body[data-theme="dark"] .employer-form-card h3,
+body[data-theme="dark"] .detail-card h1,
+body[data-theme="dark"] .detail-card h2,
+body[data-theme="dark"] .detail-card h3 {
+  color: #f3f4fb;
+}
+body[data-theme="dark"] .workspace p,
+body[data-theme="dark"] .workspace small,
+body[data-theme="dark"] .simple-page p,
+body[data-theme="dark"] .simple-page small,
+body[data-theme="dark"] .content-card p,
+body[data-theme="dark"] .content-card small,
+body[data-theme="dark"] .job-card p,
+body[data-theme="dark"] .job-card small,
+body[data-theme="dark"] .profile-card p,
+body[data-theme="dark"] .profile-card small,
+body[data-theme="dark"] .employer-form-card p,
+body[data-theme="dark"] .employer-form-card small,
+body[data-theme="dark"] .detail-card p,
+body[data-theme="dark"] .detail-card small,
+body[data-theme="dark"] .settings-hero p,
+body[data-theme="dark"] .settings-card p,
+body[data-theme="dark"] .settings-card small {
+  color: #b4bacb;
+}
+body[data-theme="dark"] .sidebar,
+body[data-theme="dark"] .sidebar nav a,
+body[data-theme="dark"] .message-bubbles {
+  background-color: #171a24;
+  border-color: #343848;
+  color: #cbd1df;
+}
+body[data-theme="dark"] .sidebar nav a.active,
+body[data-theme="dark"] .sidebar nav a:hover {
+  background-color: #302d52;
+  color: #e2dfff;
+}
+body[data-theme="dark"] .form-control,
+body[data-theme="dark"] .form-select,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  background-color: #151823;
+  color: #eef0f7;
+  border-color: #454a5e;
+}
+body[data-theme="dark"] .form-control::placeholder,
+body[data-theme="dark"] .form-select:disabled,
+body[data-theme="dark"] .form-control:disabled,
+body[data-theme="dark"] textarea::placeholder {
+  color: #b4bacb;
+  opacity: 1;
+}
+body[data-theme="dark"] .table {
+  --bs-table-bg: #1b1e29;
+  --bs-table-color: #e8eaf2;
+  --bs-table-border-color: #343848;
+  --bs-table-striped-bg: #202331;
+  --bs-table-striped-color: #e8eaf2;
+  --bs-table-hover-bg: #292c3c;
+  --bs-table-hover-color: #f3f4fb;
+}
+body[data-theme="dark"] .table thead th,
+body[data-theme="dark"] label,
+body[data-theme="dark"] .form-label {
+  color: #cbd1df;
+}
+body[data-theme="dark"] .btn-light,
+body[data-theme="dark"] .btn-outline,
+body[data-theme="dark"] .btn-ghost,
+body[data-theme="dark"] .btn-primary-soft {
+  background-color: #25283a;
+  border-color: #454a5e;
+  color: #f0f1f7;
+}
+body[data-theme="dark"] .btn-light:hover,
+body[data-theme="dark"] .btn-outline:hover,
+body[data-theme="dark"] .btn-ghost:hover,
+body[data-theme="dark"] .btn-primary-soft:hover {
+  background-color: #30344a;
+  color: #fff;
+}
+body[data-theme="dark"] .status.inactive,
+body[data-theme="dark"] .source-badge {
+  background-color: #303443;
+  color: #e0e4ee;
+}
+body[data-theme="dark"] .empty-state,
+body[data-theme="dark"] .table-empty {
+  color: #c3c9d8;
+}
+
+/* Follow operating-system dark mode only when the user selected System. */
+@media (prefers-color-scheme: dark) {
+  body[data-theme="system"] {
+    --ink: #eef0f7;
+    --muted: #b4bacb;
+    --line: #343848;
+    --surface: #1b1e29;
+    --bg: #11131b;
+  }
+  body[data-theme="system"] .content-card,
+  body[data-theme="system"] .dashboard-card,
+  body[data-theme="system"] .stat-card,
+  body[data-theme="system"] .dash-stat,
+  body[data-theme="system"] .job-card,
+  body[data-theme="system"] .candidate-card,
+  body[data-theme="system"] .vacancy-row,
+  body[data-theme="system"] .profile-card,
+  body[data-theme="system"] .profile-editor,
+  body[data-theme="system"] .profile-save-bar,
+  body[data-theme="system"] .employer-info-card,
+  body[data-theme="system"] .employer-edit-card,
+  body[data-theme="system"] .employer-form-card,
+  body[data-theme="system"] .bulk-import-card,
+  body[data-theme="system"] .bulk-manual-card,
+  body[data-theme="system"] .notification-card,
+  body[data-theme="system"] .message-layout,
+  body[data-theme="system"] .message-list,
+  body[data-theme="system"] .message-thread,
+  body[data-theme="system"] .message-compose,
+  body[data-theme="system"] .detail-card,
+  body[data-theme="system"] .empty-state,
+  body[data-theme="system"] .table-empty {
+    color: #e8eaf2;
+    background-color: #1b1e29;
+    border-color: #343848;
+    box-shadow: none;
+  }
+  body[data-theme="system"] .form-control,
+  body[data-theme="system"] .form-select,
+  body[data-theme="system"] textarea,
+  body[data-theme="system"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    background-color: #151823;
+    color: #eef0f7;
+    border-color: #454a5e;
+  }
+  body[data-theme="system"] .table {
+    --bs-table-bg: #1b1e29;
+    --bs-table-color: #e8eaf2;
+    --bs-table-border-color: #343848;
+    --bs-table-striped-bg: #202331;
+    --bs-table-striped-color: #e8eaf2;
+    --bs-table-hover-bg: #292c3c;
+    --bs-table-hover-color: #f3f4fb;
+  }
+
+  body[data-theme="system"] .workspace-head h1,
+  body[data-theme="system"] .content-card h1,
+  body[data-theme="system"] .content-card h2,
+  body[data-theme="system"] .content-card h3,
+  body[data-theme="system"] .dashboard-card h1,
+  body[data-theme="system"] .dashboard-card h2,
+  body[data-theme="system"] .dashboard-card h3,
+  body[data-theme="system"] .job-card h1,
+  body[data-theme="system"] .job-card h2,
+  body[data-theme="system"] .job-card h3,
+  body[data-theme="system"] .profile-card h1,
+  body[data-theme="system"] .profile-card h2,
+  body[data-theme="system"] .profile-card h3,
+  body[data-theme="system"] .employer-form-card h1,
+  body[data-theme="system"] .employer-form-card h2,
+  body[data-theme="system"] .employer-form-card h3,
+  body[data-theme="system"] .detail-card h1,
+  body[data-theme="system"] .detail-card h2,
+  body[data-theme="system"] .detail-card h3 {
+    color: #f3f4fb;
+  }
+  body[data-theme="system"] .workspace p,
+  body[data-theme="system"] .workspace small,
+  body[data-theme="system"] .simple-page p,
+  body[data-theme="system"] .simple-page small,
+  body[data-theme="system"] .content-card p,
+  body[data-theme="system"] .content-card small,
+  body[data-theme="system"] .job-card p,
+  body[data-theme="system"] .job-card small,
+  body[data-theme="system"] .profile-card p,
+  body[data-theme="system"] .profile-card small,
+  body[data-theme="system"] .employer-form-card p,
+  body[data-theme="system"] .employer-form-card small,
+  body[data-theme="system"] .detail-card p,
+  body[data-theme="system"] .detail-card small {
+    color: #b4bacb;
+  }
+  body[data-theme="system"] .sidebar,
+  body[data-theme="system"] .sidebar nav a,
+  body[data-theme="system"] .message-bubbles {
+    background-color: #171a24;
+    border-color: #343848;
+    color: #cbd1df;
+  }
+  body[data-theme="system"] .sidebar nav a.active,
+  body[data-theme="system"] .sidebar nav a:hover {
+    background-color: #302d52;
+    color: #e2dfff;
+  }
+  body[data-theme="system"] .form-control::placeholder,
+  body[data-theme="system"] .form-select:disabled,
+  body[data-theme="system"] .form-control:disabled,
+  body[data-theme="system"] textarea::placeholder {
+    color: #b4bacb;
+    opacity: 1;
+  }
+  body[data-theme="system"] .table thead th,
+  body[data-theme="system"] label,
+  body[data-theme="system"] .form-label {
+    color: #cbd1df;
+  }
+  body[data-theme="system"] .btn-light:hover,
+  body[data-theme="system"] .btn-outline:hover,
+  body[data-theme="system"] .btn-ghost:hover,
+  body[data-theme="system"] .btn-primary-soft:hover {
+    background-color: #30344a;
+    color: #fff;
+  }
+  body[data-theme="system"] .btn-light,
+  body[data-theme="system"] .btn-outline,
+  body[data-theme="system"] .btn-ghost,
+  body[data-theme="system"] .btn-primary-soft {
+    background-color: #25283a;
+    border-color: #454a5e;
+    color: #f0f1f7;
+  }
+}
