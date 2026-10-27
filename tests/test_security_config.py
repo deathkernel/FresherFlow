@@ -9,6 +9,9 @@ def test_admin_credentials_require_explicit_configuration(monkeypatch):
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
 
+    from routes import admin_setup_routes
+    monkeypatch.setattr(admin_setup_routes, "local_admin_credentials", lambda: None)
+
     import config
     importlib.reload(config)
 
@@ -41,6 +44,9 @@ def test_admin_credentials_are_disabled_outside_development(monkeypatch):
     monkeypatch.setenv("FRESHERFLOW_ENV", "staging")
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
+
+    from routes import admin_setup_routes
+    monkeypatch.setattr(admin_setup_routes, "local_admin_credentials", lambda: None)
 
     import config
     assert config.get_admin_credentials() == ("", "")
