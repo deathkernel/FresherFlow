@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS vacancies (
     location TEXT NOT NULL, salary TEXT, skills TEXT, eligibility TEXT, deadline TEXT,
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','active','closed')),
     moderation_status TEXT NOT NULL DEFAULT 'pending' CHECK(moderation_status IN ('pending','approved','rejected')),
-    moderation_note TEXT, moderated_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    moderation_note TEXT, moderated_at TEXT, vacancy_code TEXT, dedupe_fingerprint TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(employer_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS applications (
