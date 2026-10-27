@@ -172,7 +172,7 @@ def company(employer_id):
     db = get_db()
     company = db.execute(
         "SELECT ep.*, u.name FROM employer_profiles ep JOIN users u ON u.id=ep.user_id "
-        "WHERE ep.user_id=? AND ep.account_status='active'", (employer_id,)
+        "WHERE ep.user_id=? AND ep.account_status='active' AND ep.verification_status='verified'", (employer_id,)
     ).fetchone()
     if not company:
         return render_template("404.html"), 404
