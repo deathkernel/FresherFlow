@@ -29,7 +29,7 @@ def get_admin_credentials():
 
     # Local setup is one-time and stores a unique password hash per install.
     # Never fall back to a shared/default administrator credential.
-    if environment != "production":
+    if environment == "development":
         try:
             from routes.admin_setup_routes import local_admin_credentials
 
