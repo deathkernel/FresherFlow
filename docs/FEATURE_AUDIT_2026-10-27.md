@@ -8,8 +8,8 @@ This is a source-level audit of the current working branch `fix/bulk-ui-audit-20
 
 | ID | Priority | Area | Finding | Status |
 |---|---|---|---|---|
-| FF-FEAT-001 | High | Student apply / employer verification | Apply endpoint does not enforce the same employer verification predicate used by public listing, job details, and save-job routes. | Open; fix recommended |
-| FF-FEAT-002 | Medium | Employer dashboard / analytics | "Live" vacancy counts are not fully consistent with public visibility: dashboard count excludes expired jobs after the current patch, but it does not check employer verification/account status; analytics has a different count predicate and also omits deadline filtering. | Open; fix recommended |
+| FF-FEAT-001 | High | Student apply / employer verification | Apply endpoint now enforces active + verified employer status, active + approved vacancy and non-expired deadline. Regression test added; execution pending. | Fix pushed; test pending |
+| FF-FEAT-002 | Medium | Employer dashboard / analytics | Dashboard, profile and analytics counts now require active + verified employer, active + approved vacancy and non-expired deadline. Regression tests added; execution pending. | Fix pushed; test pending |
 | FF-FEAT-003 | Medium | UI / accessibility | Current CI does not run browser-level smoke tests or automated accessibility checks. Visual behavior such as the admin setup layout and responsive dashboards needs browser verification. | Coverage gap |
 | FF-FEAT-004 | Medium | Auth/config test isolation | Local admin credentials previously caused three local tests to fail with `admin123`; current branch now limits local-file credential loading to development and isolates those tests, but the updated suite still needs a fresh run. | Fix pushed; retest pending |
 | FF-FEAT-005 | Low | Maintainability | CI runs pytest and dependency audit, but no enforced Python formatter/linter or template/CSS/JS checks were found in the reviewed workflow. | Improvement |
@@ -135,9 +135,8 @@ The README and CI define Python 3.11+ / test matrix 3.11 and 3.12, while the use
 
 ## Recommended fix order
 
-1. Fix FF-FEAT-001 so the apply route enforces the same employer verification/public visibility rules as the listing.
-2. Fix FF-FEAT-002 by aligning dashboard, profile and analytics live counts.
-3. Pull the branch in the correct worktree and run the complete pytest suite; resolve every failure before merging.
-4. Verify CI, dependency audit and CodeQL on the latest PR commit.
-5. Add browser smoke/accessibility tests and manually inspect Student, Employer and Admin pages at desktop/mobile widths.
-6. Run authorized staging security checks and test database upgrade/backup recovery before any production deployment.
+1. FF-FEAT-001 code fix and regression test have been pushed; run the complete suite to verify.
+2. FF-FEAT-002 dashboard, profile and analytics count predicates have been aligned and regression tests added; run the complete suite to verify.
+3. Verify CI, dependency audit and CodeQL on the latest PR commit.
+4. Add browser smoke/accessibility tests and manually inspect Student, Employer and Admin pages at desktop/mobile widths.
+5. Run authorized staging security checks and test database upgrade/backup recovery before any production deployment.
