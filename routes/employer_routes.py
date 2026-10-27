@@ -5,7 +5,17 @@ import sqlite3
 from datetime import date, datetime
 from zipfile import BadZipFile, LargeZipFile, ZipFile
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
@@ -27,6 +37,7 @@ MAX_BULK_VACANCIES = 100
 MAX_EXCEL_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
 MAX_EXCEL_MEMBER_BYTES = 10 * 1024 * 1024
 MAX_EXCEL_ARCHIVE_ENTRIES = 1000
+
 
 def experience_requirement_invalid(vacancy_type, eligibility):
     if vacancy_type != "Entry-level Job":
@@ -63,6 +74,7 @@ def experience_requirement_invalid(vacancy_type, eligibility):
     )
     return bool(experience_pattern.search(text) or reverse_pattern.search(text))
 
+
 def deadline_invalid(deadline):
     if not deadline:
         return False
@@ -71,6 +83,7 @@ def deadline_invalid(deadline):
         return date.fromisoformat(deadline) < date.today()
     except ValueError:
         return True
+
 
 def vacancy_form(form):
     title = form.get("title", "").strip()
@@ -104,10 +117,12 @@ def vacancy_form(form):
         "deadline": deadline,
     }, None
 
+
 def normalize_excel_header(value):
     return " ".join(
         str(value or "").strip().lower().replace("_", " ").split()
     )
+
 
 def excel_cell_text(value):
     if value is None:
@@ -117,6 +132,7 @@ def excel_cell_text(value):
     if isinstance(value, date):
         return value.isoformat()
     return str(value).strip()
+
 
 def bulk_vacancy_forms(form):
     titles = form.getlist("title")
@@ -182,6 +198,7 @@ def bulk_vacancy_forms(form):
 
     return vacancies, None
 
+
 def excel_vacancy_forms(file_storage):
     filename = (file_storage.filename or "").strip().lower()
     if not filename.endswith(".xlsx"):
@@ -189,7 +206,8 @@ def excel_vacancy_forms(file_storage):
 
     raw_file = file_storage.read()
     try:
-
+        # XLSX is a ZIP container. Check expanded sizes before XML parsing so a
+        # small compressed upload cannot expand into an unbounded workbook.
         with ZipFile(io.BytesIO(raw_file)) as archive:
             infos = archive.infolist()
             if (
@@ -293,6 +311,7 @@ def excel_vacancy_forms(file_storage):
     finally:
         workbook.close()
 
+
 @employer_bp.get("/dashboard")
 @role_required("employer")
 def dashboard():
@@ -346,6 +365,7 @@ def dashboard():
         posted_vacancies=posted_vacancies,
         applications=applications,
     )
+
 
 @employer_bp.route("/profile", methods=["GET", "POST"])
 @role_required("employer")
@@ -409,6 +429,7 @@ def profile():
     }
     return render_template("employer/profile.html", profile=profile, stats=stats)
 
+
 @employer_bp.route("/vacancies/new", methods=["GET", "POST"])
 @role_required("employer")
 def new_vacancy():
@@ -450,6 +471,7 @@ def new_vacancy():
         flash("Vacancy submitted for admin approval." if publish else "Vacancy saved as draft.","success")
         return redirect(url_for("employer.vacancies"))
     return render_template("employer/post-vacancy.html")
+
 
 @employer_bp.route("/vacancies/bulk-new", methods=["GET", "POST"])
 @role_required("employer")
@@ -511,6 +533,7 @@ def bulk_new_vacancies():
     )
     return redirect(url_for("employer.vacancies"))
 
+
 @employer_bp.get("/vacancies")
 @role_required("employer")
 def vacancies():
@@ -537,6 +560,7 @@ def vacancies():
         per_page=per_page,
         total=total,
     )
+
 
 @employer_bp.route("/vacancies/<int:vacancy_id>/edit", methods=["GET", "POST"])
 @role_required("employer")
@@ -583,6 +607,7 @@ def edit_vacancy(vacancy_id):
         flash("Vacancy updated and saved as a draft. Publish it from My Vacancies when ready.","success"); return redirect(url_for("employer.vacancies"))
     return render_template("employer/edit-vacancy.html",job=job)
 
+
 @employer_bp.post("/vacancies/publish-drafts")
 @role_required("employer")
 def publish_all_drafts():
@@ -615,6 +640,7 @@ def publish_all_drafts():
     )
     return redirect(url_for("employer.vacancies"))
 
+
 @employer_bp.post("/vacancies/<int:vacancy_id>/status")
 @role_required("employer")
 def vacancy_status(vacancy_id):
@@ -646,6 +672,7 @@ def vacancy_status(vacancy_id):
     )
     db.commit()
     return redirect(url_for("employer.vacancies"))
+
 
 @employer_bp.get("/applications")
 @role_required("employer")
@@ -680,6 +707,32 @@ def applications():
         per_page=per_page,
         total=total,
     )
+
+
+@employer_bp.get("/applications/<int:application_id>/resume")
+@role_required("employer")
+def application_resume(application_id):
+    db = get_db()
+    row = db.execute(
+        """SELECT sp.resume_filename
+           FROM applications a
+           JOIN vacancies v ON v.id=a.vacancy_id
+           JOIN student_profiles sp ON sp.user_id=a.student_id
+           WHERE a.id=? AND v.employer_id=?""",
+        (application_id, session["user_id"]),
+    ).fetchone()
+    if not row or not row["resume_filename"]:
+        return render_template("404.html"), 404
+
+    response = send_from_directory(
+        current_app.config["UPLOAD_FOLDER"],
+        row["resume_filename"],
+        as_attachment=True,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
 
 @employer_bp.post("/applications/<int:application_id>/status")
 @role_required("employer")
@@ -746,7 +799,7 @@ def change_password():
             (generate_password_hash(new_password), new_auth_version, uid),
         )
         db.commit()
-
+        # Keep this browser signed in while invalidating all other sessions.
         session["auth_version"] = new_auth_version
         flash("Password changed successfully.", "success")
         return redirect(url_for("employer.profile"))
