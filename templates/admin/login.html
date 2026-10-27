@@ -19,6 +19,7 @@
         <input id="admin-password" class="form-control" type="password" name="password" required autocomplete="current-password">
         <button class="btn btn-primary w-100" type="submit">Sign in to Admin</button>
       </form>
+      <p class="auth-foot"><a href="{{ url_for('admin_setup.register') }}">Create a local admin account</a></p>
       <p class="auth-foot"><a href="{{ url_for('index') }}">← Back to FresherFlow</a></p>
     </main>
     <div class="auth-page-note">FresherFlow · Protected administration workspace</div>
