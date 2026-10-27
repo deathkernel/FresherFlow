@@ -480,3 +480,87 @@ def test_employer_dashboard_shows_live_vacancy_count_and_excludes_expired_jobs(a
 
     assert response.status_code == 200
     assert b'<span>Live vacancies</span><strong>1</strong>' in response.data
+
+def test_unverified_employer_cannot_receive_direct_job_application(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        student_id = db.execute(
+            "SELECT id FROM users WHERE email='student@example.com'"
+        ).fetchone()["id"]
+        cur = db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,deadline,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (employer_id, "Hidden Role", "Entry-level Job", "Not publicly visible.",
+             "Pune", date.today().isoformat(), "active", "approved"),
+        )
+        vacancy_id = cur.lastrowid
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (employer_id,),
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    token = csrf(client, f"/student/jobs/{vacancy_id}")
+    response = client.post(
+        f"/student/jobs/{vacancy_id}/apply",
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT COUNT(*) FROM applications WHERE vacancy_id=? AND student_id=?",
+            (vacancy_id, student_id),
+        ).fetchone()[0] == 0
+
+
+def test_live_vacancy_count_matches_dashboard_and_analytics_visibility(app):
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        for title, deadline in (
+            ("Visible Role", date.today().isoformat()),
+            ("Expired Role", "2000-01-01"),
+        ):
+            db.execute(
+                """INSERT INTO vacancies
+                   (employer_id,title,vacancy_type,description,location,deadline,status,moderation_status)
+                   VALUES(?,?,?,?,?,?,?,?)""",
+                (employer_id, title, "Entry-level Job", "Test vacancy.", "Pune",
+                 deadline, "active", "approved"),
+            )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "employer", "employer@example.com", "employer-password-123")
+    dashboard = client.get("/employer/dashboard")
+    analytics = client.get("/employer/analytics")
+    assert dashboard.status_code == analytics.status_code == 200
+    assert b'<span>Live vacancies</span><strong>1</strong>' in dashboard.data
+    assert b'<span>Live vacancies</span><strong>1</strong>' in analytics.data
+
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (employer_id,),
+        )
+        db.commit()
+    dashboard = client.get("/employer/dashboard")
+    analytics = client.get("/employer/analytics")
+    assert b'<span>Live vacancies</span><strong>0</strong>' in dashboard.data
+    assert b'<span>Live vacancies</span><strong>0</strong>' in analytics.data
