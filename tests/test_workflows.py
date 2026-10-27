@@ -451,3 +451,32 @@ def test_unverified_employer_jobs_are_hidden_from_student_dashboard(app):
     assert response.status_code == 200
     assert b"Unverified Dashboard Role" not in response.data
 
+def test_employer_dashboard_shows_live_vacancy_count_and_excludes_expired_jobs(app):
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,deadline,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (employer_id, "Live Role", "Entry-level Job", "Current opening.", "Pune",
+             date.today().isoformat(), "active", "approved"),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,deadline,status,moderation_status)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (employer_id, "Expired Role", "Entry-level Job", "Old opening.", "Pune",
+             "2000-01-01", "active", "approved"),
+        )
+        db.commit()
+
+    client = app.test_client()
+    login(client, "employer", "employer@example.com", "employer-password-123")
+    response = client.get("/employer/dashboard")
+
+    assert response.status_code == 200
+    assert b'<span>Live vacancies</span><strong>1</strong>' in response.data
