@@ -150,3 +150,31 @@ html { scroll-behavior: smooth; }
 .table thead th { font-size: .72rem; }
 .table tbody td > small, .detail-meta small, .dash-stat > span { line-height: 1.45; }
 
+
+
+/* Contrast fixes confirmed by the first automated axe scan. */
+body .footer span:not(:first-child) {
+  color: #596273 !important;
+}
+body .auth-simple-shell .auth-heading .eyebrow,
+body .auth-simple-shell .auth-heading p,
+body .auth-simple-shell .auth-foot,
+body .auth-simple-shell .auth-page-note,
+body .auth-simple-shell .auth-shortcuts small,
+body .auth-simple-shell .upload-box small,
+body .auth-simple-shell .student-register-note span {
+  color: #596273 !important;
+}
+body .auth-simple-shell .role-choice {
+  color: #596273;
+}
+body .auth-simple-shell .form-control::placeholder {
+  color: #626b7b;
+  opacity: 1;
+}
+body main.container .text-primary {
+  color: #0b5ed7 !important;
+}
+body main.container .text-secondary {
+  color: #596273 !important;
+}
