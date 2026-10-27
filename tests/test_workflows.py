@@ -375,3 +375,79 @@ def test_employer_can_download_only_resume_of_own_applicant(app, tmp_path):
     response = other_client.get(f"/employer/applications/{application_id}/resume")
     assert response.status_code == 404
 
+def test_messages_require_an_application_relationship(app):
+    seed_student(app)
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    with app.app_context():
+        employer_id = get_db().execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+    token = "test-csrf-token"
+    with client.session_transaction() as session:
+        session["csrf_token"] = token
+    response = client.post(
+        "/messages",
+        data={"csrf_token": token, "recipient_id": employer_id, "body": "Hello"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 0
+
+
+def test_editing_verified_employer_profile_resets_verification(app):
+    seed_employer(app)
+    client = app.test_client()
+    login(client, "employer", "employer@example.com", "employer-password-123")
+    token = csrf(client, "/employer/profile")
+    response = client.post(
+        "/employer/profile",
+        data={
+            "csrf_token": token,
+            "organization_name": "Changed Company Name",
+            "organization_type": "Company",
+            "website": "",
+            "location": "Pune",
+            "description": "Updated company details",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        profile = get_db().execute(
+            "SELECT verification_status, verification_note, verified_at "
+            "FROM employer_profiles WHERE organization_name='Changed Company Name'"
+        ).fetchone()
+        assert profile is not None
+        assert profile["verification_status"] == "pending"
+        assert profile["verified_at"] is None
+        assert "re-verification" in profile["verification_note"]
+
+
+def test_unverified_employer_jobs_are_hidden_from_student_dashboard(app):
+    seed_student(app)
+    seed_employer(app)
+    with app.app_context():
+        db = get_db()
+        employer_id = db.execute(
+            "SELECT id FROM users WHERE email='employer@example.com'"
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (employer_id,),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status)
+               VALUES(?,?,?,?,?,'active','approved')""",
+            (employer_id, "Unverified Dashboard Role", "Entry-level Job", "A hidden role", "Pune"),
+        )
+        db.commit()
+    client = app.test_client()
+    login(client, "student", "student@example.com", "student-password-123")
+    response = client.get("/student/dashboard")
+    assert response.status_code == 200
+    assert b"Unverified Dashboard Role" not in response.data
+
