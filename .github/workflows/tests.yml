@@ -40,6 +40,9 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Check Python syntax and core style errors
+        run: python -m ruff check --select E4,E7,E9 .
+
       - name: Audit Python dependencies
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
         run: |
