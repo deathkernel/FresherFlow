@@ -16,14 +16,15 @@ This change adds a browser-based regression layer for public-facing pages. It in
 
 - Add a separate GitHub Actions workflow for browser-level UI and accessibility checks.
 - Use Playwright with Chromium to smoke-test the landing page, login, registration, and public job listing routes.
-- Verify the landing page skip link is the first keyboard focus target and points to the main content.
+- Verify the landing page skip link is the first keyboard focus target, points to the main content, and moves focus to that target when activated with Enter.
 - Check the landing page for horizontal overflow at a 390px viewport width.
-- Run axe-core against WCAG 2.0/2.1 A and AA tags on representative public pages. The workflow fails on serious or critical violations and prints all detected violations for review.
-- The first browser run identified low-contrast secondary text and a landing-page brand accessible-name mismatch. Targeted text-color overrides and a matching brand accessible name were added; the updated scan must confirm these changes.
+- Run axe-core against WCAG 2.0/2.1 A and AA tags on representative public pages. The workflow fails on serious or critical violations and prints all detected violations for review, including a dedicated dark-theme landing-page scan.
+- The first browser run identified low-contrast secondary text and a landing-page brand accessible-name mismatch. Targeted contrast overrides now respect Light, Dark, and System appearance settings, and the brand link uses its visible text as its accessible name.
+- Disable persisted checkout credentials in the browser workflow because the job does not require authenticated Git operations.
 
 ## Validation status
 
-The checks are executable in GitHub Actions; their pass/fail status must be read from the workflow run for the PR commit. No claim is made here that browser tests or axe scans passed before CI executes.
+The checks are executable in GitHub Actions. The current PR head is being revalidated after the latest theme, keyboard, and workflow-hardening fixes; use the latest commit's workflow results as the source of truth.
 
 ## Follow-up
 
