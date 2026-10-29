@@ -119,8 +119,12 @@ def dashboard():
             "SELECT COUNT(*) c FROM vacancies"
         ).fetchone()["c"],
         "live_jobs": db.execute(
-            "SELECT COUNT(*) c FROM vacancies "
-            "WHERE status='active' AND moderation_status='approved'"
+            "SELECT COUNT(*) c FROM vacancies v "
+            "JOIN employer_profiles ep ON ep.user_id=v.employer_id "
+            "WHERE v.status='active' AND v.moderation_status='approved' "
+            "AND ep.account_status='active' AND ep.verification_status='verified' "
+            "AND (v.deadline IS NULL OR trim(v.deadline)='' "
+            "OR v.deadline>=date('now','localtime'))"
         ).fetchone()["c"],
         "pending_jobs": db.execute(
             "SELECT COUNT(*) c FROM vacancies "
