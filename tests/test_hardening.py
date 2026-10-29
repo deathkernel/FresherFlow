@@ -229,6 +229,10 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
             "SELECT id FROM users WHERE email=?", ("pending@example.com",)
         ).fetchone()["id"]
         db.execute(
+            "UPDATE employer_profiles SET verified_at=date('now') WHERE user_id=?",
+            (verified_id,),
+        )
+        db.execute(
             """INSERT INTO vacancies
                (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
                VALUES(?, 'Visible role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
