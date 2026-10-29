@@ -81,12 +81,35 @@ def test_public_registration_rejects_employer_role(app):
             "confirm_password": "blocked-password-123",
         },
     )
-    assert response.status_code == 200
-    assert b"Employer accounts can only be created by an administrator." in response.data
+    assert response.status_code == 403
+    assert b"Student accounts are created by your college." in response.data
     with app.app_context():
         assert get_db().execute(
             "SELECT COUNT(*) FROM users WHERE email=?",
             ("blocked@example.com",),
+        ).fetchone()[0] == 0
+
+
+def test_public_student_registration_is_disabled(app):
+    client = app.test_client()
+    token = csrf(client, "/register")
+    response = client.post(
+        "/register",
+        data={
+            "csrf_token": token,
+            "role": "student",
+            "name": "Self Registered Student",
+            "email": "self-register@example.edu",
+            "password": "student-password-123",
+            "confirm_password": "student-password-123",
+        },
+    )
+    assert response.status_code == 403
+    assert b"Student accounts are created by your college." in response.data
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT COUNT(*) FROM users WHERE email=?",
+            ("self-register@example.edu",),
         ).fetchone()[0] == 0
 
 
