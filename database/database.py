@@ -382,6 +382,32 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(13)")
 
+    if 14 not in applied:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS interviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL UNIQUE,
+            employer_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            scheduled_at TEXT NOT NULL,
+            mode TEXT NOT NULL CHECK(mode IN ('Online','In-person','Phone')),
+            meeting_url TEXT,
+            location TEXT,
+            notes TEXT,
+            status TEXT NOT NULL DEFAULT 'scheduled' CHECK(status IN ('scheduled','cancelled','completed')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(application_id) REFERENCES applications(id) ON DELETE CASCADE,
+            FOREIGN KEY(employer_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_interviews_student_schedule
+            ON interviews(student_id, scheduled_at, status);
+        CREATE INDEX IF NOT EXISTS idx_interviews_employer_schedule
+            ON interviews(employer_id, scheduled_at, status);
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(14)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
