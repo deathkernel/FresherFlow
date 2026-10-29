@@ -228,9 +228,10 @@ def match_score(job_skills):
     profile = get_db().execute(
         "SELECT skills FROM student_profiles WHERE user_id=?", (session["user_id"],)
     ).fetchone()
+    raw_skills = profile["skills"] if profile else ""
     student_skills = {
         s.strip().lower()
-        for s in (profile["skills"] if profile else "").split(",")
+        for s in (raw_skills or "").split(",")
         if s.strip()
     }
     required = {
