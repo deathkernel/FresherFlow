@@ -291,36 +291,11 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
     assert rendered_stats["live_jobs"] == 1
 
 
-def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
-    import sqlite3
+def test_public_registration_does_not_process_student_resume(app):
     from io import BytesIO
 
-    import routes.auth_routes as auth_routes
-
-    real_get_db = auth_routes.get_db
-
-    class FailingProfileInsert:
-        def __init__(self, db):
-            self.db = db
-
-        def execute(self, sql, parameters=()):
-            if sql.lstrip().startswith("INSERT INTO student_profiles"):
-                raise sqlite3.OperationalError("simulated database failure")
-            return self.db.execute(sql, parameters)
-
-        def rollback(self):
-            raise sqlite3.OperationalError("simulated rollback failure")
-
-        def __getattr__(self, name):
-            return getattr(self.db, name)
-
-    monkeypatch.setattr(
-        auth_routes,
-        "get_db",
-        lambda: FailingProfileInsert(real_get_db()),
-    )
     client = app.test_client()
-    token = csrf(client, "/register")
+    token = csrf(client, "/login?role=student")
     response = client.post(
         "/register",
         data={
@@ -330,16 +305,15 @@ def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
             "password": "student-password-123",
             "confirm_password": "student-password-123",
             "role": "student",
-            "resume": (BytesIO(b"%PDF-1.7\nresume"), "resume.pdf"),
+            "resume": (BytesIO(b"%PDF-1.7\\nresume"), "resume.pdf"),
         },
         content_type="multipart/form-data",
     )
 
-    assert response.status_code == 500
+    assert response.status_code == 403
     assert list(Path(app.config["UPLOAD_FOLDER"]).glob("*")) == []
     with app.app_context():
         assert get_db().execute(
             "SELECT 1 FROM users WHERE email=?",
             ("student-db-error@example.com",),
         ).fetchone() is None
-
