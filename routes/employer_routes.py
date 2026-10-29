@@ -2,7 +2,7 @@ import io
 import re
 import secrets
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zipfile import BadZipFile, LargeZipFile, ZipFile
 
 from flask import (
@@ -838,7 +838,7 @@ def schedule_interview(application_id):
         "employer/schedule-interview.html",
         application=application,
         interview=interview,
-        minimum_time=(datetime.now() + __import__("datetime").timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M"),
+        minimum_time=(datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M"),
     )
 
 
