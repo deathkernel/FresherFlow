@@ -30,7 +30,11 @@
                required>
         <button class="btn btn-primary w-100" type="submit">Sign in</button>
       </form>
-      <p class="auth-foot">New here? <a href="{{ url_for('auth.register', role='student') }}">Create student account</a></p>
+      {% if login_context == "student" %}
+      <p class="auth-foot">Need an account? Your college representative creates student IDs. <a href="{{ url_for('auth.register') }}">Learn how to get access</a></p>
+      {% else %}
+      <p class="auth-foot">Employer accounts are issued by the Admin panel.</p>
+      {% endif %}
     </main>
     <div class="auth-page-note">FresherFlow · Secure workspace access</div>
   </div>

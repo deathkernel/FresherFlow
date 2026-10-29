@@ -408,6 +408,26 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(14)")
 
+    if 15 not in applied:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS college_student_accounts (
+            user_id INTEGER PRIMARY KEY,
+            college_id INTEGER NOT NULL,
+            enrollment_number TEXT NOT NULL,
+            graduation_year TEXT NOT NULL,
+            created_by_verifier_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(college_id, enrollment_number),
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE,
+            FOREIGN KEY(created_by_verifier_id) REFERENCES college_verifiers(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_college_student_accounts_college
+            ON college_student_accounts(college_id, created_at DESC);
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(15)")
+
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)

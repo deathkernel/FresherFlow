@@ -1,9 +1,10 @@
+import re
 import sqlite3
 from functools import wraps
 from pathlib import Path
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, send_from_directory, session, url_for
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.database import get_db
 from security import client_login_ip_key, client_login_key, clear_login_failures, login_is_locked, record_login_failure
@@ -107,6 +108,114 @@ def dashboard():
         ).fetchall()
     }
     return render_template('college/dashboard.html', requests=requests, counts=counts, status=status)
+
+
+@college_bp.route('/students', methods=['GET', 'POST'])
+@college_required
+def student_accounts():
+    db = get_db()
+    college_id = session['college_id']
+    college = db.execute(
+        "SELECT id, name FROM colleges WHERE id=? AND status='active'",
+        (college_id,),
+    ).fetchone()
+    if not college:
+        session.clear()
+        flash('This college panel account is inactive. Contact the FresherFlow administrator.', 'error')
+        return redirect(url_for('college.login'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        enrollment_number = request.form.get('enrollment_number', '').strip()
+        graduation_year = request.form.get('graduation_year', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if (
+            not name
+            or len(name) > 120
+            or not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email)
+            or len(email) > 254
+            or not enrollment_number
+            or len(enrollment_number) > 80
+            or not graduation_year.isdigit()
+            or not 2000 <= int(graduation_year) <= 2100
+        ):
+            flash('Enter a valid student name, email, enrollment number and graduation year.', 'error')
+            return redirect(url_for('college.student_accounts'))
+        if len(password) < 12 or password != confirm_password:
+            flash('Use a password of at least 12 characters and confirm it correctly.', 'error')
+            return redirect(url_for('college.student_accounts'))
+
+        try:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM users WHERE email=?', (email,)).fetchone():
+                db.rollback()
+                flash('That email is already registered. Use a different student email.', 'error')
+                return redirect(url_for('college.student_accounts'))
+            if db.execute(
+                'SELECT 1 FROM college_student_accounts WHERE college_id=? AND enrollment_number=? COLLATE NOCASE',
+                (college_id, enrollment_number),
+            ).fetchone():
+                db.rollback()
+                flash('That enrollment number already exists for your college.', 'error')
+                return redirect(url_for('college.student_accounts'))
+
+            cursor = db.execute(
+                "INSERT INTO users(name, email, password_hash, role) VALUES(?, ?, ?, 'student')",
+                (name, email, generate_password_hash(password)),
+            )
+            student_id = cursor.lastrowid
+            db.execute(
+                'INSERT INTO student_profiles(user_id, college, graduation_year) VALUES(?, ?, ?)',
+                (student_id, college['name'], graduation_year),
+            )
+            db.execute(
+                'INSERT INTO college_student_accounts '
+                '(user_id, college_id, enrollment_number, graduation_year, created_by_verifier_id) '
+                'VALUES(?, ?, ?, ?, ?)',
+                (student_id, college_id, enrollment_number, graduation_year, session['verifier_id']),
+            )
+            db.execute(
+                "INSERT INTO student_verification_requests "
+                "(student_id, college_id, enrollment_number, graduation_year, status, reviewer_id, reviewer_note, reviewed_at, admin_status) "
+                "VALUES(?, ?, ?, ?, 'college_approved', ?, ?, CURRENT_TIMESTAMP, 'pending')",
+                (
+                    student_id,
+                    college_id,
+                    enrollment_number,
+                    graduation_year,
+                    session['verifier_id'],
+                    'Student account issued by the college; awaiting final Admin review.',
+                ),
+            )
+            db.execute(
+                "INSERT INTO audit_log(actor_type, actor_id, action, target_type, target_id, details, ip_address) "
+                "VALUES('college', ?, 'create_student_account', 'student_account', ?, ?, ?)",
+                (str(session['verifier_id']), str(student_id), f'College ID: {college_id}', request.remote_addr),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            db.rollback()
+            flash('The student email or enrollment number is already in use.', 'error')
+            return redirect(url_for('college.student_accounts'))
+        except sqlite3.DatabaseError:
+            db.rollback()
+            current_app.logger.exception('College student account creation failed')
+            flash('The student account could not be created. Please try again.', 'error')
+            return redirect(url_for('college.student_accounts'))
+
+        flash('Student account created. Share the login email and initial password securely.', 'success')
+        return redirect(url_for('college.student_accounts'))
+
+    students = db.execute(
+        "SELECT u.id, u.name, u.email, csa.enrollment_number, csa.graduation_year, csa.created_at "
+        "FROM college_student_accounts csa JOIN users u ON u.id=csa.user_id "
+        "WHERE csa.college_id=? ORDER BY csa.created_at DESC, u.id DESC",
+        (college_id,),
+    ).fetchall()
+    return render_template('college/students.html', students=students)
 
 
 @college_bp.post('/requests/<int:request_id>/decision')

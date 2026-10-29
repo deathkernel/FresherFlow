@@ -181,7 +181,7 @@ Audit sensitive actions
 
 ## Features
 
-- Student registration and profile management
+- College-issued student accounts and profile management
 - Resume upload and replacement
 - Internship and entry-level job vacancies
 - Opportunity search and filters
@@ -210,10 +210,11 @@ Do not use Flask's development server as the production web server. Put FresherF
 Runtime files such as the SQLite database, generated secret and uploaded resumes should not be committed to Git.
 
 
-## College verification panel
+## College-issued student accounts and verification
 
 - College representative login: `http://127.0.0.1:5000/college/login`
-- Admin-only college account provisioning: sign in as Admin, then open `http://127.0.0.1:5000/admin/colleges/`.
-- Student verification request: sign in as a student, then open `http://127.0.0.1:5000/student/verification`.
-- College representatives can review only requests assigned to their own college. Their approval confirms enrollment details only; it does not independently prove that a student has no work experience.
-- Set a unique password of at least 12 characters for every college representative and share credentials securely. Do not put college passwords in source control.
+- Create a college and its representative login from Admin: `http://127.0.0.1:5000/admin/colleges/`.
+- A college representative creates student accounts at `http://127.0.0.1:5000/college/students`. Each account is tied to that college and records the student's enrollment number and graduation year.
+- Public student self-registration is disabled. Students sign in at `http://127.0.0.1:5000/login?role=student` using the login email and initial password issued by their college.
+- College-created accounts enter the existing Admin final-verification queue after the college has confirmed enrollment. Admin review remains a separate step.
+- Student passwords are stored as hashes. Share initial passwords securely and never put passwords in source control.
