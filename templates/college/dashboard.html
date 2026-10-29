@@ -3,7 +3,7 @@
 {% block body %}
 <div class="app-shell admin-theme">
   <aside class="sidebar"><div class="brand">Fresher<span>Flow</span></div><div class="side-label">COLLEGE WORKSPACE</div>
-    <nav aria-label="College panel navigation"><a class="active" href="{{ url_for('college.dashboard') }}">Student approvals</a></nav>
+    <nav aria-label="College panel navigation"><a class="active" href="{{ url_for('college.dashboard') }}">Student approvals</a><a href="{{ url_for('college.student_accounts') }}">Student accounts</a></nav>
     <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>{{ session.college_name }}</small></div></div>
       <form method="post" action="{{ url_for('college.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form></div>
   </aside>
