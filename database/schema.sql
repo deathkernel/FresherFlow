@@ -121,3 +121,18 @@ CREATE TABLE IF NOT EXISTS student_verification_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_college_verifiers_college ON college_verifiers(college_id, status);
 CREATE INDEX IF NOT EXISTS idx_student_verification_queue ON student_verification_requests(college_id, status, submitted_at);
+
+
+CREATE TABLE IF NOT EXISTS career_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    title TEXT NOT NULL CHECK(length(trim(title)) > 0),
+    notes TEXT,
+    target_date TEXT,
+    is_completed INTEGER NOT NULL DEFAULT 0 CHECK(is_completed IN (0,1)),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_career_tasks_student_due
+    ON career_tasks(student_id, is_completed, target_date, id);
