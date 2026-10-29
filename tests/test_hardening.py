@@ -252,6 +252,18 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
         )
         db.commit()
 
+    import routes.admin_routes as admin_routes
+
+    rendered_stats = {}
+    real_render_template = admin_routes.render_template
+
+    def capture_dashboard_stats(template, **context):
+        if template == "admin/dashboard.html":
+            rendered_stats.update(context["stats"])
+        return real_render_template(template, **context)
+
+    monkeypatch.setattr(admin_routes, "render_template", capture_dashboard_stats)
+
     client = app.test_client()
     token = csrf(client, "/admin/login")
     response = client.post(
@@ -266,7 +278,7 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
     assert response.status_code == 302
     dashboard = client.get("/admin/")
     assert dashboard.status_code == 200
-    assert b"1 live" in dashboard.data
+    assert rendered_stats["live_jobs"] == 1
 
 
 def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
