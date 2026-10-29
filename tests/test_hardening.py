@@ -251,8 +251,14 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
             (pending_id, (date.today() + timedelta(days=7)).isoformat()),
         )
         db.execute(
-            "UPDATE employer_profiles SET verification_status='pending' WHERE user_id=?",
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
             (pending_id,),
+        )
+        db.execute(
+            """UPDATE employer_profiles
+               SET account_status='active', verification_status='verified', verified_at=CURRENT_TIMESTAMP
+               WHERE user_id=?""",
+            (verified_id,),
         )
         db.commit()
 
