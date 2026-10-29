@@ -65,15 +65,28 @@ def register():
                 "admin_id": admin_id,
                 "password_hash": generate_password_hash(password),
             }
+            created_credentials_file = False
             try:
                 # Exclusive creation makes registration one-time even if two
                 # local requests arrive at nearly the same time.
                 with path.open("x", encoding="utf-8") as handle:
+                    created_credentials_file = True
                     json.dump(payload, handle)
                     handle.write("\n")
             except FileExistsError:
                 flash("Administrator registration has already been completed.", "error")
                 return redirect(url_for("admin.login"))
+            except OSError:
+                if created_credentials_file:
+                    try:
+                        path.unlink(missing_ok=True)
+                    except OSError:
+                        current_app.logger.exception(
+                            "Could not remove incomplete admin credentials file"
+                        )
+                current_app.logger.exception("Local administrator setup could not write credentials")
+                flash("Administrator setup failed. Please try again.", "error")
+                return render_template("admin/register.html"), 500
 
             db = get_db()
             clear_login_failures(db, client_login_key(request, "admin", admin_id))
