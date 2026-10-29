@@ -39,6 +39,11 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     )
     assert response.status_code == 302
 
+    dashboard = client.get("/admin/")
+    assert dashboard.status_code == 200
+    assert b"New College" in dashboard.data
+    assert b"/admin/colleges/" in dashboard.data
+
     token = csrf(client, "/admin/colleges/")
     response = client.post(
         "/admin/colleges/",
