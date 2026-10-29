@@ -364,6 +364,24 @@ def apply_migrations(db):
             )
         db.execute("INSERT INTO schema_migrations(version) VALUES(12)")
 
+    if 13 not in applied:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS career_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            title TEXT NOT NULL CHECK(length(trim(title)) > 0),
+            notes TEXT,
+            target_date TEXT,
+            is_completed INTEGER NOT NULL DEFAULT 0 CHECK(is_completed IN (0,1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT,
+            FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_career_tasks_student_due
+            ON career_tasks(student_id, is_completed, target_date, id);
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(13)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
