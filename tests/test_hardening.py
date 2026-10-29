@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -267,6 +268,7 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
     assert dashboard.status_code == 200
     assert b"1 live" in dashboard.data
 
+
 def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
     import sqlite3
     from io import BytesIO
@@ -309,7 +311,7 @@ def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
     )
 
     assert response.status_code == 500
-    assert list((app.config["UPLOAD_FOLDER"] and __import__("pathlib").Path(app.config["UPLOAD_FOLDER"])).glob("*")) == []
+    assert list(Path(app.config["UPLOAD_FOLDER"]).glob("*")) == []
     with app.app_context():
         assert get_db().execute(
             "SELECT 1 FROM users WHERE email=?",
