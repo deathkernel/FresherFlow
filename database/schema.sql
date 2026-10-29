@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS student_verification_requests (
     college_id INTEGER NOT NULL,
     enrollment_number TEXT NOT NULL,
     graduation_year TEXT NOT NULL,
+    supporting_document_filename TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','college_approved','college_rejected')),
     reviewer_id INTEGER,
     reviewer_note TEXT,
