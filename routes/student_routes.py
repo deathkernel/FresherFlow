@@ -523,6 +523,98 @@ def applications():
     return render_template("student/applications.html", applications=rows)
 
 
+@student_bp.route("/career-plan", methods=["GET", "POST"])
+@role_required("student")
+def career_plan():
+    db = get_db()
+    student_id = session["user_id"]
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:120]
+        notes = request.form.get("notes", "").strip()[:1000] or None
+        target_date = request.form.get("target_date", "").strip() or None
+        if not title:
+            flash("Enter a task title.", "error")
+            return redirect(url_for("student.career_plan"))
+        if target_date:
+            try:
+                target_date = date.fromisoformat(target_date).isoformat()
+            except ValueError:
+                flash("Choose a valid target date.", "error")
+                return redirect(url_for("student.career_plan"))
+        try:
+            db.execute(
+                "INSERT INTO career_tasks(student_id, title, notes, target_date) "
+                "VALUES(?,?,?,?)",
+                (student_id, title, notes, target_date),
+            )
+            db.commit()
+        except sqlite3.DatabaseError:
+            db.rollback()
+            current_app.logger.exception("Career checklist task could not be saved")
+            flash("The task could not be saved. Please try again.", "error")
+            return redirect(url_for("student.career_plan"))
+        flash("Career preparation task added.", "success")
+        return redirect(url_for("student.career_plan"))
+
+    tasks = db.execute(
+        "SELECT * FROM career_tasks WHERE student_id=? "
+        "ORDER BY is_completed ASC, CASE WHEN target_date IS NULL THEN 1 ELSE 0 END, "
+        "target_date ASC, id DESC",
+        (student_id,),
+    ).fetchall()
+    total = len(tasks)
+    completed = sum(1 for task in tasks if task["is_completed"])
+    overdue = sum(
+        1 for task in tasks
+        if not task["is_completed"] and task["target_date"]
+        and task["target_date"] < date.today().isoformat()
+    )
+    return render_template(
+        "student/career-plan.html",
+        tasks=tasks,
+        total=total,
+        completed=completed,
+        overdue=overdue,
+        today=date.today().isoformat(),
+    )
+
+
+@student_bp.post("/career-plan/<int:task_id>/toggle")
+@role_required("student")
+def toggle_career_task(task_id):
+    db = get_db()
+    cursor = db.execute(
+        """UPDATE career_tasks
+           SET is_completed=CASE WHEN is_completed=1 THEN 0 ELSE 1 END,
+               completed_at=CASE WHEN is_completed=1 THEN NULL ELSE CURRENT_TIMESTAMP END
+           WHERE id=? AND student_id=?""",
+        (task_id, session["user_id"]),
+    )
+    if cursor.rowcount != 1:
+        db.rollback()
+        return render_template("404.html"), 404
+    db.commit()
+    flash("Career task status updated.", "success")
+    return redirect(url_for("student.career_plan"))
+
+
+@student_bp.post("/career-plan/<int:task_id>/delete")
+@role_required("student")
+def delete_career_task(task_id):
+    db = get_db()
+    cursor = db.execute(
+        "DELETE FROM career_tasks WHERE id=? AND student_id=?",
+        (task_id, session["user_id"]),
+    )
+    if cursor.rowcount != 1:
+        db.rollback()
+        return render_template("404.html"), 404
+    db.commit()
+    flash("Career task deleted.", "success")
+    return redirect(url_for("student.career_plan"))
+
+
 @student_bp.route("/change-password", methods=["GET", "POST"])
 @role_required("student")
 def change_password():
