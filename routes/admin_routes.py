@@ -570,6 +570,88 @@ def bulk_moderate_vacancies():
 
 
 
+@admin_bp.get("/student-verifications")
+@admin_required
+def student_verifications():
+    db = get_db()
+    status = request.args.get("status", "pending").strip().lower()
+    if status not in {"pending", "verified", "rejected", "all"}:
+        status = "pending"
+    clauses = ["r.status='college_approved'"]
+    params = []
+    if status != "all":
+        clauses.append("r.admin_status=?")
+        params.append(status)
+    rows = db.execute(
+        """SELECT r.*, u.name AS student_name, u.email AS student_email,
+                  c.name AS college_name, sp.education
+           FROM student_verification_requests r
+           JOIN users u ON u.id=r.student_id
+           JOIN colleges c ON c.id=r.college_id
+           LEFT JOIN student_profiles sp ON sp.user_id=u.id
+           WHERE """ + " AND ".join(clauses) + """
+           ORDER BY CASE r.admin_status WHEN 'pending' THEN 0 ELSE 1 END,
+                    r.submitted_at DESC, r.id DESC
+           LIMIT 200""",
+        params,
+    ).fetchall()
+    counts = {
+        row["admin_status"]: row["total"]
+        for row in db.execute(
+            "SELECT admin_status, COUNT(*) AS total FROM student_verification_requests "
+            "WHERE status='college_approved' GROUP BY admin_status"
+        ).fetchall()
+    }
+    return render_template(
+        "admin/student-verifications.html", requests=rows, counts=counts, status=status
+    )
+
+
+@admin_bp.post("/student-verifications/<int:request_id>/decision")
+@admin_required
+def decide_student_verification(request_id):
+    decision = request.form.get("decision", "").strip().lower()
+    note = request.form.get("note", "").strip()[:500] or None
+    if decision not in {"verified", "rejected"}:
+        flash("Choose final approve or reject.", "error")
+        return redirect(url_for("admin.student_verifications"))
+
+    db = get_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        item = db.execute(
+            "SELECT id, student_id, status, admin_status FROM student_verification_requests WHERE id=?",
+            (request_id,),
+        ).fetchone()
+        if not item:
+            db.rollback()
+            return render_template("404.html"), 404
+        if item["status"] != "college_approved" or item["admin_status"] != "pending":
+            db.rollback()
+            flash("This request is not awaiting final admin review.", "error")
+            return redirect(url_for("admin.student_verifications"))
+        cursor = db.execute(
+            """UPDATE student_verification_requests
+               SET admin_status=?, admin_review_note=?, admin_reviewed_at=CURRENT_TIMESTAMP
+               WHERE id=? AND status='college_approved' AND admin_status='pending'""",
+            (decision, note, request_id),
+        )
+        if cursor.rowcount != 1:
+            db.rollback()
+            flash("This request was already reviewed. Refresh the queue.", "error")
+            return redirect(url_for("admin.student_verifications"))
+        audit("final_student_verification_" + decision, "student_verification_request", request_id, note)
+        db.commit()
+    except sqlite3.DatabaseError:
+        db.rollback()
+        current_app.logger.exception("Final student verification decision failed")
+        flash("The final decision could not be saved. Please try again.", "error")
+        return redirect(url_for("admin.student_verifications"))
+
+    flash("Student verification marked " + decision + ".", "success")
+    return redirect(url_for("admin.student_verifications"))
+
+
 @admin_bp.get("/students/<int:student_id>/resume")
 @admin_required
 def student_resume(student_id):
