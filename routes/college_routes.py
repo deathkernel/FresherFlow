@@ -117,21 +117,29 @@ def decide_request(request_id):
         flash('Choose approve or reject.', 'error')
         return redirect(url_for('college.dashboard'))
     db = get_db()
-    request_row = db.execute(
-        'SELECT id, student_id, status FROM student_verification_requests WHERE id=? AND college_id=?',
-        (request_id, session['college_id']),
-    ).fetchone()
-    if not request_row:
-        return render_template('404.html'), 404
-    if request_row['status'] != 'pending':
-        flash('This request has already been reviewed.', 'error')
-        return redirect(url_for('college.dashboard'))
     try:
-        db.execute(
-            "UPDATE student_verification_requests SET status=?, reviewer_id=?, reviewer_note=?, reviewed_at=CURRENT_TIMESTAMP "
-            "WHERE id=? AND college_id=? AND status='pending'",
+        db.execute('BEGIN IMMEDIATE')
+        request_row = db.execute(
+            'SELECT id, status FROM student_verification_requests WHERE id=? AND college_id=?',
+            (request_id, session['college_id']),
+        ).fetchone()
+        if not request_row:
+            db.rollback()
+            return render_template('404.html'), 404
+        if request_row['status'] != 'pending':
+            db.rollback()
+            flash('This request has already been reviewed.', 'error')
+            return redirect(url_for('college.dashboard'))
+        cursor = db.execute(
+            """UPDATE student_verification_requests
+               SET status=?, reviewer_id=?, reviewer_note=?, reviewed_at=CURRENT_TIMESTAMP
+               WHERE id=? AND college_id=? AND status='pending'""",
             (decision, session['verifier_id'], note, request_id, session['college_id']),
         )
+        if cursor.rowcount != 1:
+            db.rollback()
+            flash('This request was already reviewed. Refresh the queue.', 'error')
+            return redirect(url_for('college.dashboard'))
         db.execute(
             "INSERT INTO audit_log(actor_type, actor_id, action, target_type, target_id, details, ip_address) "
             "VALUES('college', ?, ?, 'student_verification_request', ?, ?, ?)",
