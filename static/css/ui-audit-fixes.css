@@ -265,3 +265,39 @@ body[data-theme="dark"] .landing-nav .btn-primary-soft {
   }
 }
 
+/* Override hover/focus/active light-surface button states on dark-theme landing navigation.
+   The generic button states are loaded by the landing page after shared theme CSS. */
+body[data-theme="dark"] .landing-nav .btn-ghost,
+body[data-theme="dark"] .landing-nav .btn-ghost:hover,
+body[data-theme="dark"] .landing-nav .btn-ghost:focus,
+body[data-theme="dark"] .landing-nav .btn-ghost:focus-visible,
+body[data-theme="dark"] .landing-nav .btn-ghost:active,
+body[data-theme="dark"] .landing-nav .btn-primary-soft,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:hover,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:focus,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:focus-visible,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:active {
+  background-color: #25283a !important;
+  border-color: #454a5e !important;
+  color: #f0f1f7 !important;
+  -webkit-text-fill-color: #f0f1f7 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body[data-theme="system"] .landing-nav .btn-ghost,
+  body[data-theme="system"] .landing-nav .btn-ghost:hover,
+  body[data-theme="system"] .landing-nav .btn-ghost:focus,
+  body[data-theme="system"] .landing-nav .btn-ghost:focus-visible,
+  body[data-theme="system"] .landing-nav .btn-ghost:active,
+  body[data-theme="system"] .landing-nav .btn-primary-soft,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:hover,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:focus,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:focus-visible,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:active {
+    background-color: #25283a !important;
+    border-color: #454a5e !important;
+    color: #f0f1f7 !important;
+    -webkit-text-fill-color: #f0f1f7 !important;
+  }
+}
+
