@@ -172,6 +172,59 @@ def profile():
     )
 
 
+@student_bp.route("/verification", methods=["GET", "POST"])
+@role_required("student")
+def verification():
+    db = get_db()
+    student_id = session["user_id"]
+    if request.method == "POST":
+        college_id = request.form.get("college_id", type=int)
+        enrollment_number = request.form.get("enrollment_number", "").strip()[:80]
+        graduation_year = request.form.get("graduation_year", "").strip()
+        if not college_id or not enrollment_number or not graduation_year.isdigit() or not 2000 <= int(graduation_year) <= 2100:
+            flash("Enter a college, enrollment number and valid graduation year.", "error")
+            return redirect(url_for("student.verification"))
+        college = db.execute("SELECT id FROM colleges WHERE id=? AND status='active'", (college_id,)).fetchone()
+        if not college:
+            flash("Choose an active college from the list.", "error")
+            return redirect(url_for("student.verification"))
+        existing = db.execute("SELECT id, status FROM student_verification_requests WHERE student_id=?", (student_id,)).fetchone()
+        if existing and existing["status"] != "college_rejected":
+            flash("You already have a verification request in progress or approved.", "error")
+            return redirect(url_for("student.verification"))
+        try:
+            if existing:
+                db.execute(
+                    "UPDATE student_verification_requests SET college_id=?, enrollment_number=?, graduation_year=?, status='pending', reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, reviewed_at=NULL WHERE id=? AND student_id=?",
+                    (college_id, enrollment_number, graduation_year, existing["id"], student_id),
+                )
+                request_id = existing["id"]
+            else:
+                cursor = db.execute(
+                    "INSERT INTO student_verification_requests(student_id, college_id, enrollment_number, graduation_year) VALUES(?,?,?,?)",
+                    (student_id, college_id, enrollment_number, graduation_year),
+                )
+                request_id = cursor.lastrowid
+            db.execute(
+                "INSERT INTO audit_log(actor_type, actor_id, action, target_type, target_id, details, ip_address) VALUES('student', ?, 'submit_college_verification', 'student_verification_request', ?, ?, ?)",
+                (str(student_id), str(request_id), "College ID: " + str(college_id), request.remote_addr),
+            )
+            db.commit()
+        except sqlite3.DatabaseError:
+            db.rollback()
+            flash("Your verification request could not be saved. Please try again.", "error")
+            return redirect(url_for("student.verification"))
+        flash("Your college verification request has been submitted.", "success")
+        return redirect(url_for("student.verification"))
+
+    verification = db.execute(
+        "SELECT r.*, c.name AS college_name FROM student_verification_requests r JOIN colleges c ON c.id=r.college_id WHERE r.student_id=?",
+        (student_id,),
+    ).fetchone()
+    colleges = db.execute("SELECT id, name FROM colleges WHERE status='active' ORDER BY name COLLATE NOCASE").fetchall()
+    return render_template("student/verification.html", verification=verification, colleges=colleges)
+
+
 @student_bp.get("/resume")
 @role_required("student")
 def resume():
