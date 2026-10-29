@@ -69,7 +69,7 @@ def login(client, role, email, password):
 
 def test_public_registration_rejects_employer_role(app):
     client = app.test_client()
-    token = csrf(client, "/register")
+    token = csrf(client, "/login?role=student")
     response = client.post(
         "/register",
         data={
@@ -92,7 +92,7 @@ def test_public_registration_rejects_employer_role(app):
 
 def test_public_student_registration_is_disabled(app):
     client = app.test_client()
-    token = csrf(client, "/register")
+    token = csrf(client, "/login?role=student")
     response = client.post(
         "/register",
         data={
