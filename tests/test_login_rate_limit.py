@@ -86,3 +86,26 @@ def test_successful_login_clears_failures(monkeypatch):
     assert db.execute(
         "SELECT 1 FROM auth_attempts WHERE attempt_key=?", (key,)
     ).fetchone() is None
+
+
+def test_lockout_cooldown_starts_a_fresh_failure_window(monkeypatch):
+    now = 1_000
+    monkeypatch.setattr(security.time, "time", lambda: now)
+    db = make_db()
+    key = "student:203.0.113.10:user@example.com"
+
+    for _ in range(security.LOGIN_MAX_FAILURES):
+        security.record_login_failure(db, key)
+
+    now += security.LOGIN_LOCK_SECONDS
+    assert not security.login_is_locked(db, key)
+
+    security.record_login_failure(db, key)
+    row = db.execute(
+        "SELECT failed_count, locked_until FROM auth_attempts WHERE attempt_key=?",
+        (key,),
+    ).fetchone()
+
+    assert row["failed_count"] == 1
+    assert row["locked_until"] == 0
+    assert not security.login_is_locked(db, key)
