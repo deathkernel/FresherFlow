@@ -140,3 +140,25 @@ def test_career_checklist_requires_student_login(tmp_path, monkeypatch):
     app = make_app(tmp_path, monkeypatch)
     response = app.test_client().get("/student/career-plan", follow_redirects=False)
     assert response.status_code == 302
+
+def test_match_score_handles_null_student_skills(tmp_path, monkeypatch):
+    from flask import session
+    from routes.platform_routes import match_score
+
+    app = make_app(tmp_path, monkeypatch)
+    student_id = add_student(
+        app, "No Skills Student", "no-skills@example.edu", "student-password-123"
+    )
+
+    with app.test_request_context("/student/jobs"):
+        session["user_id"] = student_id
+        session["role"] = "student"
+        db = get_db()
+        db.execute(
+            "UPDATE student_profiles SET skills=NULL WHERE user_id=?", (student_id,)
+        )
+        db.commit()
+
+        assert match_score("Python, Flask") == 0
+        assert match_score("") is None
+
