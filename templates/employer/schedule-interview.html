@@ -1,0 +1,68 @@
+{% extends "employer/base.html" %}
+{% block employer_content %}
+<div class="section-head">
+  <div>
+    <span class="eyebrow">CANDIDATE INTERVIEW</span>
+    <h2>Schedule interview</h2>
+    <p>Set or update an interview slot for this application.</p>
+  </div>
+  <a class="btn btn-light" href="{{ url_for('employer.applications') }}">Back to applications</a>
+</div>
+
+<div class="content-card p-4 mb-4">
+  <h3 class="h5">{{ application.student_name }}</h3>
+  <p class="text-secondary mb-1">{{ application.student_email }}</p>
+  <p><strong>Role:</strong> {{ application.vacancy_title }}</p>
+  <p><strong>Application status:</strong> <span class="status {{ application.application_status|lower }}">{{ application.application_status }}</span></p>
+  {% if interview %}
+  <p><strong>Current interview:</strong> {{ interview.scheduled_at|replace('T',' ') }} · {{ interview.mode }} · {{ interview.status|title }}</p>
+  {% endif %}
+</div>
+
+{% if application.application_status == 'Rejected' %}
+<div class="content-card p-4"><p class="mb-0">An interview cannot be scheduled for a rejected application.</p></div>
+{% else %}
+<div class="content-card p-4 mb-4">
+  <h3 class="h5">{{ 'Reschedule interview' if interview and interview.status == 'scheduled' else 'Interview details' }}</h3>
+  <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-6">
+      <label class="form-label" for="scheduled-at">Date and time</label>
+      <input class="form-control" id="scheduled-at" name="scheduled_at" type="datetime-local" min="{{ minimum_time }}" required value="{{ interview.scheduled_at[:16] if interview and interview.status == 'scheduled' else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="mode">Interview mode</label>
+      <select class="form-select" id="mode" name="mode" required>
+        <option value="">Choose mode</option>
+        <option value="Online" {% if interview and interview.mode == 'Online' %}selected{% endif %}>Online</option>
+        <option value="In-person" {% if interview and interview.mode == 'In-person' %}selected{% endif %}>In-person</option>
+        <option value="Phone" {% if interview and interview.mode == 'Phone' %}selected{% endif %}>Phone</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="meeting-url">Online meeting link</label>
+      <input class="form-control" id="meeting-url" name="meeting_url" type="url" maxlength="500" value="{{ interview.meeting_url if interview else '' }}" placeholder="https://...">
+      <small class="text-secondary">Required for online interviews.</small>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="location">Location / dial-in details</label>
+      <input class="form-control" id="location" name="location" maxlength="250" value="{{ interview.location if interview else '' }}" placeholder="Office address or phone contact details">
+      <small class="text-secondary">Required for in-person or phone interviews.</small>
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="notes">Instructions for the candidate (optional)</label>
+      <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="800">{{ interview.notes if interview else '' }}</textarea>
+    </div>
+    <div class="col-12"><button class="btn btn-primary" type="submit">{{ 'Update interview' if interview and interview.status == 'scheduled' else 'Schedule interview' }}</button></div>
+  </form>
+</div>
+{% if interview and interview.status == 'scheduled' %}
+<div class="content-card p-3">
+  <form method="post" action="{{ url_for('employer.cancel_interview', application_id=application.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-outline-danger" type="submit">Cancel interview</button>
+  </form>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
