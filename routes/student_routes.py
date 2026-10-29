@@ -195,7 +195,7 @@ def verification():
         try:
             if existing:
                 db.execute(
-                    "UPDATE student_verification_requests SET college_id=?, enrollment_number=?, graduation_year=?, status='pending', reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, reviewed_at=NULL WHERE id=? AND student_id=?",
+                    "UPDATE student_verification_requests SET college_id=?, enrollment_number=?, graduation_year=?, status='pending', reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, reviewed_at=NULL, admin_status='pending', admin_review_note=NULL, admin_reviewed_at=NULL WHERE id=? AND student_id=?",
                     (college_id, enrollment_number, graduation_year, existing["id"], student_id),
                 )
                 request_id = existing["id"]
