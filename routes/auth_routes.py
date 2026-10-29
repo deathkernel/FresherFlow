@@ -208,6 +208,18 @@ def register():
         current_app.logger.exception("Resume upload failed during registration")
         flash("The resume could not be saved. Please try again.", "error")
         return render_template("register.html", selected_role="student")
+    except sqlite3.DatabaseError:
+        db.rollback()
+        if resume_path:
+            try:
+                resume_path.unlink(missing_ok=True)
+            except OSError:
+                current_app.logger.exception(
+                    "Could not clean up resume after registration database failure"
+                )
+        current_app.logger.exception("Database error during student registration")
+        flash("Account creation failed. Please try again.", "error")
+        return render_template("register.html", selected_role="student"), 500
 
     flash("Account created. Please sign in.", "success")
     return redirect(url_for("auth.login"))
