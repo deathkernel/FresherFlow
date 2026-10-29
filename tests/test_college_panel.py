@@ -1,4 +1,5 @@
 import io
+from datetime import date, timedelta
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
@@ -213,6 +214,46 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
             "SELECT admin_status FROM student_verification_requests WHERE student_id=?",
             (student_id,),
         ).fetchone()["admin_status"] == "verified"
+        get_db().execute(
+            "UPDATE student_verification_requests SET expires_at=? WHERE student_id=?",
+            ((date.today() - timedelta(days=1)).isoformat(), student_id),
+        )
+        get_db().commit()
+
+    # An expired verification can be submitted again for college and admin review.
+    token = csrf(client, "/admin/login")
+    client.post("/admin/logout", data={"csrf_token": token}, follow_redirects=False)
+    token = csrf(client, "/login?role=student")
+    response = client.post(
+        "/login?role=student",
+        data={"csrf_token": token, "email": "student@example.com", "password": student_password},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    expired_page = client.get("/student/verification")
+    assert expired_page.status_code == 200
+    assert b"expired" in expired_page.data.lower()
+    token = csrf(client, "/student/verification")
+    response = client.post(
+        "/student/verification",
+        data={
+            "csrf_token": token,
+            "college_id": "1",
+            "enrollment_number": "ETC-2024-101",
+            "graduation_year": "2027",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        request_row = get_db().execute(
+            "SELECT status, admin_status, expires_at FROM student_verification_requests "
+            "WHERE student_id=?",
+            (student_id,),
+        ).fetchone()
+        assert request_row["status"] == "pending"
+        assert request_row["admin_status"] == "pending"
+        assert request_row["expires_at"] is None
 
 
 def test_college_panel_does_not_allow_unauthenticated_queue_access(tmp_path, monkeypatch):
