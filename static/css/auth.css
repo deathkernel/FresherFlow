@@ -346,3 +346,12 @@
     flex-basis: auto;
   }
 }
+
+
+/* Keep registration upload helper text readable against its light background. */
+.auth-simple-shell .upload-box span {
+  color: #4f49c7;
+}
+.auth-simple-shell .upload-box small {
+  color: #626a79;
+}

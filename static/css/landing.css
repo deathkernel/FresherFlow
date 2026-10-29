@@ -912,3 +912,29 @@ body[data-font-scale="large"] .landing :is(.hero-copy p, .process-head p,
     font-size: clamp(2.55rem, 10.5vw, 3rem);
   }
 }
+
+/* Center the Core Features section intro without changing other section headers. */
+.home-features > .process-head {
+  width: min(100%, 820px);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.home-features > .process-head .section-label {
+  display: inline-block;
+  text-align: center;
+}
+
+.home-features > .process-head h2,
+.home-features > .process-head p {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.home-features > .process-head h2 {
+  max-width: 24ch;
+}
+
+.home-features > .process-head p {
+  max-width: 66ch;
+}
