@@ -83,6 +83,39 @@ def valid_resume_upload(file_storage):
 
     return True
 
+ALLOWED_VERIFICATION_DOCUMENT_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
+MAX_VERIFICATION_DOCUMENT_BYTES = 3 * 1024 * 1024
+
+
+def valid_verification_document(file_storage):
+    """Validate the extension, size and signature of a college-proof document."""
+    if not file_storage or not file_storage.filename:
+        return False
+
+    filename = Path(file_storage.filename).name
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in ALLOWED_VERIFICATION_DOCUMENT_EXTENSIONS:
+        return False
+
+    stream = file_storage.stream
+    position = stream.tell()
+    try:
+        stream.seek(0, 2)
+        size = stream.tell()
+        stream.seek(0)
+        header = stream.read(8)
+    finally:
+        stream.seek(position)
+
+    if size <= 0 or size > MAX_VERIFICATION_DOCUMENT_BYTES:
+        return False
+    if extension == "pdf":
+        return header.startswith(b"%PDF-")
+    if extension == "png":
+        return header.startswith(bytes.fromhex("89504E470D0A1A0A"))
+    return header.startswith(bytes.fromhex("FFD8FF"))
+
+
 def login_is_locked(db, key):
     now = int(time.time())
     row = db.execute(
