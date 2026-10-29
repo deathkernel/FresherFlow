@@ -609,7 +609,11 @@ def student_verifications():
         ).fetchall()
     }
     return render_template(
-        "admin/student-verifications.html", requests=rows, counts=counts, status=status
+        "admin/student-verifications.html",
+        requests=rows,
+        counts=counts,
+        status=status,
+        today=date.today().isoformat(),
     )
 
 
