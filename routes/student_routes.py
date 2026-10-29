@@ -188,8 +188,9 @@ def verification():
         if not college:
             flash("Choose an active college from the list.", "error")
             return redirect(url_for("student.verification"))
-        existing = db.execute("SELECT id, status FROM student_verification_requests WHERE student_id=?", (student_id,)).fetchone()
-        if existing and existing["status"] != "college_rejected":
+        existing = db.execute("SELECT id, status, admin_status FROM student_verification_requests WHERE student_id=?", (student_id,)).fetchone()
+        can_resubmit = existing and (existing["status"] == "college_rejected" or (existing["status"] == "college_approved" and existing["admin_status"] == "rejected"))
+        if existing and not can_resubmit:
             flash("You already have a verification request in progress or approved.", "error")
             return redirect(url_for("student.verification"))
         try:
