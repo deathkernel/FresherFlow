@@ -356,3 +356,10 @@ body[data-theme="system"] .auth-simple-shell label.upload-box.compact-upload > s
   color: #596273 !important;
   -webkit-text-fill-color: #596273 !important;
 }
+
+
+/* Keep the registration upload hint readable even when the auth shell wrapper is absent. */
+label.upload-box.compact-upload > small {
+  color: #596273 !important;
+  -webkit-text-fill-color: #596273 !important;
+}
