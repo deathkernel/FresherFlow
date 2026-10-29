@@ -1,4 +1,6 @@
+import csv
 import hashlib
+import io
 import os
 import sqlite3
 from datetime import date
@@ -11,6 +13,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    Response,
     send_from_directory,
     session,
     url_for,
@@ -137,6 +140,184 @@ def dashboard():
         ).fetchone()[0],
     }
     return render_template("admin/dashboard.html", stats=stats)
+
+
+ADMIN_REPORTS = {
+    "applications": {
+        "title": "Applications",
+        "date_column": "a.applied_at",
+        "columns": [
+            ("Application ID", "application_id"),
+            ("Student", "student_name"),
+            ("Student email", "student_email"),
+            ("College", "college"),
+            ("Vacancy", "vacancy_title"),
+            ("Vacancy type", "vacancy_type"),
+            ("Company", "company"),
+            ("Status", "status"),
+            ("Applied at", "applied_at"),
+        ],
+        "sql": """SELECT a.id AS application_id, u.name AS student_name,
+                         u.email AS student_email, COALESCE(sp.college, '') AS college,
+                         v.title AS vacancy_title, v.vacancy_type,
+                         COALESCE(ep.organization_name, 'Unknown company') AS company,
+                         a.status, a.applied_at
+                  FROM applications a
+                  JOIN vacancies v ON v.id=a.vacancy_id
+                  JOIN users u ON u.id=a.student_id
+                  LEFT JOIN student_profiles sp ON sp.user_id=u.id
+                  LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id""",
+    },
+    "vacancies": {
+        "title": "Vacancies",
+        "date_column": "v.created_at",
+        "columns": [
+            ("Vacancy ID", "vacancy_id"),
+            ("Vacancy code", "vacancy_code"),
+            ("Title", "title"),
+            ("Type", "vacancy_type"),
+            ("Company", "company"),
+            ("Location", "location"),
+            ("Publication status", "status"),
+            ("Moderation status", "moderation_status"),
+            ("Created at", "created_at"),
+            ("Deadline", "deadline"),
+        ],
+        "sql": """SELECT v.id AS vacancy_id, v.vacancy_code, v.title, v.vacancy_type,
+                         COALESCE(ep.organization_name, 'Unknown company') AS company,
+                         v.location, v.status, v.moderation_status, v.created_at, v.deadline
+                  FROM vacancies v
+                  LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id""",
+    },
+    "college-verifications": {
+        "title": "College verifications",
+        "date_column": "r.submitted_at",
+        "columns": [
+            ("Request ID", "request_id"),
+            ("Student", "student_name"),
+            ("Student email", "student_email"),
+            ("College", "college"),
+            ("Enrollment number", "enrollment_number"),
+            ("Graduation year", "graduation_year"),
+            ("College decision", "college_status"),
+            ("Admin decision", "admin_status"),
+            ("Submitted at", "submitted_at"),
+            ("College reviewed at", "reviewed_at"),
+            ("Admin reviewed at", "admin_reviewed_at"),
+            ("Valid until", "expires_at"),
+        ],
+        "sql": """SELECT r.id AS request_id, u.name AS student_name, u.email AS student_email,
+                         c.name AS college, r.enrollment_number, r.graduation_year,
+                         r.status AS college_status, r.admin_status, r.submitted_at,
+                         r.reviewed_at, r.admin_reviewed_at, r.expires_at
+                  FROM student_verification_requests r
+                  JOIN users u ON u.id=r.student_id
+                  JOIN colleges c ON c.id=r.college_id""",
+    },
+}
+
+
+def _admin_report_filters():
+    report_type = request.args.get("report", "applications").strip()
+    if report_type not in ADMIN_REPORTS:
+        from flask import abort
+        abort(400, description="Choose a valid report type.")
+
+    parsed_dates = {}
+    for field in ("from_date", "to_date"):
+        raw_value = request.args.get(field, "").strip()
+        if not raw_value:
+            parsed_dates[field] = ""
+            continue
+        try:
+            parsed_dates[field] = date.fromisoformat(raw_value).isoformat()
+        except ValueError:
+            from flask import abort
+            abort(400, description="Report dates must be valid YYYY-MM-DD dates.")
+
+    if parsed_dates["from_date"] and parsed_dates["to_date"]:
+        if parsed_dates["from_date"] > parsed_dates["to_date"]:
+            from flask import abort
+            abort(400, description="The start date must not be after the end date.")
+    return report_type, parsed_dates["from_date"], parsed_dates["to_date"]
+
+
+def _admin_report_rows(db, report_type, from_date="", to_date=""):
+    report = ADMIN_REPORTS[report_type]
+    clauses = []
+    params = []
+    if from_date:
+        clauses.append(f"date({report['date_column']}) >= date(?)")
+        params.append(from_date)
+    if to_date:
+        clauses.append(f"date({report['date_column']}) <= date(?)")
+        params.append(to_date)
+    sql = report["sql"]
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += f" ORDER BY {report['date_column']} DESC"
+    rows = db.execute(sql, params).fetchall()
+    return report, rows
+
+
+def _csv_cell(value):
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        return value
+    text = str(value)
+    if text.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + text
+    return text
+
+
+@admin_bp.get("/reports")
+@admin_required
+def reports():
+    report_type, from_date, to_date = _admin_report_filters()
+    report, rows = _admin_report_rows(get_db(), report_type, from_date, to_date)
+    headers = [label for label, _key in report["columns"]]
+    preview_rows = rows[:25]
+    return render_template(
+        "admin/reports.html",
+        report_type=report_type,
+        report_title=report["title"],
+        report_options=[
+            (key, value["title"]) for key, value in ADMIN_REPORTS.items()
+        ],
+        headers=headers,
+        columns=[key for _label, key in report["columns"]],
+        rows=preview_rows,
+        row_count=len(rows),
+        from_date=from_date,
+        to_date=to_date,
+    )
+
+
+@admin_bp.get("/reports/export.csv")
+@admin_required
+def export_report_csv():
+    report_type, from_date, to_date = _admin_report_filters()
+    report, rows = _admin_report_rows(get_db(), report_type, from_date, to_date)
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow([label for label, _key in report["columns"]])
+    for row in rows:
+        writer.writerow([_csv_cell(row[key]) for _label, key in report["columns"]])
+
+    audit(
+        "export_admin_report",
+        "report",
+        report_type,
+        f"from={from_date or 'all'};to={to_date or 'all'};rows={len(rows)}",
+    )
+    get_db().commit()
+    response = Response(output.getvalue(), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="fresherflow_{report_type}.csv"'
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @admin_bp.get("/jobs")
