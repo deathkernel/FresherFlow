@@ -1,0 +1,71 @@
+{% extends "student/base.html" %}
+{% block title %}Career Checklist — FresherFlow{% endblock %}
+{% block student_content %}
+<div class="section-head">
+  <div>
+    <span class="eyebrow">CAREER PREPARATION</span>
+    <h2>My career checklist</h2>
+    <p>Break preparation into small tasks, set target dates and track your progress.</p>
+  </div>
+</div>
+
+<div class="stat-grid admin-stat-grid mb-4">
+  <div class="dash-stat"><span>Total tasks</span><strong>{{ total }}</strong><small>Your preparation plan</small></div>
+  <div class="dash-stat"><span>Completed</span><strong>{{ completed }}</strong><small>Tasks finished</small></div>
+  <div class="dash-stat"><span>Overdue</span><strong>{{ overdue }}</strong><small>Open tasks past their target date</small></div>
+</div>
+
+<div class="content-card p-4 mb-4">
+  <h3 class="h5">Add a preparation task</h3>
+  <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-6">
+      <label class="form-label" for="task-title">Task title</label>
+      <input class="form-control" id="task-title" name="title" maxlength="120" required placeholder="e.g. Practise Python interview questions">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="target-date">Target date (optional)</label>
+      <input class="form-control" id="target-date" name="target_date" type="date">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="task-notes">Notes (optional)</label>
+      <input class="form-control" id="task-notes" name="notes" maxlength="1000" placeholder="Topic, resource or reminder">
+    </div>
+    <div class="col-12"><button class="btn btn-primary" type="submit">Add task</button></div>
+  </form>
+</div>
+
+<div class="content-card">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3">
+    <div><h3 class="h5 mb-1">Preparation tasks</h3><p class="text-secondary mb-0">Only you can view and manage your checklist.</p></div>
+  </div>
+  <div class="table-wrap">
+    <table class="table align-middle">
+      <thead><tr><th>Task</th><th>Target date</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for task in tasks %}
+        <tr>
+          <td><strong>{{ task.title }}</strong>{% if task.notes %}<small class="d-block text-secondary">{{ task.notes }}</small>{% endif %}</td>
+          <td>{% if task.target_date %}{{ task.target_date }}{% if not task.is_completed and task.target_date < today %}<small class="d-block text-danger">Overdue</small>{% endif %}{% else %}—{% endif %}</td>
+          <td><span class="status {{ 'completed' if task.is_completed else 'pending' }}">{{ 'Completed' if task.is_completed else 'Pending' }}</span></td>
+          <td>
+            <div class="d-flex flex-wrap gap-2">
+              <form method="post" action="{{ url_for('student.toggle_career_task', task_id=task.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-light" type="submit">{{ 'Reopen' if task.is_completed else 'Mark complete' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('student.delete_career_task', task_id=task.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4"><div class="table-empty"><strong>Your checklist is empty.</strong><span>Add a task above to start planning your career preparation.</span></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
