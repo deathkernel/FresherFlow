@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.exceptions import BadRequest
+import secrets
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config, get_admin_credentials
@@ -17,7 +18,7 @@ from routes.platform_routes import platform_bp
 from routes.student_routes import student_bp
 from routes.settings_routes import settings_bp
 from routes.seo_routes import seo_bp
-from security import csrf_token, validate_csrf, valid_website_url
+from security import CSRF_SESSION_KEY, csrf_token, validate_csrf, valid_website_url
 
 def safe_website(value):
     return value if valid_website_url(value) else ""
@@ -87,9 +88,16 @@ def create_app():
             try:
                 validate_csrf(request.form.get("csrf_token"))
             except BadRequest:
-                # A stale admin review page should recover to a fresh form,
-                # never bypass CSRF validation or show a dead-end 400 page.
+                # Reject the submitted action, but rotate the session token so
+                # the redirected form and browser's next session cookie use one
+                # fresh value. Never accept the invalid token or bypass CSRF.
                 if session.get("role") == "admin":
+                    if request.endpoint in {
+                        "admin.moderate_vacancy",
+                        "admin.bulk_moderate_vacancies",
+                    }:
+                        session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+
                     if request.endpoint == "admin.moderate_vacancy":
                         flash(
                             "This moderation form expired. Review the job again and submit your decision once more.",
