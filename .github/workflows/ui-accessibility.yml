@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   browser-accessibility:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -43,60 +43,28 @@ jobs:
       - name: Install browser test dependencies
         run: |
           npm install --no-save @playwright/test @axe-core/playwright
-          npx playwright install chromium
+          npx playwright install --with-deps chromium
 
-      - name: Start FresherFlow and run browser smoke/accessibility checks
+      - name: Start FresherFlow
         env:
           HOST: 127.0.0.1
           PORT: 5000
           FRESHERFLOW_ENV: development
-        shell: pwsh
         run: |
-          $stdoutLog = Join-Path $env:RUNNER_TEMP "fresherflow.stdout.log"
-          $stderrLog = Join-Path $env:RUNNER_TEMP "fresherflow.stderr.log"
-          $server = $null
-          $exitCode = 1
+          python -m flask --app app run --host 127.0.0.1 --port 5000 > /tmp/fresherflow.log 2>&1 &
+          echo $! > /tmp/fresherflow.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/fresherflow.log
+          exit 1
 
-          try {
-            $server = Start-Process -FilePath "python" -ArgumentList @(
-              "-m", "flask", "--app", "app", "run",
-              "--host", "127.0.0.1", "--port", "5000"
-            ) -PassThru -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
+      - name: Run browser smoke and accessibility checks
+        run: npx playwright test tests/browser/ui-accessibility.spec.cjs --reporter=list
 
-            $ready = $false
-            for ($attempt = 0; $attempt -lt 60; $attempt++) {
-              try {
-                $response = Invoke-WebRequest -Uri "http://127.0.0.1:5000/" -TimeoutSec 2
-                if ($response.StatusCode -eq 200) {
-                  $ready = $true
-                  break
-                }
-              } catch {
-                Start-Sleep -Seconds 1
-              }
-            }
-
-            if ($ready) {
-              npx playwright test tests/browser/ui-accessibility.spec.cjs --reporter=list
-              $exitCode = $LASTEXITCODE
-            }
-          } catch {
-            Write-Error $_
-          } finally {
-            if ($null -ne $server) {
-              try {
-                $server.Refresh()
-                if (-not $server.HasExited) {
-                  Stop-Process -Id $server.Id -Force
-                }
-              } catch {
-                # The server may already have exited after a failed startup.
-              }
-            }
-          }
-
-          if ($exitCode -ne 0) {
-            if (Test-Path $stdoutLog) { Get-Content $stdoutLog }
-            if (Test-Path $stderrLog) { Get-Content $stderrLog }
-          }
-          exit $exitCode
+      - name: Show application log on failure
+        if: failure()
+        run: cat /tmp/fresherflow.log
