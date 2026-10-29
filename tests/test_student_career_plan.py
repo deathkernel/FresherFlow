@@ -54,7 +54,7 @@ def make_app(tmp_path, monkeypatch):
 def test_student_career_checklist_task_lifecycle_and_ownership(tmp_path, monkeypatch):
     app = make_app(tmp_path, monkeypatch)
     student_id = add_student(app, "First Student", "first@example.edu", "student-password-123")
-    other_id = add_student(app, "Other Student", "other@example.edu", "other-password-123")
+    add_student(app, "Other Student", "other@example.edu", "other-password-123")
     client = student_client(app, "first@example.edu", "student-password-123")
     other_client = student_client(app, "other@example.edu", "other-password-123")
 
