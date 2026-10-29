@@ -301,3 +301,58 @@ body[data-theme="dark"] .landing-nav .btn-primary-soft:active {
   }
 }
 
+
+/* Make theme-dependent colors settle immediately before accessibility scans and on theme changes.
+   The landing stylesheet animates button backgrounds, which can expose a low-contrast midpoint. */
+body[data-theme="dark"] .landing-nav .btn-ghost,
+body[data-theme="dark"] .landing-nav .btn-ghost:hover,
+body[data-theme="dark"] .landing-nav .btn-ghost:focus,
+body[data-theme="dark"] .landing-nav .btn-ghost:focus-visible,
+body[data-theme="dark"] .landing-nav .btn-ghost:active,
+body[data-theme="dark"] .landing-nav .btn-primary-soft,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:hover,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:focus,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:focus-visible,
+body[data-theme="dark"] .landing-nav .btn-primary-soft:active {
+  background: #25283a !important;
+  background-color: #25283a !important;
+  border-color: #454a5e !important;
+  color: #f0f1f7 !important;
+  -webkit-text-fill-color: #f0f1f7 !important;
+  transition: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body[data-theme="system"] .landing-nav .btn-ghost,
+  body[data-theme="system"] .landing-nav .btn-ghost:hover,
+  body[data-theme="system"] .landing-nav .btn-ghost:focus,
+  body[data-theme="system"] .landing-nav .btn-ghost:focus-visible,
+  body[data-theme="system"] .landing-nav .btn-ghost:active,
+  body[data-theme="system"] .landing-nav .btn-primary-soft,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:hover,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:focus,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:focus-visible,
+  body[data-theme="system"] .landing-nav .btn-primary-soft:active {
+    background: #25283a !important;
+    background-color: #25283a !important;
+    border-color: #454a5e !important;
+    color: #f0f1f7 !important;
+    -webkit-text-fill-color: #f0f1f7 !important;
+    transition: none !important;
+  }
+}
+
+/* The registration upload label uses a pale surface; force AA-safe text colors on that exact control. */
+body[data-theme="light"] .auth-simple-shell label.upload-box.compact-upload > span,
+body[data-theme="system"] .auth-simple-shell label.upload-box.compact-upload > span,
+.auth-simple-shell label.upload-box.compact-upload > span {
+  color: #4f49c7 !important;
+  -webkit-text-fill-color: #4f49c7 !important;
+}
+
+body[data-theme="light"] .auth-simple-shell label.upload-box.compact-upload > small,
+body[data-theme="system"] .auth-simple-shell label.upload-box.compact-upload > small,
+.auth-simple-shell label.upload-box.compact-upload > small {
+  color: #596273 !important;
+  -webkit-text-fill-color: #596273 !important;
+}
