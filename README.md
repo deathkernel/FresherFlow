@@ -26,15 +26,17 @@ The application is intentionally small and role-oriented:
 - `static/` — CSS and JavaScript
 - `tests/` — automated security and workflow tests
 
-## Local setup
+## Local setup (Windows only)
 
-```bash
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# Linux/macOS: source .venv/bin/activate
+```powershell
+py -3.11 -m venv .venv
+Set-ExecutionPolicy -Scope Process Bypass
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
+
+The execution-policy change applies only to the current PowerShell process and is reset when that session closes.
 
 ## Run
 

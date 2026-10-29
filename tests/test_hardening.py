@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -208,4 +209,137 @@ def test_admin_job_pagination_uses_filtered_match_count(app, monkeypatch):
     assert b"21 matching vacancies" in last_page.data
     assert b"Previous" in last_page.data
     assert b"Next" not in last_page.data
+
+def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypatch):
+    from datetime import date, timedelta
+
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv(
+        "ADMIN_PASSWORD_HASH",
+        generate_password_hash("a-strong-test-password"),
+    )
+    seed_employer(app, email="verified@example.com")
+    seed_employer(app, email="pending@example.com")
+    with app.app_context():
+        db = get_db()
+        verified_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("verified@example.com",)
+        ).fetchone()["id"]
+        pending_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("pending@example.com",)
+        ).fetchone()["id"]
+        db.execute(
+            "UPDATE employer_profiles SET verified_at=date('now') WHERE user_id=?",
+            (verified_id,),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Visible role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (verified_id, (date.today() + timedelta(days=7)).isoformat()),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Expired role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (verified_id, (date.today() - timedelta(days=1)).isoformat()),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Unverified company role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (pending_id, (date.today() + timedelta(days=7)).isoformat()),
+        )
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending', verified_at=NULL WHERE user_id=?",
+            (pending_id,),
+        )
+        db.execute(
+            """UPDATE employer_profiles
+               SET account_status='active', verification_status='verified', verified_at=CURRENT_TIMESTAMP
+               WHERE user_id=?""",
+            (verified_id,),
+        )
+        db.commit()
+
+    import routes.admin_routes as admin_routes
+
+    rendered_stats = {}
+    real_render_template = admin_routes.render_template
+
+    def capture_dashboard_stats(template, **context):
+        if template == "admin/dashboard.html":
+            rendered_stats.update(context["stats"])
+        return real_render_template(template, **context)
+
+    monkeypatch.setattr(admin_routes, "render_template", capture_dashboard_stats)
+
+    client = app.test_client()
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={
+            "csrf_token": token,
+            "email": "admin@example.com",
+            "password": "a-strong-test-password",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    dashboard = client.get("/admin/")
+    assert dashboard.status_code == 200
+    assert rendered_stats["live_jobs"] == 1
+
+
+def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
+    import sqlite3
+    from io import BytesIO
+
+    import routes.auth_routes as auth_routes
+
+    real_get_db = auth_routes.get_db
+
+    class FailingProfileInsert:
+        def __init__(self, db):
+            self.db = db
+
+        def execute(self, sql, parameters=()):
+            if sql.lstrip().startswith("INSERT INTO student_profiles"):
+                raise sqlite3.OperationalError("simulated database failure")
+            return self.db.execute(sql, parameters)
+
+        def rollback(self):
+            raise sqlite3.OperationalError("simulated rollback failure")
+
+        def __getattr__(self, name):
+            return getattr(self.db, name)
+
+    monkeypatch.setattr(
+        auth_routes,
+        "get_db",
+        lambda: FailingProfileInsert(real_get_db()),
+    )
+    client = app.test_client()
+    token = csrf(client, "/register")
+    response = client.post(
+        "/register",
+        data={
+            "csrf_token": token,
+            "name": "Test Student",
+            "email": "student-db-error@example.com",
+            "password": "student-password-123",
+            "confirm_password": "student-password-123",
+            "role": "student",
+            "resume": (BytesIO(b"%PDF-1.7\nresume"), "resume.pdf"),
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 500
+    assert list(Path(app.config["UPLOAD_FOLDER"]).glob("*")) == []
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT 1 FROM users WHERE email=?",
+            ("student-db-error@example.com",),
+        ).fetchone() is None
 
