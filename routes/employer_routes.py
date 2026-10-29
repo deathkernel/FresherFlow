@@ -765,6 +765,9 @@ def schedule_interview(application_id):
             flash("Choose a valid interview date and time.", "error")
             return redirect(url_for("employer.schedule_interview", application_id=application_id))
 
+        if "T" not in raw_time or scheduled_time.tzinfo is not None:
+            flash("Choose a local date and time using the interview form.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
         if scheduled_time <= datetime.now():
             flash("Interview must be scheduled for a future date and time.", "error")
             return redirect(url_for("employer.schedule_interview", application_id=application_id))
