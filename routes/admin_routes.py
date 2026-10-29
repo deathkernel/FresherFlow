@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 from flask import (
@@ -608,7 +609,11 @@ def student_verifications():
         ).fetchall()
     }
     return render_template(
-        "admin/student-verifications.html", requests=rows, counts=counts, status=status
+        "admin/student-verifications.html",
+        requests=rows,
+        counts=counts,
+        status=status,
+        today=date.today().isoformat(),
     )
 
 
@@ -638,9 +643,21 @@ def student_verification_document(request_id):
 def decide_student_verification(request_id):
     decision = request.form.get("decision", "").strip().lower()
     note = request.form.get("note", "").strip()[:500] or None
+    expires_at = request.form.get("expires_at", "").strip() or None
     if decision not in {"verified", "rejected"}:
         flash("Choose final approve or reject.", "error")
         return redirect(url_for("admin.student_verifications"))
+    if decision == "verified" and expires_at:
+        try:
+            expiry_date = date.fromisoformat(expires_at)
+        except ValueError:
+            flash("Enter a valid verification expiry date.", "error")
+            return redirect(url_for("admin.student_verifications"))
+        if expiry_date < date.today():
+            flash("Verification expiry date cannot be in the past.", "error")
+            return redirect(url_for("admin.student_verifications"))
+    else:
+        expires_at = None
 
     db = get_db()
     try:
@@ -658,9 +675,10 @@ def decide_student_verification(request_id):
             return redirect(url_for("admin.student_verifications"))
         cursor = db.execute(
             """UPDATE student_verification_requests
-               SET admin_status=?, admin_review_note=?, admin_reviewed_at=CURRENT_TIMESTAMP
+               SET admin_status=?, admin_review_note=?, admin_reviewed_at=CURRENT_TIMESTAMP,
+                   expires_at=?
                WHERE id=? AND status='college_approved' AND admin_status='pending'""",
-            (decision, note, request_id),
+            (decision, note, expires_at, request_id),
         )
         if cursor.rowcount != 1:
             db.rollback()

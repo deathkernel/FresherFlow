@@ -352,6 +352,18 @@ def apply_migrations(db):
             )
         db.execute("INSERT INTO schema_migrations(version) VALUES(11)")
 
+    if 12 not in applied:
+        request_columns = {
+            row["name"] for row in db.execute(
+                "PRAGMA table_info(student_verification_requests)"
+            ).fetchall()
+        }
+        if "expires_at" not in request_columns:
+            db.execute(
+                "ALTER TABLE student_verification_requests ADD COLUMN expires_at TEXT"
+            )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(12)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)

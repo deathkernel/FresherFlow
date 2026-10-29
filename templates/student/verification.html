@@ -8,20 +8,22 @@
 <p><strong>College:</strong> {{ verification.college_name }}</p>
 <p><strong>Enrollment number:</strong> {{ verification.enrollment_number }}</p>
 <p><strong>Graduation year:</strong> {{ verification.graduation_year }}</p>
+{% if verification.expires_at %}<p><strong>Verification valid until:</strong> {{ verification.expires_at }}</p>{% endif %}
 {% if verification.supporting_document_filename %}<p><strong>Supporting document:</strong> <a href="{{ url_for('student.verification_document') }}">Download your submitted document</a></p>{% endif %}
 {% if verification.reviewer_note %}<p><strong>College note:</strong> {{ verification.reviewer_note }}</p>{% endif %}
-{% if verification.status == 'college_approved' and verification.admin_status == 'pending' %}<p class="text-success">Your college has confirmed the submitted enrollment details. FresherFlow admin final review is pending.</p>
+{% if verification_expired %}<p class="text-danger">Your student verification has expired. Submit a new request for revalidation.</p>
+{% elif verification.status == 'college_approved' and verification.admin_status == 'pending' %}<p class="text-success">Your college has confirmed the submitted enrollment details. FresherFlow admin final review is pending.</p>
 {% elif verification.admin_status == 'verified' %}<p class="text-success">Your FresherFlow student verification is complete.</p>
 {% elif verification.admin_status == 'rejected' %}<p class="text-danger">Final verification was rejected. {{ verification.admin_review_note or 'Contact FresherFlow support for clarification.' }}</p>{% endif %}
 {% endif %}
-{% if not verification or verification.status == 'college_rejected' or verification.admin_status == 'rejected' %}
+{% if not verification or verification.status == 'college_rejected' or verification.admin_status == 'rejected' or verification_expired %}
 <form method="post" enctype="multipart/form-data" class="row g-3">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <div class="col-12"><label for="college-id" class="form-label">College</label><select id="college-id" class="form-select" name="college_id" required><option value="">Choose your college</option>{% for college in colleges %}<option value="{{ college.id }}" {% if verification and verification.college_id == college.id %}selected{% endif %}>{{ college.name }}</option>{% endfor %}</select></div>
 <div class="col-md-6"><label for="enrollment-number" class="form-label">Enrollment / roll number</label><input id="enrollment-number" class="form-control" name="enrollment_number" required maxlength="80" value="{{ verification.enrollment_number if verification else '' }}"></div>
 <div class="col-md-6"><label for="graduation-year" class="form-label">Graduation year</label><input id="graduation-year" class="form-control" name="graduation_year" type="number" min="2000" max="2100" required value="{{ verification.graduation_year if verification else '' }}"></div>
 <div class="col-12"><label for="supporting-document" class="form-label">Supporting document (optional)</label><input id="supporting-document" class="form-control" name="supporting_document" type="file" accept=".pdf,.png,.jpg,.jpeg"><small class="text-secondary">PDF, PNG or JPG; maximum 3 MB. Do not upload unrelated sensitive documents.</small></div>
-<div class="col-12"><button class="btn btn-primary" type="submit">Submit for college approval</button></div>
+<div class="col-12"><button class="btn btn-primary" type="submit">{% if verification_expired %}Submit for revalidation{% else %}Submit for college approval{% endif %}</button></div>
 </form>
 {% elif verification.status == 'pending' %}<p class="text-secondary mb-0">Your request is waiting for the college representative to review it.</p>{% endif %}
 </div>
