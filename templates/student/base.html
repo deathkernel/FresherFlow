@@ -11,6 +11,8 @@
       <div class="side-nav-label">COMMUNICATION</div>
       <a href="{{ url_for('platform.notifications') }}">Notifications {% if unread_notifications %}<span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a>
       <a href="{{ url_for('platform.messages') }}">Messages</a>
+      <div class="side-nav-label">CAREER PREPARATION</div>
+      <a class="{% if request.endpoint == 'student.career_plan' %}active{% endif %}" href="{{ url_for('student.career_plan') }}">Career checklist</a>
       <div class="side-nav-label">ACCOUNT</div>
       <a class="{% if request.endpoint in ['student.profile','student.resume'] %}active{% endif %}" href="{{ url_for('student.profile') }}">My Profile</a>
       <a class="{% if request.endpoint == 'settings.preferences' %}active{% endif %}" href="{{ url_for('settings.preferences') }}">Settings</a>
