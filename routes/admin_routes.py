@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sqlite3
+from pathlib import Path
 
 from flask import (
     Blueprint,
@@ -609,6 +610,27 @@ def student_verifications():
     return render_template(
         "admin/student-verifications.html", requests=rows, counts=counts, status=status
     )
+
+
+@admin_bp.get("/student-verifications/<int:request_id>/document")
+@admin_required
+def student_verification_document(request_id):
+    item = get_db().execute(
+        "SELECT supporting_document_filename FROM student_verification_requests "
+        "WHERE id=? AND status='college_approved'",
+        (request_id,),
+    ).fetchone()
+    if not item or not item["supporting_document_filename"]:
+        return render_template("404.html"), 404
+    filename = item["supporting_document_filename"]
+    response = send_from_directory(
+        current_app.config["VERIFICATION_UPLOAD_FOLDER"],
+        filename,
+        as_attachment=True,
+        download_name=f"college-supporting-document{Path(filename).suffix.lower()}",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @admin_bp.post("/student-verifications/<int:request_id>/decision")
