@@ -1,7 +1,8 @@
 import sqlite3
 from functools import wraps
+from pathlib import Path
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.database import get_db
@@ -167,3 +168,23 @@ def request_detail(request_id):
     if not item:
         return render_template('404.html'), 404
     return render_template('college/request_detail.html', item=item)
+
+@college_bp.get('/requests/<int:request_id>/document')
+@college_required
+def request_document(request_id):
+    item = get_db().execute(
+        "SELECT supporting_document_filename FROM student_verification_requests "
+        "WHERE id=? AND college_id=?",
+        (request_id, session['college_id']),
+    ).fetchone()
+    if not item or not item['supporting_document_filename']:
+        return render_template('404.html'), 404
+    filename = item['supporting_document_filename']
+    response = send_from_directory(
+        current_app.config['VERIFICATION_UPLOAD_FOLDER'],
+        filename,
+        as_attachment=True,
+        download_name=f"college-supporting-document{Path(filename).suffix.lower()}",
+    )
+    response.headers['Cache-Control'] = 'private, no-store'
+    return response
