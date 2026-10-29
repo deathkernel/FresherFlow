@@ -20,7 +20,7 @@ def college_required(view):
             "FROM college_verifiers cv JOIN colleges c ON c.id=cv.college_id WHERE cv.id=?",
             (session['verifier_id'],),
         ).fetchone()
-        if not verifier or verifier['status'] != 'active' or verifier['college_status'] != 'active':
+        if not verifier or verifier['status'] != 'active' or verifier['college_status'] != 'active' or verifier['college_id'] != session.get('college_id'):
             session.clear()
             flash('This college panel account is inactive. Contact the FresherFlow administrator.', 'error')
             return redirect(url_for('college.login'))
