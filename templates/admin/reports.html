@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Reports &amp; Exports — FresherFlow{% endblock %}
+{% block body %}
+<div class="app-shell admin-theme">
+  <aside class="sidebar">
+    <div class="brand">Fresher<span>Flow</span></div>
+    <div class="side-label">ADMIN WORKSPACE</div>
+    <nav>
+      <a href="{{ url_for('admin.dashboard') }}">Overview</a>
+      <div class="side-nav-label">MANAGEMENT</div>
+      <a href="{{ url_for('admin.jobs') }}">Job Moderation</a>
+      <a href="{{ url_for('admin.applications') }}">Applications</a>
+      <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
+      <a href="{{ url_for('admin.companies') }}">Companies</a>
+      <a href="{{ url_for('admin.student_verifications') }}">Student verification</a>
+      <a class="active" href="{{ url_for('admin.reports') }}">Reports &amp; exports</a>
+    </nav>
+    <div class="side-bottom">
+      <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Platform control</small></div></div>
+      <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form>
+    </div>
+  </aside>
+
+  <section class="workspace" id="main-content" tabindex="-1">
+    <header class="workspace-head">
+      <div>
+        <span class="eyebrow">PLATFORM ANALYTICS</span>
+        <h1>Reports &amp; exports</h1>
+        <p>Review recruitment records for a selected period and download them as CSV.</p>
+      </div>
+    </header>
+
+    <div class="content-card p-4 mb-4">
+      <h2 class="h5">Choose a report</h2>
+      <form method="get" action="{{ url_for('admin.reports') }}" class="row g-3">
+        <div class="col-md-4">
+          <label for="report" class="form-label">Report type</label>
+          <select id="report" name="report" class="form-select">
+            {% for key, label in report_options %}
+            <option value="{{ key }}" {% if report_type == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="from-date" class="form-label">From date (optional)</label>
+          <input id="from-date" name="from_date" type="date" class="form-control" value="{{ from_date }}">
+        </div>
+        <div class="col-md-3">
+          <label for="to-date" class="form-label">To date (optional)</label>
+          <input id="to-date" name="to_date" type="date" class="form-control" value="{{ to_date }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-light w-100" type="submit">Apply filters</button>
+        </div>
+        <div class="col-12">
+          <a class="btn btn-primary" href="{{ url_for('admin.export_report_csv', report=report_type, from_date=from_date, to_date=to_date) }}">Download CSV</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="stat-grid admin-stat-grid mb-4">
+      <div class="dash-stat"><span>Selected report</span><strong>{{ report_title }}</strong><small>Report type</small></div>
+      <div class="dash-stat"><span>Matching records</span><strong>{{ row_count }}</strong><small>Based on the selected date range</small></div>
+    </div>
+
+    <div class="content-card">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3">
+        <div><h2 class="h5 mb-1">{{ report_title }} report</h2><p class="text-secondary mb-0">Showing up to 25 records in the preview. The CSV includes all matching records.</p></div>
+      </div>
+      <div class="table-wrap">
+        <table class="table align-middle">
+          <thead><tr>{% for header in headers %}<th>{{ header }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for row in rows %}
+            <tr>{% for column in columns %}<td>{{ row[column] if row[column] is not none and row[column] != '' else '—' }}</td>{% endfor %}</tr>
+          {% else %}
+            <tr><td colspan="{{ headers|length }}"><div class="table-empty"><strong>No records found.</strong><span>Try a different report type or date range.</span></div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
