@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   browser-accessibility:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -43,23 +43,38 @@ jobs:
       - name: Install browser test dependencies
         run: |
           npm install --no-save @playwright/test @axe-core/playwright
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Start FresherFlow
         env:
           HOST: 127.0.0.1
           PORT: 5000
           FRESHERFLOW_ENV: development
+        shell: pwsh
         run: |
-          python -m flask --app app run --host 127.0.0.1 --port 5000 > /tmp/fresherflow.log 2>&1 &
-          echo $! > /tmp/fresherflow.pid
-          for attempt in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:5000/ > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/fresherflow.log
+          $stdoutLog = Join-Path $env:RUNNER_TEMP "fresherflow.stdout.log"
+          $stderrLog = Join-Path $env:RUNNER_TEMP "fresherflow.stderr.log"
+          $pidFile = Join-Path $env:RUNNER_TEMP "fresherflow.pid"
+
+          $server = Start-Process -FilePath "python" -ArgumentList @(
+            "-m", "flask", "--app", "app", "run",
+            "--host", "127.0.0.1", "--port", "5000"
+          ) -PassThru -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
+          $server.Id | Out-File -FilePath $pidFile -Encoding ascii
+
+          for ($attempt = 0; $attempt -lt 60; $attempt++) {
+            try {
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:5000/" -TimeoutSec 2
+              if ($response.StatusCode -eq 200) {
+                exit 0
+              }
+            } catch {
+              Start-Sleep -Seconds 1
+            }
+          }
+
+          if (Test-Path $stdoutLog) { Get-Content $stdoutLog }
+          if (Test-Path $stderrLog) { Get-Content $stderrLog }
           exit 1
 
       - name: Run browser smoke and accessibility checks
@@ -67,4 +82,9 @@ jobs:
 
       - name: Show application log on failure
         if: failure()
-        run: cat /tmp/fresherflow.log
+        shell: pwsh
+        run: |
+          $stdoutLog = Join-Path $env:RUNNER_TEMP "fresherflow.stdout.log"
+          $stderrLog = Join-Path $env:RUNNER_TEMP "fresherflow.stderr.log"
+          if (Test-Path $stdoutLog) { Get-Content $stdoutLog }
+          if (Test-Path $stderrLog) { Get-Content $stderrLog }
