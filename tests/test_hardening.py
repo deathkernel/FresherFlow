@@ -308,6 +308,9 @@ def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
                 raise sqlite3.OperationalError("simulated database failure")
             return self.db.execute(sql, parameters)
 
+        def rollback(self):
+            raise sqlite3.OperationalError("simulated rollback failure")
+
         def __getattr__(self, name):
             return getattr(self.db, name)
 
