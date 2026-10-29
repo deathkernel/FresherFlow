@@ -58,6 +58,7 @@ class Config:
     DATABASE = str(INSTANCE_DIR / "fresherflow.db")
     SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "").strip().rstrip("/")
     UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "resumes")
+    VERIFICATION_UPLOAD_FOLDER = str(BASE_DIR / "uploads" / "college-verification")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
     MAX_FORM_MEMORY_SIZE = 500_000
     MAX_FORM_PARTS = 1000

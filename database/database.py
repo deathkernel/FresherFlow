@@ -339,6 +339,19 @@ def apply_migrations(db):
         )
         db.execute("INSERT INTO schema_migrations(version) VALUES(10)")
 
+    if 11 not in applied:
+        request_columns = {
+            row["name"] for row in db.execute(
+                "PRAGMA table_info(student_verification_requests)"
+            ).fetchall()
+        }
+        if "supporting_document_filename" not in request_columns:
+            db.execute(
+                "ALTER TABLE student_verification_requests "
+                "ADD COLUMN supporting_document_filename TEXT"
+            )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(11)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)

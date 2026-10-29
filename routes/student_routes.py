@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 
 from database.database import get_db
 from routes.decorators import role_required
-from security import calculate_profile_strength, valid_resume_upload
+from security import calculate_profile_strength, valid_resume_upload, valid_verification_document
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -181,49 +181,144 @@ def verification():
         college_id = request.form.get("college_id", type=int)
         enrollment_number = request.form.get("enrollment_number", "").strip()[:80]
         graduation_year = request.form.get("graduation_year", "").strip()
-        if not college_id or not enrollment_number or not graduation_year.isdigit() or not 2000 <= int(graduation_year) <= 2100:
+        supporting_document = request.files.get("supporting_document")
+        if (
+            not college_id
+            or not enrollment_number
+            or not graduation_year.isdigit()
+            or not 2000 <= int(graduation_year) <= 2100
+        ):
             flash("Enter a college, enrollment number and valid graduation year.", "error")
             return redirect(url_for("student.verification"))
-        college = db.execute("SELECT id FROM colleges WHERE id=? AND status='active'", (college_id,)).fetchone()
+        college = db.execute(
+            "SELECT id FROM colleges WHERE id=? AND status='active'", (college_id,)
+        ).fetchone()
         if not college:
             flash("Choose an active college from the list.", "error")
             return redirect(url_for("student.verification"))
-        existing = db.execute("SELECT id, status, admin_status FROM student_verification_requests WHERE student_id=?", (student_id,)).fetchone()
-        can_resubmit = existing and (existing["status"] == "college_rejected" or (existing["status"] == "college_approved" and existing["admin_status"] == "rejected"))
+        if supporting_document and supporting_document.filename:
+            if not valid_verification_document(supporting_document):
+                flash(
+                    "Supporting document must be a valid PDF, PNG or JPG file under 3 MB.",
+                    "error",
+                )
+                return redirect(url_for("student.verification"))
+
+        existing = db.execute(
+            "SELECT id, status, admin_status, supporting_document_filename "
+            "FROM student_verification_requests WHERE student_id=?",
+            (student_id,),
+        ).fetchone()
+        can_resubmit = existing and (
+            existing["status"] == "college_rejected"
+            or (
+                existing["status"] == "college_approved"
+                and existing["admin_status"] == "rejected"
+            )
+        )
         if existing and not can_resubmit:
             flash("You already have a verification request in progress or approved.", "error")
             return redirect(url_for("student.verification"))
+
+        old_document_filename = (
+            existing["supporting_document_filename"] if existing else None
+        )
+        document_filename = old_document_filename
+        new_document_path = None
+        if supporting_document and supporting_document.filename:
+            extension = Path(secure_filename(supporting_document.filename)).suffix.lower()
+            document_filename = f"{student_id}_{uuid4().hex}{extension}"
+            upload_dir = Path(current_app.config["VERIFICATION_UPLOAD_FOLDER"])
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            new_document_path = upload_dir / document_filename
+            try:
+                supporting_document.save(new_document_path)
+            except OSError:
+                current_app.logger.exception("College verification document upload failed")
+                flash("The supporting document could not be saved. Please try again.", "error")
+                return redirect(url_for("student.verification"))
+
         try:
             if existing:
                 db.execute(
-                    "UPDATE student_verification_requests SET college_id=?, enrollment_number=?, graduation_year=?, status='pending', reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, reviewed_at=NULL, admin_status='pending', admin_review_note=NULL, admin_reviewed_at=NULL WHERE id=? AND student_id=?",
-                    (college_id, enrollment_number, graduation_year, existing["id"], student_id),
+                    "UPDATE student_verification_requests SET college_id=?, enrollment_number=?, "
+                    "graduation_year=?, supporting_document_filename=?, status='pending', "
+                    "reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, "
+                    "reviewed_at=NULL, admin_status='pending', admin_review_note=NULL, "
+                    "admin_reviewed_at=NULL WHERE id=? AND student_id=?",
+                    (
+                        college_id, enrollment_number, graduation_year, document_filename,
+                        existing["id"], student_id,
+                    ),
                 )
                 request_id = existing["id"]
             else:
                 cursor = db.execute(
-                    "INSERT INTO student_verification_requests(student_id, college_id, enrollment_number, graduation_year) VALUES(?,?,?,?)",
-                    (student_id, college_id, enrollment_number, graduation_year),
+                    "INSERT INTO student_verification_requests "
+                    "(student_id, college_id, enrollment_number, graduation_year, "
+                    "supporting_document_filename) VALUES(?,?,?,?,?)",
+                    (student_id, college_id, enrollment_number, graduation_year, document_filename),
                 )
                 request_id = cursor.lastrowid
             db.execute(
-                "INSERT INTO audit_log(actor_type, actor_id, action, target_type, target_id, details, ip_address) VALUES('student', ?, 'submit_college_verification', 'student_verification_request', ?, ?, ?)",
+                "INSERT INTO audit_log(actor_type, actor_id, action, target_type, target_id, details, ip_address) "
+                "VALUES('student', ?, 'submit_college_verification', 'student_verification_request', ?, ?, ?)",
                 (str(student_id), str(request_id), "College ID: " + str(college_id), request.remote_addr),
             )
             db.commit()
         except sqlite3.DatabaseError:
             db.rollback()
+            if new_document_path:
+                new_document_path.unlink(missing_ok=True)
+            current_app.logger.exception("College verification request could not be saved")
             flash("Your verification request could not be saved. Please try again.", "error")
             return redirect(url_for("student.verification"))
+
+        if new_document_path and old_document_filename and old_document_filename != document_filename:
+            try:
+                (Path(current_app.config["VERIFICATION_UPLOAD_FOLDER"]) / old_document_filename).unlink(
+                    missing_ok=True
+                )
+            except OSError:
+                current_app.logger.warning(
+                    "Could not remove replaced college verification document %s",
+                    old_document_filename,
+                )
         flash("Your college verification request has been submitted.", "success")
         return redirect(url_for("student.verification"))
 
     verification = db.execute(
-        "SELECT r.*, c.name AS college_name FROM student_verification_requests r JOIN colleges c ON c.id=r.college_id WHERE r.student_id=?",
+        "SELECT r.*, c.name AS college_name FROM student_verification_requests r "
+        "JOIN colleges c ON c.id=r.college_id WHERE r.student_id=?",
         (student_id,),
     ).fetchone()
-    colleges = db.execute("SELECT id, name FROM colleges WHERE status='active' ORDER BY name COLLATE NOCASE").fetchall()
-    return render_template("student/verification.html", verification=verification, colleges=colleges)
+    colleges = db.execute(
+        "SELECT id, name FROM colleges WHERE status='active' ORDER BY name COLLATE NOCASE"
+    ).fetchall()
+    return render_template(
+        "student/verification.html", verification=verification, colleges=colleges
+    )
+
+
+@student_bp.get("/verification/document")
+@role_required("student")
+def verification_document():
+    item = get_db().execute(
+        "SELECT supporting_document_filename FROM student_verification_requests "
+        "WHERE student_id=?",
+        (session["user_id"],),
+    ).fetchone()
+    if not item or not item["supporting_document_filename"]:
+        return render_template("404.html"), 404
+    filename = item["supporting_document_filename"]
+    response = send_from_directory(
+        current_app.config["VERIFICATION_UPLOAD_FOLDER"],
+        filename,
+        as_attachment=True,
+        download_name=f"college-supporting-document{Path(filename).suffix.lower()}",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @student_bp.get("/resume")

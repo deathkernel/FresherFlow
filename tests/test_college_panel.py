@@ -1,3 +1,6 @@
+import io
+from pathlib import Path
+
 from werkzeug.security import generate_password_hash
 
 from app import create_app
@@ -14,6 +17,7 @@ def csrf(client, path):
 def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "fresherflow.db"))
     monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+    monkeypatch.setattr(Config, "VERIFICATION_UPLOAD_FOLDER", str(tmp_path / "verification-documents"))
     admin_password = "admin-test-password-123"
     college_password = "college-test-password-123"
     student_password = "student-test-password-123"
@@ -73,6 +77,25 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     assert response.status_code == 302
 
     token = csrf(client, "/student/verification")
+    invalid_response = client.post(
+        "/student/verification",
+        data={
+            "csrf_token": token,
+            "college_id": "1",
+            "enrollment_number": "ETC-2024-101",
+            "graduation_year": "2027",
+            "supporting_document": (io.BytesIO(b"not a PDF"), "student-id.pdf"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=False,
+    )
+    assert invalid_response.status_code == 302
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT COUNT(*) FROM student_verification_requests"
+        ).fetchone()[0] == 0
+
+    token = csrf(client, "/student/verification")
     response = client.post(
         "/student/verification",
         data={
@@ -80,10 +103,27 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
             "college_id": "1",
             "enrollment_number": "ETC-2024-101",
             "graduation_year": "2027",
+            "supporting_document": (
+                io.BytesIO(b"%PDF-1.4\\nFresherFlow test document"),
+                "student-id.pdf",
+            ),
         },
+        content_type="multipart/form-data",
         follow_redirects=False,
     )
     assert response.status_code == 302
+    with app.app_context():
+        row = get_db().execute(
+            "SELECT supporting_document_filename FROM student_verification_requests "
+            "WHERE student_id=?",
+            (student_id,),
+        ).fetchone()
+        assert row["supporting_document_filename"]
+        assert (Path(Config.VERIFICATION_UPLOAD_FOLDER) / row["supporting_document_filename"]).is_file()
+    student_document = client.get("/student/verification/document")
+    assert student_document.status_code == 200
+    assert b"%PDF-1.4" in student_document.data
+    assert student_document.headers["Cache-Control"] == "private, no-store"
 
     # The college login can see and approve its own queue.
     client.post(
@@ -102,6 +142,10 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     dashboard = client.get("/college/")
     assert dashboard.status_code == 200
     assert b"ETC-2024-101" in dashboard.data
+
+    college_document = client.get("/college/requests/1/document")
+    assert college_document.status_code == 200
+    assert b"%PDF-1.4" in college_document.data
 
     token = csrf(client, "/college/requests/1")
     response = client.post(
@@ -137,6 +181,9 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     queue = client.get("/admin/student-verifications")
     assert queue.status_code == 200
     assert b"ETC-2024-101" in queue.data
+    admin_document = client.get("/admin/student-verifications/1/document")
+    assert admin_document.status_code == 200
+    assert b"%PDF-1.4" in admin_document.data
     token = csrf(client, "/admin/student-verifications")
     response = client.post(
         "/admin/student-verifications/1/decision",
@@ -171,6 +218,7 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
 def test_college_panel_does_not_allow_unauthenticated_queue_access(tmp_path, monkeypatch):
     monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "fresherflow.db"))
     monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+    monkeypatch.setattr(Config, "VERIFICATION_UPLOAD_FOLDER", str(tmp_path / "verification-documents"))
     app = create_app()
     app.config.update(TESTING=True)
     response = app.test_client().get("/college/", follow_redirects=False)
