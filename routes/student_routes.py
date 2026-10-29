@@ -523,6 +523,24 @@ def applications():
     return render_template("student/applications.html", applications=rows)
 
 
+@student_bp.get("/interviews")
+@role_required("student")
+def interviews():
+    rows = get_db().execute(
+        """SELECT i.*, v.title AS vacancy_title, v.vacancy_type,
+                  COALESCE(ep.organization_name, 'Unknown company') AS company_name
+           FROM interviews i
+           JOIN applications a ON a.id=i.application_id
+           JOIN vacancies v ON v.id=a.vacancy_id
+           LEFT JOIN employer_profiles ep ON ep.user_id=v.employer_id
+           WHERE i.student_id=?
+           ORDER BY CASE i.status WHEN 'scheduled' THEN 0 ELSE 1 END,
+                    i.scheduled_at ASC, i.id DESC""",
+        (session["user_id"],),
+    ).fetchall()
+    return render_template("student/interviews.html", interviews=rows)
+
+
 @student_bp.route("/career-plan", methods=["GET", "POST"])
 @role_required("student")
 def career_plan():

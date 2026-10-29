@@ -2,7 +2,7 @@ import io
 import re
 import secrets
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zipfile import BadZipFile, LargeZipFile, ZipFile
 
 from flask import (
@@ -730,6 +730,156 @@ def applications():
         per_page=per_page,
         total=total,
     )
+
+
+@employer_bp.route("/applications/<int:application_id>/interview", methods=["GET", "POST"])
+@role_required("employer")
+def schedule_interview(application_id):
+    db = get_db()
+    application = db.execute(
+        """SELECT a.id, a.student_id, a.status AS application_status,
+                  u.name AS student_name, u.email AS student_email, v.title AS vacancy_title
+           FROM applications a
+           JOIN vacancies v ON v.id=a.vacancy_id
+           JOIN users u ON u.id=a.student_id
+           WHERE a.id=? AND v.employer_id=?""",
+        (application_id, session["user_id"]),
+    ).fetchone()
+    if not application:
+        return render_template("404.html"), 404
+
+    if request.method == "POST":
+        if application["application_status"] == "Rejected":
+            flash("An interview cannot be scheduled for a rejected application.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+
+        raw_time = request.form.get("scheduled_at", "").strip()
+        mode = request.form.get("mode", "").strip()
+        meeting_url = request.form.get("meeting_url", "").strip()[:500] or None
+        location = request.form.get("location", "").strip()[:250] or None
+        notes = request.form.get("notes", "").strip()[:800] or None
+
+        try:
+            scheduled_time = datetime.fromisoformat(raw_time)
+        except ValueError:
+            flash("Choose a valid interview date and time.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+
+        if "T" not in raw_time or scheduled_time.tzinfo is not None:
+            flash("Choose a local date and time using the interview form.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+        if scheduled_time <= datetime.now():
+            flash("Interview must be scheduled for a future date and time.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+        if mode not in {"Online", "In-person", "Phone"}:
+            flash("Choose a valid interview mode.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+        if meeting_url and not valid_website_url(meeting_url):
+            flash("Enter a valid HTTP or HTTPS meeting link.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+        if mode == "Online" and not meeting_url:
+            flash("Add a meeting link for an online interview.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+        if mode in {"In-person", "Phone"} and not location:
+            flash("Add the interview location or contact details.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+
+        scheduled_at = scheduled_time.replace(second=0, microsecond=0).isoformat(timespec="minutes")
+        try:
+            db.execute("BEGIN IMMEDIATE")
+            existing = db.execute(
+                "SELECT id FROM interviews WHERE application_id=? AND employer_id=?",
+                (application_id, session["user_id"]),
+            ).fetchone()
+            if existing:
+                db.execute(
+                    """UPDATE interviews
+                       SET scheduled_at=?, mode=?, meeting_url=?, location=?, notes=?,
+                           status='scheduled', updated_at=CURRENT_TIMESTAMP
+                       WHERE id=? AND employer_id=?""",
+                    (
+                        scheduled_at, mode, meeting_url, location, notes,
+                        existing["id"], session["user_id"],
+                    ),
+                )
+                notification_title = "Interview rescheduled"
+            else:
+                db.execute(
+                    """INSERT INTO interviews
+                       (application_id, employer_id, student_id, scheduled_at, mode,
+                        meeting_url, location, notes)
+                       VALUES(?,?,?,?,?,?,?,?)""",
+                    (
+                        application_id, session["user_id"], application["student_id"],
+                        scheduled_at, mode, meeting_url, location, notes,
+                    ),
+                )
+                notification_title = "Interview scheduled"
+            db.execute(
+                "INSERT INTO notifications(user_id, title, body, kind) VALUES(?,?,?,'interview')",
+                (
+                    application["student_id"],
+                    notification_title,
+                    f"{application['vacancy_title']}: {scheduled_at.replace('T', ' ')} ({mode}).",
+                ),
+            )
+            db.commit()
+        except sqlite3.DatabaseError:
+            db.rollback()
+            current_app.logger.exception("Interview schedule could not be saved")
+            flash("The interview could not be saved. Please try again.", "error")
+            return redirect(url_for("employer.schedule_interview", application_id=application_id))
+
+        flash(notification_title + " successfully.", "success")
+        return redirect(url_for("employer.schedule_interview", application_id=application_id))
+
+    interview = db.execute(
+        "SELECT * FROM interviews WHERE application_id=? AND employer_id=?",
+        (application_id, session["user_id"]),
+    ).fetchone()
+    return render_template(
+        "employer/schedule-interview.html",
+        application=application,
+        interview=interview,
+        minimum_time=(datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M"),
+    )
+
+
+@employer_bp.post("/applications/<int:application_id>/interview/cancel")
+@role_required("employer")
+def cancel_interview(application_id):
+    db = get_db()
+    item = db.execute(
+        """SELECT i.id, i.status, i.student_id, v.title
+           FROM interviews i
+           JOIN applications a ON a.id=i.application_id
+           JOIN vacancies v ON v.id=a.vacancy_id
+           WHERE i.application_id=? AND v.employer_id=?""",
+        (application_id, session["user_id"]),
+    ).fetchone()
+    if not item:
+        return render_template("404.html"), 404
+    if item["status"] != "scheduled":
+        flash("This interview is not currently scheduled.", "error")
+        return redirect(url_for("employer.schedule_interview", application_id=application_id))
+    try:
+        db.execute(
+            "UPDATE interviews SET status='cancelled', updated_at=CURRENT_TIMESTAMP "
+            "WHERE id=? AND employer_id=?",
+            (item["id"], session["user_id"]),
+        )
+        db.execute(
+            "INSERT INTO notifications(user_id, title, body, kind) VALUES(?,?,?,'interview')",
+            (item["student_id"], "Interview cancelled", f"The interview for {item['title']} was cancelled."),
+        )
+        db.commit()
+    except sqlite3.DatabaseError:
+        db.rollback()
+        current_app.logger.exception("Interview cancellation failed")
+        flash("The interview could not be cancelled. Please try again.", "error")
+    else:
+        flash("Interview cancelled.", "success")
+    return redirect(url_for("employer.schedule_interview", application_id=application_id))
 
 
 @employer_bp.get("/applications/<int:application_id>/resume")

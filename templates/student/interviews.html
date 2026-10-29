@@ -1,0 +1,35 @@
+{% extends "student/base.html" %}
+{% block title %}Interview Schedule — FresherFlow{% endblock %}
+{% block student_content %}
+<div class="section-head">
+  <div>
+    <span class="eyebrow">INTERVIEWS</span>
+    <h2>Interview schedule</h2>
+    <p>View interview times, meeting details and any schedule changes from employers.</p>
+  </div>
+</div>
+<div class="content-card">
+  <div class="table-wrap">
+    <table class="table align-middle">
+      <thead><tr><th>Role / company</th><th>Date and time</th><th>Mode / details</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for item in interviews %}
+        <tr>
+          <td><strong>{{ item.vacancy_title }}</strong><small class="d-block text-secondary">{{ item.company_name }}</small></td>
+          <td>{{ item.scheduled_at|replace('T',' ') }}</td>
+          <td>
+            <strong>{{ item.mode }}</strong>
+            {% if item.meeting_url and item.status == 'scheduled' %}<a class="d-block" href="{{ item.meeting_url }}" target="_blank" rel="noopener noreferrer">Open meeting link</a>{% endif %}
+            {% if item.location %}<small class="d-block text-secondary">{{ item.location }}</small>{% endif %}
+            {% if item.notes %}<small class="d-block text-secondary">{{ item.notes }}</small>{% endif %}
+          </td>
+          <td><span class="status {{ item.status }}">{{ item.status|title }}</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4"><div class="table-empty"><strong>No interviews scheduled yet.</strong><span>When an employer schedules an interview for one of your applications, the details will appear here.</span></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
