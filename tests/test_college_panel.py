@@ -123,6 +123,50 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
         assert request_row["status"] == "college_approved"
         assert request_row["reviewer_note"] == "Enrollment confirmed in college records."
 
+    # Final platform-admin review is separate from the college's decision.
+    token = csrf(client, "/college/login")
+    client.post("/college/logout", data={"csrf_token": token}, follow_redirects=False)
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={"csrf_token": token, "email": "admin@example.com", "password": admin_password},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+
+    queue = client.get("/admin/student-verifications")
+    assert queue.status_code == 200
+    assert b"ETC-2024-101" in queue.data
+    token = csrf(client, "/admin/student-verifications")
+    response = client.post(
+        "/admin/student-verifications/1/decision",
+        data={"csrf_token": token, "decision": "verified", "note": "Records checked."},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        request_row = get_db().execute(
+            "SELECT status, admin_status, admin_review_note FROM student_verification_requests WHERE student_id=?",
+            (student_id,),
+        ).fetchone()
+        assert request_row["status"] == "college_approved"
+        assert request_row["admin_status"] == "verified"
+        assert request_row["admin_review_note"] == "Records checked."
+
+    # A second final decision must not overwrite the first one.
+    token = csrf(client, "/admin/student-verifications")
+    response = client.post(
+        "/admin/student-verifications/1/decision",
+        data={"csrf_token": token, "decision": "rejected", "note": "Conflicting retry"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT admin_status FROM student_verification_requests WHERE student_id=?",
+            (student_id,),
+        ).fetchone()["admin_status"] == "verified"
+
 
 def test_college_panel_does_not_allow_unauthenticated_queue_access(tmp_path, monkeypatch):
     monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "fresherflow.db"))
