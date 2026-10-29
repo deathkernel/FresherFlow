@@ -209,3 +209,52 @@ def test_admin_job_pagination_uses_filtered_match_count(app, monkeypatch):
     assert b"Previous" in last_page.data
     assert b"Next" not in last_page.data
 
+def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypatch):
+    from datetime import date, timedelta
+
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv(
+        "ADMIN_PASSWORD_HASH",
+        generate_password_hash("a-strong-test-password"),
+    )
+    seed_employer(app, email="verified@example.com")
+    with app.app_context():
+        db = get_db()
+        verified_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("verified@example.com",)
+        ).fetchone()["id"]
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Visible role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (verified_id, (date.today() + timedelta(days=7)).isoformat()),
+        )
+        db.execute(
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Expired role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (verified_id, (date.today() - timedelta(days=1)).isoformat()),
+        )
+        db.execute(
+            """UPDATE employer_profiles SET verification_status='pending'
+               WHERE user_id=?""",
+            (verified_id,),
+        )
+        db.commit()
+
+    client = app.test_client()
+    token = csrf(client, "/admin/login")
+    response = client.post(
+        "/admin/login",
+        data={
+            "csrf_token": token,
+            "email": "admin@example.com",
+            "password": "a-strong-test-password",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    dashboard = client.get("/admin/")
+    assert dashboard.status_code == 200
+    assert b"0 live" in dashboard.data
+
