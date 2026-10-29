@@ -24,8 +24,10 @@ def manage():
             return redirect(url_for('college_admin.manage'))
         try:
             db.execute('BEGIN IMMEDIATE')
-            db.execute('INSERT INTO colleges(name) VALUES(?) ON CONFLICT(name) DO NOTHING', (college_name,))
             college = db.execute('SELECT id, status FROM colleges WHERE name=? COLLATE NOCASE', (college_name,)).fetchone()
+            if not college:
+                db.execute('INSERT INTO colleges(name) VALUES(?)', (college_name,))
+                college = db.execute('SELECT id, status FROM colleges WHERE name=? COLLATE NOCASE', (college_name,)).fetchone()
             if not college or college['status'] != 'active':
                 raise ValueError('This college is inactive.')
             db.execute(
