@@ -1,9 +1,5 @@
-import sqlite3
-from pathlib import Path
-
 from flask import (
     Blueprint,
-    current_app,
     flash,
     redirect,
     render_template,
@@ -11,49 +7,19 @@ from flask import (
     session,
     url_for,
 )
-from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash
 
 from database.database import get_db
 from security import (
-    calculate_profile_strength,
     client_login_ip_key,
     client_login_key,
     clear_login_failures,
     login_is_locked,
     record_login_failure,
-    valid_resume_upload,
 )
 
 
 auth_bp = Blueprint("auth", __name__)
-MIN_PASSWORD_LENGTH = 12
-
-
-def _rollback_registration(db):
-    try:
-        db.rollback()
-    except sqlite3.DatabaseError:
-        current_app.logger.exception(
-            "Could not roll back failed student registration"
-        )
-
-
-def _remove_registration_resume(resume_path):
-    if resume_path:
-        try:
-            resume_path.unlink(missing_ok=True)
-        except OSError:
-            current_app.logger.exception(
-                "Could not clean up resume after failed student registration"
-            )
-
-
-def allowed_resume(filename):
-    """Keep the old extension check for code that still uses it."""
-    if "." not in filename:
-        return False
-    return filename.rsplit(".", 1)[1].lower() in {"pdf", "doc", "docx"}
 
 
 def login_target(role):
@@ -125,115 +91,13 @@ def login():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method != "POST":
-        return render_template("register.html", selected_role="student")
-
-    form = request.form
-    name = form.get("name", "").strip()
-    email = form.get("email", "").strip().lower()
-    password = form.get("password", "")
-    confirm_password = form.get("confirm_password", "")
-    role = form.get("role", "student")
-
-    if role != "student":
-        flash("Employer accounts can only be created by an administrator.", "error")
-        return render_template("register.html", selected_role="student")
-
-    if (
-        not name
-        or not email
-        or len(password) < MIN_PASSWORD_LENGTH
-        or password != confirm_password
-    ):
+    if request.method == "POST":
         flash(
-            f"Please complete the form and use a password of at least {MIN_PASSWORD_LENGTH} characters.",
+            "Student accounts are created by your college. Please contact your college representative.",
             "error",
         )
-        return render_template("register.html", selected_role="student")
-
-    db = get_db()
-    resume_path = None
-
-    try:
-        cur = db.execute(
-            "INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)",
-            (name, email, generate_password_hash(password), role),
-        )
-        user_id = cur.lastrowid
-
-        resume = request.files.get("resume")
-        resume_filename = None
-        if resume and resume.filename:
-            if not valid_resume_upload(resume):
-                _rollback_registration(db)
-                flash(
-                    "Resume must be a valid PDF, DOC or DOCX file under 5 MB.",
-                    "error",
-                )
-                return render_template("register.html", selected_role="student")
-
-            resume_filename = f"{user_id}_{secure_filename(resume.filename)}"
-            upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            resume_path = upload_dir / resume_filename
-            resume.save(resume_path)
-
-        profile_strength = calculate_profile_strength(
-            [
-                form.get("phone", "").strip(),
-                form.get("education", "").strip(),
-                form.get("college", "").strip(),
-                form.get("graduation_year", "").strip(),
-                form.get("skills", "").strip(),
-                form.get("certifications", "").strip(),
-                form.get("preferred_job_type", "Both").strip(),
-                form.get("preferred_location", "").strip(),
-            ],
-            bool(resume_filename),
-        )
-        db.execute(
-            """INSERT INTO student_profiles
-            (user_id,phone,education,college,graduation_year,skills,certifications,
-             preferred_job_type,preferred_location,resume_filename,profile_strength)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-            (
-                user_id,
-                form.get("phone", "").strip(),
-                form.get("education", "").strip(),
-                form.get("college", "").strip(),
-                form.get("graduation_year", "").strip(),
-                form.get("skills", "").strip(),
-                form.get("certifications", "").strip(),
-                form.get("preferred_job_type", "Both"),
-                form.get("preferred_location", "").strip(),
-                resume_filename,
-                profile_strength,
-            ),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        _rollback_registration(db)
-        _remove_registration_resume(resume_path)
-        flash(
-            "That email is already registered or the submitted data is invalid.",
-            "error",
-        )
-        return render_template("register.html", selected_role="student")
-    except OSError:
-        _rollback_registration(db)
-        _remove_registration_resume(resume_path)
-        current_app.logger.exception("Resume upload failed during registration")
-        flash("The resume could not be saved. Please try again.", "error")
-        return render_template("register.html", selected_role="student")
-    except sqlite3.DatabaseError:
-        _rollback_registration(db)
-        _remove_registration_resume(resume_path)
-        current_app.logger.exception("Database error during student registration")
-        flash("Account creation failed. Please try again.", "error")
-        return render_template("register.html", selected_role="student"), 500
-
-    flash("Account created. Please sign in.", "success")
-    return redirect(url_for("auth.login"))
+        return render_template("register.html"), 403
+    return render_template("register.html")
 
 
 @auth_bp.post("/logout")
