@@ -30,10 +30,13 @@ The application is intentionally small and role-oriented:
 
 ```powershell
 py -3.11 -m venv .venv
+Set-ExecutionPolicy -Scope Process Bypass
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
+
+The execution-policy change applies only to the current PowerShell process and is reset when that session closes.
 
 ## Run
 
