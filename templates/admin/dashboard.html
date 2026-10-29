@@ -11,7 +11,9 @@
         <a href="{{ url_for('admin.jobs') }}">Job Moderation</a>
         <a href="{{ url_for('admin.applications') }}">Applications</a>
         <a href="{{ url_for('admin.add_company_page') }}">Add New Employer</a>
-        <a href="{{ url_for('admin.companies') }}">Companies</a><a href="{{ url_for('admin.student_verifications') }}">Student verification</a>
+        <a href="{{ url_for('admin.companies') }}">Companies</a>
+        <a href="{{ url_for('admin.student_verifications') }}">Student verification</a>
+        <a href="{{ url_for('admin.reports') }}">Reports &amp; exports</a>
       </nav>
       <div class="side-bottom">
         <div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>Platform control</small></div></div>
@@ -66,6 +68,11 @@
             <span class="admin-action-index">05</span>
             <strong>Student verification</strong>
             <small>Review college-approved student records</small>
+          </a>
+          <a class="admin-action-card" href="{{ url_for('admin.reports') }}">
+            <span class="admin-action-index">06</span>
+            <strong>Reports &amp; exports</strong>
+            <small>Filter recruitment records and download CSV reports</small>
           </a>
         </div>
       </section>
