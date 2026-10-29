@@ -317,6 +317,28 @@ def apply_migrations(db):
         """)
         db.execute("INSERT INTO schema_migrations(version) VALUES(9)")
 
+    if 10 not in applied:
+        request_columns = {
+            row["name"] for row in db.execute(
+                "PRAGMA table_info(student_verification_requests)"
+            ).fetchall()
+        }
+        additions = {
+            "admin_status": "TEXT NOT NULL DEFAULT 'pending'",
+            "admin_review_note": "TEXT",
+            "admin_reviewed_at": "TEXT",
+        }
+        for column, definition in additions.items():
+            if column not in request_columns:
+                db.execute(
+                    f"ALTER TABLE student_verification_requests ADD COLUMN {column} {definition}"
+                )
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_student_verification_admin_queue "
+            "ON student_verification_requests(admin_status, status, submitted_at)"
+        )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(10)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
