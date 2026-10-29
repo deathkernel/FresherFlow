@@ -136,3 +136,26 @@ CREATE TABLE IF NOT EXISTS career_tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_career_tasks_student_due
     ON career_tasks(student_id, is_completed, target_date, id);
+
+
+CREATE TABLE IF NOT EXISTS interviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    application_id INTEGER NOT NULL UNIQUE,
+    employer_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    scheduled_at TEXT NOT NULL,
+    mode TEXT NOT NULL CHECK(mode IN ('Online','In-person','Phone')),
+    meeting_url TEXT,
+    location TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'scheduled' CHECK(status IN ('scheduled','cancelled','completed')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(application_id) REFERENCES applications(id) ON DELETE CASCADE,
+    FOREIGN KEY(employer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_interviews_student_schedule
+    ON interviews(student_id, scheduled_at, status);
+CREATE INDEX IF NOT EXISTS idx_interviews_employer_schedule
+    ON interviews(employer_id, scheduled_at, status);
