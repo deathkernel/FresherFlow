@@ -26,12 +26,11 @@ The application is intentionally small and role-oriented:
 - `static/` — CSS and JavaScript
 - `tests/` — automated security and workflow tests
 
-## Local setup
+## Local setup (Windows only)
 
-```bash
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# Linux/macOS: source .venv/bin/activate
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
