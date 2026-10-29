@@ -221,8 +221,7 @@ def register():
         return render_template("register.html", selected_role="student")
     except OSError:
         _rollback_registration(db)
-        if resume_path:
-            resume_path.unlink(missing_ok=True)
+        _remove_registration_resume(resume_path)
         current_app.logger.exception("Resume upload failed during registration")
         flash("The resume could not be saved. Please try again.", "error")
         return render_template("register.html", selected_role="student")
