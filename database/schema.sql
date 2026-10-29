@@ -110,6 +110,9 @@ CREATE TABLE IF NOT EXISTS student_verification_requests (
     reviewer_note TEXT,
     submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TEXT,
+    admin_status TEXT NOT NULL DEFAULT 'pending' CHECK(admin_status IN ('pending','verified','rejected')),
+    admin_review_note TEXT,
+    admin_reviewed_at TEXT,
     FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(college_id) REFERENCES colleges(id),
     FOREIGN KEY(reviewer_id) REFERENCES college_verifiers(id)
