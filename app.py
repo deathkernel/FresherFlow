@@ -1,7 +1,8 @@
 import os
 from urllib.parse import urlparse
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.exceptions import BadRequest
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config, get_admin_credentials
@@ -83,7 +84,30 @@ def create_app():
     @app.before_request
     def protect_forms():
         if request.method == "POST":
-            validate_csrf(request.form.get("csrf_token"))
+            try:
+                validate_csrf(request.form.get("csrf_token"))
+            except BadRequest:
+                # A stale admin review page should recover to a fresh form,
+                # never bypass CSRF validation or show a dead-end 400 page.
+                if session.get("role") == "admin":
+                    if request.endpoint == "admin.moderate_vacancy":
+                        flash(
+                            "This moderation form expired. Review the job again and submit your decision once more.",
+                            "error",
+                        )
+                        return redirect(
+                            url_for(
+                                "admin.job_detail",
+                                job_id=request.view_args["vacancy_id"],
+                            )
+                        )
+                    if request.endpoint == "admin.bulk_moderate_vacancies":
+                        flash(
+                            "This moderation form expired. Refresh the job list and submit your decision again.",
+                            "error",
+                        )
+                        return redirect(url_for("admin.jobs"))
+                raise
 
     @app.after_request
     def security_headers(response):
