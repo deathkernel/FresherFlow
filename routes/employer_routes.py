@@ -723,12 +723,15 @@ def applications():
         LIMIT ? OFFSET ?
     """, (uid, per_page, offset)).fetchall()
 
+    total_pages = (total + per_page - 1) // per_page
+
     return render_template(
         "employer/applications.html",
         applications=rows,
         page=page,
         per_page=per_page,
         total=total,
+        total_pages=total_pages,
     )
 
 
