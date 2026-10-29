@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}College Approval Panel — FresherFlow{% endblock %}
+{% block body %}
+<div class="app-shell admin-theme">
+  <aside class="sidebar"><div class="brand">Fresher<span>Flow</span></div><div class="side-label">COLLEGE WORKSPACE</div>
+    <nav aria-label="College panel navigation"><a class="active" href="{{ url_for('college.dashboard') }}">Student approvals</a></nav>
+    <div class="side-bottom"><div class="user-chip"><div class="avatar">{{ session.name[:1]|upper }}</div><div><b>{{ session.name }}</b><small>{{ session.college_name }}</small></div></div>
+      <form method="post" action="{{ url_for('college.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout" type="submit">Log out</button></form></div>
+  </aside>
+  <section class="workspace" id="main-content" tabindex="-1">
+    <header class="workspace-head"><div><span class="eyebrow">COLLEGE VERIFICATION</span><h1>Student approvals</h1><p>Review enrollment details submitted by students associated with your college.</p></div></header>
+    <div class="stat-grid admin-stat-grid"><div class="dash-stat"><span>Pending</span><strong>{{ counts.get('pending', 0) }}</strong><small>Awaiting your decision</small></div><div class="dash-stat"><span>Approved</span><strong>{{ counts.get('college_approved', 0) }}</strong><small>College confirmed</small></div><div class="dash-stat"><span>Rejected</span><strong>{{ counts.get('college_rejected', 0) }}</strong><small>Not confirmed</small></div></div>
+    <div class="admin-page-stats">{% for key, label in [('pending','Pending'),('college_approved','Approved'),('college_rejected','Rejected'),('all','All requests')] %}<a class="admin-filter-chip {% if status == key %}active{% endif %}" href="{{ url_for('college.dashboard', status=key) }}">{{ label }}</a>{% endfor %}</div>
+    <div class="content-card"><div class="table-wrap"><table class="table align-middle"><thead><tr><th>Student</th><th>Enrollment no.</th><th>Graduation</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead><tbody>
+      {% for item in requests %}<tr><td><strong>{{ item.student_name }}</strong><small>{{ item.student_email }}</small></td><td>{{ item.enrollment_number }}</td><td>{{ item.graduation_year }}</td><td>{{ item.submitted_at }}</td><td><span class="status {{ item.status }}">{{ item.status|replace('_',' ')|title }}</span></td><td><a class="btn btn-sm btn-light" href="{{ url_for('college.request_detail', request_id=item.id) }}">Review</a></td></tr>
+      {% else %}<tr><td colspan="6"><div class="table-empty"><strong>No requests found.</strong><span>New student requests will appear here.</span></div></td></tr>{% endfor %}
+    </tbody></table></div></div>
+  </section>
+</div>
+{% endblock %}
