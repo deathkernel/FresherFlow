@@ -242,3 +242,26 @@ body[data-theme="dark"] main.container .text-primary,
 body[data-theme="dark"] main.container a:not(.btn) {
   color: #9bbcff !important;
 }
+
+/* Keep small registration upload hints above WCAG AA contrast on the upload surface. */
+.auth-simple-shell .upload-box small {
+  color: #596273 !important;
+}
+
+/* Landing navigation buttons must retain readable foregrounds in dark appearance. */
+body[data-theme="dark"] .landing-nav .btn-ghost,
+body[data-theme="dark"] .landing-nav .btn-primary-soft {
+  background-color: #25283a;
+  border-color: #454a5e;
+  color: #f0f1f7 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body[data-theme="system"] .landing-nav .btn-ghost,
+  body[data-theme="system"] .landing-nav .btn-primary-soft {
+    background-color: #25283a;
+    border-color: #454a5e;
+    color: #f0f1f7 !important;
+  }
+}
+
