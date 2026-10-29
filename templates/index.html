@@ -20,7 +20,7 @@
     <a href="#features" class="btn btn-ghost">Features</a>
     <a href="#how-it-works" class="btn btn-ghost">How it works</a>
     <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign in</a>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Get started</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-soft">Student access</a>
   </div>
 </nav>
 
@@ -43,7 +43,7 @@
       <h1>Launch your career from <span>one place.</span></h1>
       <p>Build your profile, discover internships and entry-level jobs, apply with confidence and keep every application in one focused workspace.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}?role=student">Find your next role <span aria-hidden="true">→</span></a>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('seo.public_jobs') }}">Explore jobs <span aria-hidden="true">→</span></a>
         <a class="btn btn-outline btn-lg" href="{{ url_for('auth.login') }}?role=employer">Employer sign in</a>
       </div>
       <div class="hero-trust">
@@ -191,7 +191,7 @@
       <article class="process-card tilt-card reveal">
         <span>01</span><b>STUDENT</b><h3>Profile → Discover → Apply</h3>
         <p>Build your profile, explore opportunities, submit applications and track progress.</p>
-        <a href="{{ url_for('auth.register') }}?role=student">Create student account →</a>
+        <a href="{{ url_for('auth.register') }}">How to get a student ID →</a>
       </article>
       <article class="process-card tilt-card reveal delay-1">
         <span>02</span><b>EMPLOYER</b><h3>Create → Publish → Review</h3>
