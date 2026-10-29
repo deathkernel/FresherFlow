@@ -218,10 +218,14 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
         generate_password_hash("a-strong-test-password"),
     )
     seed_employer(app, email="verified@example.com")
+    seed_employer(app, email="pending@example.com")
     with app.app_context():
         db = get_db()
         verified_id = db.execute(
             "SELECT id FROM users WHERE email=?", ("verified@example.com",)
+        ).fetchone()["id"]
+        pending_id = db.execute(
+            "SELECT id FROM users WHERE email=?", ("pending@example.com",)
         ).fetchone()["id"]
         db.execute(
             """INSERT INTO vacancies
@@ -236,9 +240,14 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
             (verified_id, (date.today() - timedelta(days=1)).isoformat()),
         )
         db.execute(
-            """UPDATE employer_profiles SET verification_status='pending'
-               WHERE user_id=?""",
-            (verified_id,),
+            """INSERT INTO vacancies
+               (employer_id,title,vacancy_type,description,location,status,moderation_status,deadline)
+               VALUES(?, 'Unverified company role', 'Entry-level Job', 'Description', 'Pune', 'active', 'approved', ?)""",
+            (pending_id, (date.today() + timedelta(days=7)).isoformat()),
+        )
+        db.execute(
+            "UPDATE employer_profiles SET verification_status='pending' WHERE user_id=?",
+            (pending_id,),
         )
         db.commit()
 
@@ -256,5 +265,54 @@ def test_admin_dashboard_live_jobs_excludes_unavailable_vacancies(app, monkeypat
     assert response.status_code == 302
     dashboard = client.get("/admin/")
     assert dashboard.status_code == 200
-    assert b"0 live" in dashboard.data
+    assert b"1 live" in dashboard.data
+
+def test_registration_cleans_up_resume_after_database_error(app, monkeypatch):
+    import sqlite3
+    from io import BytesIO
+
+    import routes.auth_routes as auth_routes
+
+    real_get_db = auth_routes.get_db
+
+    class FailingProfileInsert:
+        def __init__(self, db):
+            self.db = db
+
+        def execute(self, sql, parameters=()):
+            if sql.lstrip().startswith("INSERT INTO student_profiles"):
+                raise sqlite3.OperationalError("simulated database failure")
+            return self.db.execute(sql, parameters)
+
+        def __getattr__(self, name):
+            return getattr(self.db, name)
+
+    monkeypatch.setattr(
+        auth_routes,
+        "get_db",
+        lambda: FailingProfileInsert(real_get_db()),
+    )
+    client = app.test_client()
+    token = csrf(client, "/register")
+    response = client.post(
+        "/register",
+        data={
+            "csrf_token": token,
+            "name": "Test Student",
+            "email": "student-db-error@example.com",
+            "password": "student-password-123",
+            "confirm_password": "student-password-123",
+            "role": "student",
+            "resume": (BytesIO(b"%PDF-1.7\nresume"), "resume.pdf"),
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 500
+    assert list((app.config["UPLOAD_FOLDER"] and __import__("pathlib").Path(app.config["UPLOAD_FOLDER"])).glob("*")) == []
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT 1 FROM users WHERE email=?",
+            ("student-db-error@example.com",),
+        ).fetchone() is None
 
