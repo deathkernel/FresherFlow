@@ -363,3 +363,10 @@ label.upload-box.compact-upload > small {
   color: #596273 !important;
   -webkit-text-fill-color: #596273 !important;
 }
+
+
+/* Ensure the registration upload hint overrides the base upload component in every theme. */
+body .upload-box.compact-upload small {
+  color: #596273 !important;
+  -webkit-text-fill-color: #596273 !important;
+}
