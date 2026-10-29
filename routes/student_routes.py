@@ -205,16 +205,23 @@ def verification():
                 return redirect(url_for("student.verification"))
 
         existing = db.execute(
-            "SELECT id, status, admin_status, supporting_document_filename "
+            "SELECT id, status, admin_status, expires_at, supporting_document_filename "
             "FROM student_verification_requests WHERE student_id=?",
             (student_id,),
         ).fetchone()
+        request_expired = bool(
+            existing
+            and existing["admin_status"] == "verified"
+            and existing["expires_at"]
+            and existing["expires_at"] < date.today().isoformat()
+        )
         can_resubmit = existing and (
             existing["status"] == "college_rejected"
             or (
                 existing["status"] == "college_approved"
                 and existing["admin_status"] == "rejected"
             )
+            or request_expired
         )
         if existing and not can_resubmit:
             flash("You already have a verification request in progress or approved.", "error")
@@ -245,7 +252,7 @@ def verification():
                     "graduation_year=?, supporting_document_filename=?, status='pending', "
                     "reviewer_id=NULL, reviewer_note=NULL, submitted_at=CURRENT_TIMESTAMP, "
                     "reviewed_at=NULL, admin_status='pending', admin_review_note=NULL, "
-                    "admin_reviewed_at=NULL WHERE id=? AND student_id=?",
+                    "admin_reviewed_at=NULL, expires_at=NULL WHERE id=? AND student_id=?",
                     (
                         college_id, enrollment_number, graduation_year, document_filename,
                         existing["id"], student_id,
@@ -295,8 +302,17 @@ def verification():
     colleges = db.execute(
         "SELECT id, name FROM colleges WHERE status='active' ORDER BY name COLLATE NOCASE"
     ).fetchall()
+    verification_expired = bool(
+        verification
+        and verification["admin_status"] == "verified"
+        and verification["expires_at"]
+        and verification["expires_at"] < date.today().isoformat()
+    )
     return render_template(
-        "student/verification.html", verification=verification, colleges=colleges
+        "student/verification.html",
+        verification=verification,
+        colleges=colleges,
+        verification_expired=verification_expired,
     )
 
 
