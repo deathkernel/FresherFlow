@@ -270,3 +270,142 @@ def test_college_panel_does_not_allow_unauthenticated_queue_access(tmp_path, mon
     response = app.test_client().get("/college/", follow_redirects=False)
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/college/login")
+
+def test_college_can_create_student_account_and_queue_admin_review(tmp_path, monkeypatch):
+    monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "college-students.db"))
+    monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+    monkeypatch.setattr(
+        Config, "VERIFICATION_UPLOAD_FOLDER", str(tmp_path / "verification-documents")
+    )
+    monkeypatch.setenv("FRESHERFLOW_ENV", "development")
+    monkeypatch.delenv("ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD_HASH", raising=False)
+
+    app = create_app()
+    app.config.update(TESTING=True)
+    college_password = "college-panel-password-123"
+    student_password = "student-initial-password-123"
+
+    with app.app_context():
+        db = get_db()
+        college_id = db.execute(
+            "INSERT INTO colleges(name) VALUES(?)",
+            ("Account Issuing College",),
+        ).lastrowid
+        db.execute(
+            "INSERT INTO college_verifiers(college_id, name, email, password_hash) "
+            "VALUES(?, ?, ?, ?)",
+            (
+                college_id,
+                "College Representative",
+                "accounts@example.edu",
+                generate_password_hash(college_password),
+            ),
+        )
+        db.commit()
+
+    college_client = app.test_client()
+    token = csrf(college_client, "/college/login")
+    response = college_client.post(
+        "/college/login",
+        data={
+            "csrf_token": token,
+            "email": "accounts@example.edu",
+            "password": college_password,
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/college/")
+
+    page = college_client.get("/college/students")
+    assert page.status_code == 200
+    assert b"Create student account" in page.data
+
+    token = csrf(college_client, "/college/students")
+    response = college_client.post(
+        "/college/students",
+        data={
+            "csrf_token": token,
+            "name": "College Created Student",
+            "email": "college-created@example.edu",
+            "enrollment_number": "ACC-2026-001",
+            "graduation_year": "2027",
+            "password": student_password,
+            "confirm_password": student_password,
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/college/students")
+
+    with app.app_context():
+        db = get_db()
+        student = db.execute(
+            "SELECT id, name, role, password_hash FROM users WHERE email=?",
+            ("college-created@example.edu",),
+        ).fetchone()
+        assert student["name"] == "College Created Student"
+        assert student["role"] == "student"
+        assert student["password_hash"] != student_password
+
+        profile = db.execute(
+            "SELECT college, graduation_year FROM student_profiles WHERE user_id=?",
+            (student["id"],),
+        ).fetchone()
+        assert profile["college"] == "Account Issuing College"
+        assert profile["graduation_year"] == "2027"
+
+        account = db.execute(
+            "SELECT college_id, enrollment_number, created_by_verifier_id "
+            "FROM college_student_accounts WHERE user_id=?",
+            (student["id"],),
+        ).fetchone()
+        assert account["college_id"] == college_id
+        assert account["enrollment_number"] == "ACC-2026-001"
+
+        verification = db.execute(
+            "SELECT status, admin_status, reviewer_id FROM student_verification_requests "
+            "WHERE student_id=?",
+            (student["id"],),
+        ).fetchone()
+        assert verification["status"] == "college_approved"
+        assert verification["admin_status"] == "pending"
+        assert verification["reviewer_id"] == account["created_by_verifier_id"]
+
+        audit = db.execute(
+            "SELECT COUNT(*) FROM audit_log "
+            "WHERE action='create_student_account' AND target_id=?",
+            (str(student["id"]),),
+        ).fetchone()[0]
+        assert audit == 1
+
+    accounts_page = college_client.get("/college/students")
+    assert b"college-created@example.edu" in accounts_page.data
+    assert b"ACC-2026-001" in accounts_page.data
+
+    student_client = app.test_client()
+    token = csrf(student_client, "/login?role=student")
+    response = student_client.post(
+        "/login?role=student",
+        data={
+            "csrf_token": token,
+            "email": "college-created@example.edu",
+            "password": student_password,
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/student/dashboard")
+
+
+def test_college_student_account_page_requires_college_login(tmp_path, monkeypatch):
+    monkeypatch.setattr(Config, "DATABASE", str(tmp_path / "college-students-guard.db"))
+    monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path / "uploads"))
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    response = app.test_client().get("/college/students", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/college/login")
+
