@@ -135,7 +135,7 @@ def student_accounts():
         if (
             not name
             or len(name) > 120
-            or not re.fullmatch(r'[^@\\s]+@[^@\\s]+\\.[^@\\s]+', email)
+            or not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email)
             or len(email) > 254
             or not enrollment_number
             or len(enrollment_number) > 80
