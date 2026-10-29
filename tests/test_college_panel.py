@@ -86,9 +86,8 @@ def test_college_approval_workflow_and_login(tmp_path, monkeypatch):
     assert response.status_code == 302
 
     # The college login can see and approve its own queue.
-    client.get("/college/logout")  # GET is harmless; authentication is cleared by next login below only if posted.
     client.post(
-        "/auth/logout",
+        "/logout",
         data={"csrf_token": csrf(client, "/login?role=student")},
         follow_redirects=False,
     )
