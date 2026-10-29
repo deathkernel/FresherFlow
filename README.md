@@ -206,3 +206,12 @@ CI runs the test suite on Python 3.11 and 3.12. Automated dependency auditing an
 Do not use Flask's development server as the production web server. Put FresherFlow behind a production WSGI server and HTTPS, keep uploads private, back up the database, and rotate credentials if they are ever exposed.
 
 Runtime files such as the SQLite database, generated secret and uploaded resumes should not be committed to Git.
+
+
+## College verification panel
+
+- College representative login: `http://127.0.0.1:5000/college/login`
+- Admin-only college account provisioning: sign in as Admin, then open `http://127.0.0.1:5000/admin/colleges/`.
+- Student verification request: sign in as a student, then open `http://127.0.0.1:5000/student/verification`.
+- College representatives can review only requests assigned to their own college. Their approval confirms enrollment details only; it does not independently prove that a student has no work experience.
+- Set a unique password of at least 12 characters for every college representative and share credentials securely. Do not put college passwords in source control.

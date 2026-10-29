@@ -78,3 +78,44 @@ CREATE INDEX IF NOT EXISTS idx_employer_account_status ON employer_profiles(acco
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(sender_id, recipient_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_created_at ON messages(sender_id, created_at);
+
+
+CREATE TABLE IF NOT EXISTS colleges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS college_verifiers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    college_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended')),
+    auth_version TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS student_verification_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL UNIQUE,
+    college_id INTEGER NOT NULL,
+    enrollment_number TEXT NOT NULL,
+    graduation_year TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','college_approved','college_rejected')),
+    reviewer_id INTEGER,
+    reviewer_note TEXT,
+    submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TEXT,
+    admin_status TEXT NOT NULL DEFAULT 'pending' CHECK(admin_status IN ('pending','verified','rejected')),
+    admin_review_note TEXT,
+    admin_reviewed_at TEXT,
+    FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(college_id) REFERENCES colleges(id),
+    FOREIGN KEY(reviewer_id) REFERENCES college_verifiers(id)
+);
+CREATE INDEX IF NOT EXISTS idx_college_verifiers_college ON college_verifiers(college_id, status);
+CREATE INDEX IF NOT EXISTS idx_student_verification_queue ON student_verification_requests(college_id, status, submitted_at);

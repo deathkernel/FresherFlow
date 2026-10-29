@@ -8,6 +8,8 @@ from config import Config, get_admin_credentials
 from database.database import close_db, init_db
 from routes.admin_routes import admin_bp
 from routes.admin_setup_routes import admin_setup_bp
+from routes.college_routes import college_bp
+from routes.college_admin_routes import college_admin_bp
 from routes.auth_routes import auth_bp
 from routes.employer_routes import employer_bp
 from routes.platform_routes import platform_bp
@@ -133,6 +135,8 @@ def create_app():
     app.register_blueprint(employer_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_setup_bp)
+    app.register_blueprint(college_bp)
+    app.register_blueprint(college_admin_bp)
     app.register_blueprint(platform_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(seo_bp)

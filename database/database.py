@@ -278,6 +278,67 @@ def apply_migrations(db):
         db.execute("INSERT INTO schema_migrations(version) VALUES(8)")
 
 
+    if 9 not in applied:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS colleges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS college_verifiers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            college_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended')),
+            auth_version TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS student_verification_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL UNIQUE,
+            college_id INTEGER NOT NULL,
+            enrollment_number TEXT NOT NULL,
+            graduation_year TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','college_approved','college_rejected')),
+            reviewer_id INTEGER,
+            reviewer_note TEXT,
+            submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TEXT,
+            FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(college_id) REFERENCES colleges(id),
+            FOREIGN KEY(reviewer_id) REFERENCES college_verifiers(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_college_verifiers_college ON college_verifiers(college_id, status);
+        CREATE INDEX IF NOT EXISTS idx_student_verification_queue ON student_verification_requests(college_id, status, submitted_at);
+        """)
+        db.execute("INSERT INTO schema_migrations(version) VALUES(9)")
+
+    if 10 not in applied:
+        request_columns = {
+            row["name"] for row in db.execute(
+                "PRAGMA table_info(student_verification_requests)"
+            ).fetchall()
+        }
+        additions = {
+            "admin_status": "TEXT NOT NULL DEFAULT 'pending'",
+            "admin_review_note": "TEXT",
+            "admin_reviewed_at": "TEXT",
+        }
+        for column, definition in additions.items():
+            if column not in request_columns:
+                db.execute(
+                    f"ALTER TABLE student_verification_requests ADD COLUMN {column} {definition}"
+                )
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_student_verification_admin_queue "
+            "ON student_verification_requests(admin_status, status, submitted_at)"
+        )
+        db.execute("INSERT INTO schema_migrations(version) VALUES(10)")
+
 def init_db(database_path):
     path = Path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)

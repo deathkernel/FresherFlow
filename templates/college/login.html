@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}College Panel Login — FresherFlow{% endblock %}
+{% block body %}
+<div class="auth-simple-shell admin-auth-shell">
+  <main id="main-content" tabindex="-1" class="auth-simple-card admin-auth-card reveal">
+    <a class="auth-logo" href="{{ url_for('index') }}">Fresher<span>Flow</span></a>
+    <div class="admin-auth-badge">COLLEGE VERIFICATION</div>
+    <div class="auth-heading"><div class="eyebrow">AUTHORIZED COLLEGE ACCESS</div><h1>College panel sign in</h1><p>Review student enrollment details and record your college decision.</p></div>
+    <div class="admin-auth-note"><strong>Restricted access</strong><span>Accounts are created by the FresherFlow administrator.</span></div>
+    <form method="post" class="auth-compact-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="college-email">College email</label><input id="college-email" class="form-control" type="email" name="email" required autocomplete="username" autofocus>
+      <label for="college-password">Password</label><input id="college-password" class="form-control" type="password" name="password" required autocomplete="current-password">
+      <button class="btn btn-primary w-100" type="submit">Sign in to College Panel</button>
+    </form>
+    <p class="auth-foot"><a href="{{ url_for('index') }}">← Back to FresherFlow</a></p>
+  </main><div class="auth-page-note">FresherFlow · College approval workspace</div>
+</div>
+{% endblock %}
