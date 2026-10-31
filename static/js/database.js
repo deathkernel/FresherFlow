@@ -75,6 +75,7 @@ function renderDiagram(){
 function svgEl(name){return document.createElementNS("http://www.w3.org/2000/svg",name);}
 function drawEdges(shown,positions){
  edges.replaceChildren();
+ const cardElements=new Map([...nodes.querySelectorAll(".dbs-table-card")].map(card=>[card.dataset.table,card]));
  const defs=svgEl("defs");
  for(const [id,color] of [["dbs-arrow","#a5afbf"],["dbs-arrow-active","#766ae2"]]){
   const marker=svgEl("marker");marker.setAttribute("id",id);marker.setAttribute("viewBox","0 0 10 10");marker.setAttribute("refX","8");marker.setAttribute("refY","5");marker.setAttribute("markerWidth","5");marker.setAttribute("markerHeight","5");marker.setAttribute("orient","auto");
@@ -91,7 +92,7 @@ function drawEdges(shown,positions){
    const bend=Math.max(28,Math.min(90,Math.abs(ex-sx)*.42));
    d=`M${sx} ${sy} C${sx+dir*bend} ${sy},${ex-dir*bend} ${ey},${ex} ${ey}`;
   }else{
-   const dir=dy>=0?1:-1;sx=a.x+127.5;sy=a.y+(dir>0?cardHeight(cards.get(t.name)):0);ex=b.x+127.5;ey=b.y+(dir>0?0:cardHeight(cards.get(fk.table)));
+   const dir=dy>=0?1:-1;sx=a.x+127.5;sy=a.y+(dir>0?cardHeight(cardElements.get(t.name)):0);ex=b.x+127.5;ey=b.y+(dir>0?0:cardHeight(cardElements.get(fk.table)));
    const bend=Math.max(28,Math.min(85,Math.abs(ey-sy)*.4));
    d=`M${sx} ${sy} C${sx} ${sy+dir*bend},${ex} ${ey-dir*bend},${ex} ${ey}`;
   }
