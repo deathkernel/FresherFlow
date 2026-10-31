@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from database.database import get_db
 from routes.decorators import role_required
@@ -253,3 +253,67 @@ def platform_context():
         (session["user_id"],),
     ).fetchone()
     return {"unread_notifications": row["c"] if row else 0, "match_score": match_score}
+
+@platform_bp.get("/architecture")
+def architecture_visualizer():
+    return render_template("architecture.html")
+
+
+@platform_bp.get("/database")
+def database_visualizer():
+    return render_template("database.html")
+
+
+@platform_bp.get("/api/database/schema")
+def database_schema():
+    """Expose schema metadata only; never return application records or row values."""
+    db = get_db()
+    tables = db.execute(
+        """
+        SELECT name, sql
+        FROM sqlite_master
+        WHERE type='table' AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+        """
+    ).fetchall()
+
+    result = []
+    for table in tables:
+        name = table["name"]
+        quoted = '"' + name.replace('"', '""') + '"'
+        columns = db.execute(f"PRAGMA table_info({quoted})").fetchall()
+        foreign_keys = db.execute(f"PRAGMA foreign_key_list({quoted})").fetchall()
+        index_rows = db.execute(f"PRAGMA index_list({quoted})").fetchall()
+        indexes = []
+        for index in index_rows:
+            index_name = index["name"]
+            index_quoted = '"' + index_name.replace('"', '""') + '"'
+            index_columns = db.execute(f"PRAGMA index_info({index_quoted})").fetchall()
+            indexes.append({
+                "name": index_name,
+                "unique": bool(index["unique"]),
+                "origin": index["origin"],
+                "columns": [row["name"] for row in index_columns],
+            })
+        result.append({
+            "name": name,
+            "sql": table["sql"] or "",
+            "columns": [{
+                "name": col["name"],
+                "type": col["type"] or "ANY",
+                "notNull": bool(col["notnull"]),
+                "default": col["dflt_value"],
+                "primaryKey": bool(col["pk"]),
+                "primaryKeyOrder": col["pk"],
+            } for col in columns],
+            "foreignKeys": [{
+                "id": fk["id"],
+                "from": fk["from"],
+                "table": fk["table"],
+                "to": fk["to"],
+                "onUpdate": fk["on_update"],
+                "onDelete": fk["on_delete"],
+            } for fk in foreign_keys],
+            "indexes": indexes,
+        })
+    return jsonify({"database": "SQLite", "tables": result, "tableCount": len(result)})

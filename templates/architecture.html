@@ -1,0 +1,48 @@
+<!-- FresherFlow 3D Architecture Visualizer -->
+{% extends "base.html" %}
+{% block title %}FresherFlow Architecture 3D{% endblock %}
+{% block body %}
+<section class="ff3d-page">
+  <header class="ff3d-header">
+    <div>
+      <p class="ff3d-kicker">SYSTEM EXPLORER / 01</p>
+      <h1>FresherFlow <span>in 3D</span></h1>
+      <p class="ff3d-subtitle">Explore the application architecture, role workflows, service modules and SQLite data model.</p>
+    </div>
+    <div class="ff3d-actions">
+      <a class="ff3d-database-link" href="{{ url_for('platform.database_visualizer') }}">Database Explorer ↗</a>
+      <button type="button" id="ff3d-reset">Reset view</button>
+      <button type="button" id="ff3d-labels" aria-pressed="true">Hide labels</button>
+    </div>
+  </header>
+  <div class="ff3d-layout">
+    <div class="ff3d-stage-wrap">
+      <div class="ff3d-stage" id="ff3d-stage" aria-label="Interactive 3D architecture graph">
+        <div class="ff3d-loading" id="ff3d-loading">Loading 3D architecture…</div>
+        <canvas id="ff3d-canvas"></canvas>
+        <div class="ff3d-hint">Drag to rotate · Scroll to zoom · Select a node to inspect</div>
+      </div>
+      <div class="ff3d-legend">
+        <span><i class="legend-dot role"></i> Roles</span>
+        <span><i class="legend-dot service"></i> App / routes</span>
+        <span><i class="legend-dot data"></i> Database</span>
+        <span><i class="legend-dot security"></i> Security</span>
+        <span><i class="legend-dot ui"></i> UI layer</span>
+      </div>
+    </div>
+    <aside class="ff3d-inspector" aria-live="polite">
+      <p class="ff3d-kicker">NODE INSPECTOR</p>
+      <h2 id="ff3d-node-title">FresherFlow Core</h2>
+      <p id="ff3d-node-desc">Select any node in the 3D map to inspect its responsibility and connections.</p>
+      <div class="ff3d-meta"><span>TYPE</span><strong id="ff3d-node-type">SYSTEM</strong></div>
+      <div class="ff3d-meta"><span>CONNECTIONS</span><strong id="ff3d-node-links">—</strong></div>
+      <div class="ff3d-meta"><span>REPOSITORY PATH</span><code id="ff3d-node-path">—</code></div>
+      <div class="ff3d-related"><span>CONNECTED TO</span><div id="ff3d-node-related">Choose a node</div></div>
+      <a class="ff3d-repo-link" href="https://github.com/deathkernel/FresherFlow" target="_blank" rel="noopener noreferrer">Open repository ↗</a>
+    </aside>
+  </div>
+  <footer class="ff3d-footer">Architecture is derived from the checked-in Flask app, route blueprints, templates and SQLite schema. Runtime traffic metrics are not represented.</footer>
+</section>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/architecture.css') }}">
+<script type="module" src="{{ url_for('static', filename='js/architecture.js') }}"></script>
+{% endblock %}
