@@ -253,3 +253,7 @@ def platform_context():
         (session["user_id"],),
     ).fetchone()
     return {"unread_notifications": row["c"] if row else 0, "match_score": match_score}
+
+@platform_bp.get("/architecture")
+def architecture_visualizer():
+    return render_template("architecture.html")
