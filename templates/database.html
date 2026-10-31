@@ -33,7 +33,7 @@
       <main class="dbs-main">
         <div class="dbs-canvas-toolbar">
           <div><span class="dbs-canvas-indicator"></span><b id="dbx-view-title">3D RELATIONSHIP MAP</b><small id="dbx-visible-count"></small></div>
-          <div class="dbs-canvas-actions"><button id="dbx-fit" type="button" title="Fit schema in view">Fit universe</button><button id="dbx-zoom-out" type="button" aria-label="Zoom out">−</button><span id="dbx-zoom-label">100%</span><button id="dbx-zoom-in" type="button" aria-label="Zoom in">+</button></div>
+          <div class="dbs-canvas-actions"><button id="dbx-fullscreen" type="button" title="Enter full screen">⛶ Full screen</button><button id="dbx-fit" type="button" title="Fit schema in view">Fit universe</button><button id="dbx-zoom-out" type="button" aria-label="Zoom out">−</button><span id="dbx-zoom-label">100%</span><button id="dbx-zoom-in" type="button" aria-label="Zoom in">+</button></div>
         </div>
         <div id="dbx-canvas-viewport" class="dbs-canvas-viewport">
           <div id="dbx-three-root" class="dbs-three-root"></div>
@@ -57,6 +57,6 @@
   </section>
   <footer class="dbs-footer"><span>FRESHERFLOW / DATABASE UNIVERSE</span><span>READ-ONLY SCHEMA INSPECTION · SQLITE</span></footer>
 </section>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/database.css', v='db-universe-20261031-4') }}">
-<script type="module" src="{{ url_for('static', filename='js/database.js', v='db-universe-20261031-4') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/database.css', v='db-universe-20261031-5') }}">
+<script type="module" src="{{ url_for('static', filename='js/database.js', v='db-universe-20261031-5') }}"></script>
 {% endblock %}
