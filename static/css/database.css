@@ -50,3 +50,72 @@
 .dbs-glass-card,.dbs-label-layer{display:none!important}
 .dbs-canvas-hint{z-index:2}
 @media(max-width:760px){.dbs-canvas-viewport{height:650px;min-height:650px}}
+
+/* Fullscreen Database Studio */
+.dbs-canvas-actions #dbx-fullscreen{
+ min-width:auto;padding:0 10px;border-color:rgba(220,183,101,.38);
+ background:rgba(180,137,55,.14);color:#efd18a;font-weight:800;
+}
+.dbs-canvas-actions #dbx-fullscreen:hover{
+ border-color:rgba(240,207,126,.75);background:rgba(180,137,55,.24);color:#fff0c8;
+}
+.dbstudio:fullscreen,
+.dbstudio.dbs-fullscreen-fallback{
+ position:fixed;inset:0;z-index:99999;
+ width:100vw;max-width:none;height:100vh;min-height:100vh;
+ margin:0;padding:10px 16px 8px;overflow:hidden;
+ display:flex;flex-direction:column;
+ background:radial-gradient(ellipse at 48% 42%,#142238 0%,#0a111d 52%,#070b12 100%);
+}
+.dbstudio:fullscreen::backdrop{background:#070b12}
+.dbstudio:fullscreen .dbs-topbar,
+.dbstudio.dbs-fullscreen-fallback .dbs-topbar{flex:0 0 36px;height:36px}
+.dbstudio:fullscreen .dbs-heading,
+.dbstudio.dbs-fullscreen-fallback .dbs-heading{flex:0 0 auto;padding:10px 0 9px;align-items:center}
+.dbstudio:fullscreen .dbs-heading h1,
+.dbstudio.dbs-fullscreen-fallback .dbs-heading h1{font-size:24px;margin-top:2px}
+.dbstudio:fullscreen .dbs-heading p,
+.dbstudio.dbs-fullscreen-fallback .dbs-heading p{margin-top:3px;font-size:9px}
+.dbstudio:fullscreen .dbs-stats,
+.dbstudio.dbs-fullscreen-fallback .dbs-stats{flex:0 0 auto;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:9px}
+.dbstudio:fullscreen .dbs-stats article,
+.dbstudio.dbs-fullscreen-fallback .dbs-stats article{padding:7px 10px}
+.dbstudio:fullscreen .dbs-stat-icon,
+.dbstudio.dbs-fullscreen-fallback .dbs-stat-icon{width:28px;height:28px;flex-basis:28px;font-size:13px}
+.dbstudio:fullscreen .dbs-stats strong,
+.dbstudio.dbs-fullscreen-fallback .dbs-stats strong{font-size:16px}
+.dbstudio:fullscreen .dbs-workbench,
+.dbstudio.dbs-fullscreen-fallback .dbs-workbench{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.dbstudio:fullscreen .dbs-workbench-head,
+.dbstudio.dbs-fullscreen-fallback .dbs-workbench-head{flex:0 0 auto;padding:9px 13px}
+.dbstudio:fullscreen .dbs-workbench-head h2,
+.dbstudio.dbs-fullscreen-fallback .dbs-workbench-head h2{font-size:13px}
+.dbstudio:fullscreen .dbs-workbench-head p,
+.dbstudio.dbs-fullscreen-fallback .dbs-workbench-head p{font-size:8px;margin-top:2px}
+.dbstudio:fullscreen .dbs-grid,
+.dbstudio.dbs-fullscreen-fallback .dbs-grid{flex:1 1 0;min-height:0;height:0;grid-template-columns:190px minmax(0,1fr) 280px}
+.dbstudio:fullscreen .dbs-sidebar,
+.dbstudio.dbs-fullscreen-fallback .dbs-sidebar{min-height:0;overflow:hidden}
+.dbstudio:fullscreen .dbs-sidebar-list,
+.dbstudio.dbs-fullscreen-fallback .dbs-sidebar-list{flex:1;max-height:none;min-height:0}
+.dbstudio:fullscreen .dbs-main,
+.dbstudio.dbs-fullscreen-fallback .dbs-main{min-height:0;height:100%;overflow:hidden}
+.dbstudio:fullscreen .dbs-canvas-viewport,
+.dbstudio.dbs-fullscreen-fallback .dbs-canvas-viewport{flex:1 1 auto;height:auto;min-height:0;max-height:none}
+.dbstudio:fullscreen .dbs-inspector,
+.dbstudio.dbs-fullscreen-fallback .dbs-inspector{height:100%;max-height:none;min-height:0;overflow:auto}
+.dbstudio:fullscreen .dbs-footer,
+.dbstudio.dbs-fullscreen-fallback .dbs-footer{flex:0 0 auto;padding:5px 1px;font-size:6px}
+@media(max-width:900px){
+ .dbstudio:fullscreen,.dbstudio.dbs-fullscreen-fallback{padding:8px}
+ .dbstudio:fullscreen .dbs-grid,.dbstudio.dbs-fullscreen-fallback .dbs-grid{grid-template-columns:150px minmax(0,1fr)}
+ .dbstudio:fullscreen .dbs-inspector,.dbstudio.dbs-fullscreen-fallback .dbs-inspector{display:none}
+ .dbstudio:fullscreen .dbs-heading .dbs-connection,.dbstudio.dbs-fullscreen-fallback .dbs-heading .dbs-connection{display:none}
+}
+@media(max-width:600px){
+ .dbstudio:fullscreen .dbs-sidebar,.dbstudio.dbs-fullscreen-fallback .dbs-sidebar{display:none}
+ .dbstudio:fullscreen .dbs-grid,.dbstudio.dbs-fullscreen-fallback .dbs-grid{grid-template-columns:minmax(0,1fr)}
+ .dbstudio:fullscreen .dbs-stats article,.dbstudio.dbs-fullscreen-fallback .dbs-stats article{padding:5px}
+ .dbstudio:fullscreen .dbs-stats label,.dbstudio.dbs-fullscreen-fallback .dbs-stats label{display:none}
+ .dbstudio:fullscreen .dbs-brand small{display:none}
+}
