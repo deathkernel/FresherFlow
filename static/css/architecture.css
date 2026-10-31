@@ -29,3 +29,6 @@
 .ff3d-footer{color:#71839c;font-size:11px;padding:14px 2px}
 @media(max-width:900px){.ff3d-layout{grid-template-columns:1fr}.ff3d-inspector{min-height:0}.ff3d-header{align-items:flex-start;flex-direction:column}.ff3d-stage{height:clamp(400px,58vh,600px);min-height:400px}}
 @media(prefers-reduced-motion:reduce){.ff3d-page *{scroll-behavior:auto!important}}
+
+.ff3d-database-link{display:inline-flex;align-items:center;border:1px solid rgba(56,189,248,.45);background:rgba(14,116,144,.18);color:#7dd3fc;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:750;text-decoration:none}
+.ff3d-database-link:hover{border-color:#7dd3fc;background:rgba(14,116,144,.3);color:#bae6fd}
