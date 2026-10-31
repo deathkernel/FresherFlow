@@ -34,25 +34,69 @@ function card(t){
 }
 function drawEdges(grid,visible){
  grid.querySelector(".dbx-er-svg")?.remove();
- const width=grid.scrollWidth,height=grid.scrollHeight;
+ const width=Math.max(grid.scrollWidth,grid.clientWidth),height=Math.max(grid.scrollHeight,grid.clientHeight);
  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
- svg.setAttribute("class","dbx-er-svg");svg.setAttribute("width",width);svg.setAttribute("height",height);svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
- const defs=document.createElementNS(svg.namespaceURI,"defs"),marker=document.createElementNS(svg.namespaceURI,"marker");
- marker.setAttribute("id","dbx-arrow");marker.setAttribute("viewBox","0 0 10 10");marker.setAttribute("refX","9");marker.setAttribute("refY","5");marker.setAttribute("markerWidth","5");marker.setAttribute("markerHeight","5");marker.setAttribute("orient","auto-start-reverse");
- const arrow=document.createElementNS(svg.namespaceURI,"path");arrow.setAttribute("d","M 0 0 L 10 5 L 0 10 z");arrow.setAttribute("fill","#9ba8bc");marker.append(arrow);defs.append(marker);svg.append(defs);
- const rect=grid.getBoundingClientRect(),byName=new Map([...grid.querySelectorAll(".dbx-er-card")].map(el=>[el.dataset.table,el]));
- for(const t of visible){const from=byName.get(t.name);if(!from)continue;
-  for(const fk of t.foreignKeys){const to=byName.get(fk.table);if(!to)continue;
-   const a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
-   const x1=a.left-rect.left+a.width/2,y1=a.top-rect.top+a.height/2;
-   const x2=b.left-rect.left+b.width/2,y2=b.top-rect.top+b.height/2;
-   const dx=x2-x1,dy=y2-y1;const bend=Math.max(26,Math.min(90,Math.abs(dx)*.18));
+ svg.setAttribute("class","dbx-er-svg");
+ svg.setAttribute("width",width);svg.setAttribute("height",height);
+ svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
+ svg.setAttribute("aria-hidden","true");
+ const defs=document.createElementNS(svg.namespaceURI,"defs");
+ const addMarker=(id,color)=>{
+  const marker=document.createElementNS(svg.namespaceURI,"marker");
+  marker.setAttribute("id",id);marker.setAttribute("viewBox","0 0 10 10");
+  marker.setAttribute("refX","8.5");marker.setAttribute("refY","5");
+  marker.setAttribute("markerWidth","6");marker.setAttribute("markerHeight","6");
+  marker.setAttribute("orient","auto");
+  const arrow=document.createElementNS(svg.namespaceURI,"path");
+  arrow.setAttribute("d","M 0 1 L 9 5 L 0 9 z");arrow.setAttribute("fill",color);
+  marker.append(arrow);defs.append(marker);
+ };
+ addMarker("dbx-arrow-muted","#9aa8bc");
+ addMarker("dbx-arrow-active","#7569e8");
+ svg.append(defs);
+ const gridRect=grid.getBoundingClientRect();
+ const byName=new Map([...grid.querySelectorAll(".dbx-er-card")].map(card=>[card.dataset.table,card]));
+ const coord=rect=>({
+  left:rect.left-gridRect.left,top:rect.top-gridRect.top,
+  right:rect.right-gridRect.left,bottom:rect.bottom-gridRect.top,
+  width:rect.width,height:rect.height,
+  cx:rect.left-gridRect.left+rect.width/2,
+  cy:rect.top-gridRect.top+rect.height/2
+ });
+ for(const table of visible){
+  const fromElement=byName.get(table.name);if(!fromElement)continue;
+  for(const fk of table.foreignKeys){
+   const toElement=byName.get(fk.table);if(!toElement)continue;
+   const a=coord(fromElement.getBoundingClientRect()),b=coord(toElement.getBoundingClientRect());
+   const dx=b.cx-a.cx,dy=b.cy-a.cy;
+   let sx,sy,ex,ey,d;
+   if(Math.abs(dx)>=Math.abs(dy)){
+    sx=dx>=0?a.right:a.left;sy=a.cy;
+    ex=dx>=0?b.left:b.right;ey=b.cy;
+    const bend=Math.max(24,Math.min(76,Math.abs(ex-sx)*.38));
+    const direction=dx>=0?1:-1;
+    d=`M ${sx} ${sy} C ${sx+direction*bend} ${sy}, ${ex-direction*bend} ${ey}, ${ex} ${ey}`;
+   }else{
+    sx=a.cx;sy=dy>=0?a.bottom:a.top;
+    ex=b.cx;ey=dy>=0?b.top:b.bottom;
+    const bend=Math.max(24,Math.min(76,Math.abs(ey-sy)*.38));
+    const direction=dy>=0?1:-1;
+    d=`M ${sx} ${sy} C ${sx} ${sy+direction*bend}, ${ex} ${ey-direction*bend}, ${ex} ${ey}`;
+   }
+   const active=!!selected&&(selected.name===table.name||selected.name===fk.table);
    const path=document.createElementNS(svg.namespaceURI,"path");
-   path.setAttribute("class","dbx-er-edge");
-   path.setAttribute("d",`M ${x1} ${y1} C ${x1+Math.sign(dx||1)*bend} ${y1}, ${x2-Math.sign(dx||1)*bend} ${y2}, ${x2} ${y2}`);
-   path.setAttribute("marker-end","url(#dbx-arrow)");
-   if(selected&&(selected.name===t.name||selected.name===fk.table))path.setAttribute("style","stroke:#7669e8;stroke-width:2.5");
+   path.setAttribute("class","dbx-er-edge "+(active?"active":"muted"));
+   path.setAttribute("d",d);
+   path.setAttribute("marker-end",active?"url(#dbx-arrow-active)":"url(#dbx-arrow-muted)");
    svg.append(path);
+   if(active){
+    const labelText=(fk.from+" → "+fk.table+"."+fk.to).slice(0,34);
+    const label=document.createElementNS(svg.namespaceURI,"text");
+    label.setAttribute("class","dbx-er-edge-label");
+    label.setAttribute("x",(sx+ex)/2);label.setAttribute("y",(sy+ey)/2-7);
+    label.setAttribute("text-anchor","middle");label.textContent=labelText;
+    svg.append(label);
+   }
   }
  }
  grid.prepend(svg);
