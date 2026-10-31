@@ -7,7 +7,7 @@ import { CSS2DRenderer, CSS2DObject } from "https://cdn.jsdelivr.net/npm/three@0
 const $=id=>document.getElementById(id);
 const root=$("dbx-three-root"),viewport=$("dbx-canvas-viewport"),loading=$("dbx-loading"),errorBox=$("dbx-error");
 const sidebar=$("dbx-sidebar-tables"),search=$("dbx-search");
-let tables=[],selected=null,mode="3d",query="",scene,camera,renderer,labelRenderer,controls,observer,raf=0;
+let tables=[],selected=null,mode="3d",query="",scene,camera,renderer,labelRenderer,controls,observer,raf=0,positions=new Map();
 const nodes=new Map(),edges=[],raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),pickables=[];
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 const set=(id,value)=>{$(id).textContent=value;};
@@ -28,10 +28,8 @@ function relationList(t){
  return [...outgoing,...incoming];
 }
 function renderMetrics(){
- set("dbx-table-count",tables.length);
- set("dbx-relation-count",tables.reduce((n,t)=>n+t.foreignKeys.length,0));
- set("dbx-total-columns",tables.reduce((n,t)=>n+t.columns.length,0));
- set("dbx-total-indexes",tables.reduce((n,t)=>n+t.indexes.length,0));
+ set("dbx-table-count",tables.length);set("dbx-relation-count",tables.reduce((n,t)=>n+t.foreignKeys.length,0));
+ set("dbx-total-columns",tables.reduce((n,t)=>n+t.columns.length,0));set("dbx-total-indexes",tables.reduce((n,t)=>n+t.indexes.length,0));
  set("dbx-sidebar-count",tables.length+" tables");
 }
 function renderSidebar(){
@@ -51,40 +49,39 @@ function cardElement(t){
  const fields=make("div","dbs-glass-fields");
  t.columns.slice(0,4).forEach(c=>{
   const row=make("div","dbs-glass-row"),mark=c.primaryKey?"PK":c.foreignKey?"FK":isIndexed(t,c)?"IX":"";
-  row.append(make("span","dbs-glass-name",c.name),make("span","dbs-glass-type",c.type||"ANY"),make("span","dbs-glass-key "+mark.toLowerCase(),mark));
-  fields.append(row);
+  row.append(make("span","dbs-glass-name",c.name),make("span","dbs-glass-type",c.type||"ANY"),make("span","dbs-glass-key "+mark.toLowerCase(),mark));fields.append(row);
  });
- card.append(head,fields);
- if(t.columns.length>4)card.append(make("div","dbs-glass-more","+"+(t.columns.length-4)+" MORE COLUMNS"));
- card.addEventListener("click",()=>selectTable(t,true));
- return card;
+ card.append(head,fields);if(t.columns.length>4)card.append(make("div","dbs-glass-more","+"+(t.columns.length-4)+" MORE COLUMNS"));
+ card.addEventListener("click",()=>selectTable(t,true));return card;
 }
 function positionsForSchema(){
- const positions=new Map(),center=new THREE.Vector3(0,0,0),byName=new Map(tables.map(t=>[t.name,t]));
- if(byName.has("users"))positions.set("users",center);
+ const result=new Map(),small=viewport.clientWidth<760,byName=new Map(tables.map(t=>[t.name,t]));
+ if(small){
+  const cols=2,stepX=285,stepY=205;
+  tables.forEach((t,i)=>{const row=Math.floor(i/cols),col=i%cols;result.set(t.name,new THREE.Vector3((col-(cols-1)/2)*stepX,(Math.ceil(tables.length/cols)-1)*stepY/2-row*stepY,(i%3-1)*28));});
+  return result;
+ }
+ if(byName.has("users"))result.set("users",new THREE.Vector3(0,0,0));
  const inner=["student_profiles","employer_profiles","vacancies","applications","colleges","notifications","messages","student_verification_requests"].filter(n=>byName.has(n));
  const outer=tables.map(t=>t.name).filter(n=>n!=="users"&&!inner.includes(n));
- const placeRing=(names,radius,offset,zShift)=>{
-  names.forEach((name,i)=>{
-   const angle=offset+(i/names.length)*Math.PI*2,lift=(i%3-1)*32;
-   positions.set(name,new THREE.Vector3(Math.cos(angle)*radius,Math.sin(angle)*radius+lift,zShift+(i%2?36:-36)));
-  });
- };
- placeRing(inner,430,-Math.PI/2,-40);
- placeRing(outer,700,-Math.PI/2+Math.PI/outer.length,30);
- tables.forEach((t,i)=>{if(!positions.has(t.name)){const a=i/tables.length*Math.PI*2;positions.set(t.name,new THREE.Vector3(Math.cos(a)*800,Math.sin(a)*800,0));}});
- return positions;
+ const placeRing=(names,radius,offset,zShift)=>names.forEach((name,i)=>{
+  const angle=offset+(i/names.length)*Math.PI*2,lift=(i%3-1)*32;
+  result.set(name,new THREE.Vector3(Math.cos(angle)*radius,Math.sin(angle)*radius+lift,zShift+(i%2?36:-36)));
+ });
+ placeRing(inner,560,-Math.PI/2,-40);placeRing(outer,800,-Math.PI/2+Math.PI/outer.length,30);
+ tables.forEach((t,i)=>{if(!result.has(t.name)){const a=i/tables.length*Math.PI*2;result.set(t.name,new THREE.Vector3(Math.cos(a)*850,Math.sin(a)*850,0));}});
+ return result;
 }
 function addBackground(){
  const stars=[],count=620;
- for(let i=0;i<count;i++){const angle=Math.random()*Math.PI*2,r=350+Math.random()*1250;stars.push(Math.cos(angle)*r,(Math.random()-.5)*1500,-150-Math.random()*800);}
- const geometry=new THREE.BufferGeometry();geometry.setAttribute("position",new THREE.Float32BufferAttribute(stars,3));
- scene.add(new THREE.Points(geometry,new THREE.PointsMaterial({color:0x9db5d2,size:2.2,transparent:true,opacity:.46,sizeAttenuation:false})));
+ for(let i=0;i<count;i++){const angle=Math.random()*Math.PI*2,r=350+Math.random()*1450;stars.push(Math.cos(angle)*r,(Math.random()-.5)*1700,-150-Math.random()*900);}
+ const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(stars,3));
+ scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0x9db5d2,size:2.2,transparent:true,opacity:.42,sizeAttenuation:false})));
  const ring1=new THREE.Mesh(new THREE.TorusGeometry(265,1.2,8,160),new THREE.MeshBasicMaterial({color:0xd6ad5d,transparent:true,opacity:.33}));ring1.position.z=-80;scene.add(ring1);
  const ring2=new THREE.Mesh(new THREE.TorusGeometry(285,.55,6,160),new THREE.MeshBasicMaterial({color:0x6f8ca9,transparent:true,opacity:.2}));ring2.position.z=-92;scene.add(ring2);
  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(12,2),new THREE.MeshStandardMaterial({color:0xe9c46f,emissive:0xb27b28,emissiveIntensity:.7,metalness:.7,roughness:.2}));core.position.set(0,0,-25);scene.add(core);
- const light=new THREE.PointLight(0xe8bd68,170,1150);light.position.set(0,0,120);scene.add(light);
- const fill=new THREE.PointLight(0x4d83b4,100,1200);fill.position.set(-500,300,180);scene.add(fill);
+ const light=new THREE.PointLight(0xe8bd68,170,1350);light.position.set(0,0,120);scene.add(light);
+ const fill=new THREE.PointLight(0x4d83b4,100,1400);fill.position.set(-500,300,180);scene.add(fill);
 }
 function makeNode(t,position){
  const group=new THREE.Group();group.position.copy(position);group.userData.table=t;
@@ -93,7 +90,7 @@ function makeNode(t,position){
  const halo=new THREE.Mesh(new THREE.TorusGeometry(150,1.15,6,80),new THREE.MeshBasicMaterial({color:0xd9b568,transparent:true,opacity:.35}));halo.position.z=-35;group.add(halo);
  const card=cardElement(t),label=new CSS2DObject(card);label.position.set(0,0,13);group.add(label);
  scene.add(group);nodes.set(t.name,{group,glass,outline,halo,label,card,position:position.clone(),table:t});
- const pick=new THREE.Mesh(new THREE.SphereGeometry(115,12,10),new THREE.MeshBasicMaterial({visible:false,transparent:true,opacity:0}));pick.position.copy(position);pick.userData.table=t;scene.add(pick);pickables.push(pick);
+ const pick=new THREE.Mesh(new THREE.SphereGeometry(115,12,10),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));pick.position.copy(position);pick.userData.table=t;scene.add(pick);pickables.push(pick);
 }
 function addRelationship(from,to,field,index){
  const a=nodes.get(from)?.position,b=nodes.get(to)?.position;if(!a||!b)return;
@@ -109,30 +106,13 @@ function resizeScene(){
  const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight);
  camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false);labelRenderer.setSize(width,height);
 }
-function buildScene(){
- if(renderer){cancelAnimationFrame(raf);controls?.dispose();observer?.disconnect();renderer.dispose();labelRenderer?.domElement.remove();renderer.domElement.remove();}
- nodes.clear();edges.length=0;pickables.length=0;
- scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x08111e,.00012);
- camera=new THREE.PerspectiveCamera(42,1,1,5000);camera.position.set(0,0,1780);camera.lookAt(0,0,0);
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.16;renderer.domElement.className="dbs-webgl";
- root.replaceChildren(renderer.domElement);
- labelRenderer=new CSS2DRenderer();labelRenderer.domElement.className="dbs-label-layer";root.append(labelRenderer.domElement);
- controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.055;controls.enablePan=true;controls.minDistance=850;controls.maxDistance=3000;controls.target.set(0,0,0);
- scene.add(new THREE.AmbientLight(0xaec5df,1.45));
- const key=new THREE.DirectionalLight(0xffffff,2.1);key.position.set(-360,620,900);scene.add(key);
- const gold=new THREE.PointLight(0xe6bd67,120,1400);gold.position.set(0,320,400);scene.add(gold);
- addBackground();
- const positions=positionsForSchema();tables.forEach(t=>makeNode(t,positions.get(t.name)));
- let edgeIndex=0;tables.forEach(t=>t.foreignKeys.forEach(f=>addRelationship(t.name,f.table,f.from,edgeIndex++)));
- resizeScene();observer=new ResizeObserver(resizeScene);observer.observe(viewport);
- renderer.domElement.addEventListener("pointerdown",onCanvasPick);
- animate();applySearch();
+function fitView(){
+ if(!camera||!controls)return;
+ const xs=[...positions.values()].map(p=>Math.abs(p.x)),ys=[...positions.values()].map(p=>Math.abs(p.y));
+ const maxX=Math.max(250,...xs)+130,maxY=Math.max(250,...ys)+100,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+ const distance=Math.max(maxY/tan,maxX/(tan*camera.aspect))*1.12;
+ camera.position.set(0,0,Math.max(1200,distance));controls.target.set(0,0,0);controls.update();set("dbx-zoom-label","FIT");
 }
-function onCanvasPick(event){
- const rect=renderer.domElement.getBoundingClientRect();pointer.x=((event.clientX-rect.left)/rect.width)*2-1;pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
- raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(pickables,false)[0];if(hit)selectTable(hit.object.userData.table,true);
-}
-function fitView(){if(!camera||!controls)return;camera.position.set(0,0,1780);controls.target.set(0,0,0);controls.update();set("dbx-zoom-label","100%");}
 function focusNode(name){const n=nodes.get(name);if(!n||!controls)return;const offset=camera.position.clone().sub(controls.target);controls.target.copy(n.position);camera.position.copy(n.position.clone().add(offset));controls.update();}
 function updateSelection(){
  for(const [name,n] of nodes){
@@ -193,7 +173,7 @@ function animate(){
 function bindButtons(){
  $("dbx-diagram").addEventListener("click",()=>setMode("3d"));$("dbx-catalog").addEventListener("click",()=>setMode("catalog"));$("dbx-ddl").addEventListener("click",()=>setMode("sql"));$("dbx-fit").addEventListener("click",fitView);
  $("dbx-zoom-in").addEventListener("click",()=>{camera.position.z=Math.max(850,camera.position.z*.88);controls.update();set("dbx-zoom-label",Math.round(1780/camera.position.z*100)+"%");});
- $("dbx-zoom-out").addEventListener("click",()=>{camera.position.z=Math.min(3000,camera.position.z*1.12);controls.update();set("dbx-zoom-label",Math.round(1780/camera.position.z*100)+"%");});
+ $("dbx-zoom-out").addEventListener("click",()=>{camera.position.z=Math.min(4000,camera.position.z*1.12);controls.update();set("dbx-zoom-label",Math.round(1780/camera.position.z*100)+"%");});
  search.addEventListener("input",()=>{query=search.value;if(mode==="3d")applySearch();else if(mode==="catalog")renderCatalog();else renderSQL();});
 }
 async function load(){
@@ -201,8 +181,26 @@ async function load(){
   const response=await fetch("/api/database/schema",{headers:{Accept:"application/json"},cache:"no-store"});if(!response.ok)throw new Error("Schema API returned HTTP "+response.status);
   const payload=await response.json();tables=(payload.tables||[]).map(t=>({...t,columns:(t.columns||[]).map(c=>({...c,foreignKey:(t.foreignKeys||[]).some(f=>f.from===c.name)})),foreignKeys:t.foreignKeys||[],indexes:t.indexes||[]}));
   if(!tables.length)throw new Error("No tables found in the configured SQLite database.");
-  renderMetrics();renderSidebar();buildScene();loading.hidden=true;selected=tables.find(t=>t.name==="users")||tables[0];renderInspector(selected);setMode("3d");fitView();
+  renderMetrics();renderSidebar();positions=positionsForSchema();buildScene();loading.hidden=true;selected=tables.find(t=>t.name==="users")||tables[0];renderInspector(selected);setMode("3d");fitView();
  }catch(error){loading.hidden=true;errorBox.hidden=false;errorBox.textContent="Unable to build schema visualization: "+error.message;console.error("Database Universe:",error);}
+}
+function buildScene(){
+ if(renderer){cancelAnimationFrame(raf);controls?.dispose();observer?.disconnect();renderer.dispose();labelRenderer?.domElement.remove();renderer.domElement.remove();}
+ nodes.clear();edges.length=0;pickables.length=0;
+ scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x08111e,.00012);
+ camera=new THREE.PerspectiveCamera(42,1,1,5000);camera.position.set(0,0,2200);camera.lookAt(0,0,0);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.16;renderer.domElement.className="dbs-webgl";
+ root.replaceChildren(renderer.domElement);
+ labelRenderer=new CSS2DRenderer();labelRenderer.domElement.className="dbs-label-layer";root.append(labelRenderer.domElement);
+ controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.055;controls.enablePan=true;controls.minDistance=850;controls.maxDistance=4000;controls.target.set(0,0,0);
+ scene.add(new THREE.AmbientLight(0xaec5df,1.45));
+ const key=new THREE.DirectionalLight(0xffffff,2.1);key.position.set(-360,620,900);scene.add(key);
+ const gold=new THREE.PointLight(0xe6bd67,120,1400);gold.position.set(0,320,400);scene.add(gold);
+ addBackground();
+ tables.forEach(t=>makeNode(t,positions.get(t.name)));
+ let edgeIndex=0;tables.forEach(t=>t.foreignKeys.forEach(f=>addRelationship(t.name,f.table,f.from,edgeIndex++)));
+ resizeScene();observer=new ResizeObserver(resizeScene);observer.observe(viewport);
+ renderer.domElement.addEventListener("pointerdown",onCanvasPick);animate();applySearch();
 }
 bindButtons();load();
 })();
