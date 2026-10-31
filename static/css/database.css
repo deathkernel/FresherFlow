@@ -25,3 +25,7 @@
 .dbx-footer{padding:13px 2px;color:#8492a6;font-size:10px}
 @media(max-width:950px){.dbx-layout{grid-template-columns:1fr}.dbx-inspector{display:grid;grid-template-columns:1fr 1fr;column-gap:18px}.dbx-inspector>.dbx-kicker,.dbx-inspector>h2,.dbx-inspector>p,.dbx-detail-stats{grid-column:1/-1}.dbx-header{align-items:flex-start;flex-direction:column}}
 @media(max-width:560px){.dbx-page{padding:18px 12px 30px}.dbx-stage{height:clamp(420px,58vh,600px);min-height:420px}.dbx-inspector{display:block}.dbx-table-strip{display:block}.dbx-table-strip #dbx-table-pills{justify-content:flex-start;max-width:100%;margin-top:10px}.dbx-toolbar{align-items:stretch}.dbx-stats{width:100%}}
+
+.dbx-label-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.dbx-node-label{padding:4px 7px;border:1px solid rgba(125,211,252,.22);border-radius:6px;background:rgba(5,15,29,.82);color:#dceeff;font:700 10px Inter,system-ui,sans-serif;white-space:nowrap;text-shadow:0 1px 5px #020617;box-shadow:0 5px 16px rgba(0,0,0,.2)}
+.dbx-node-label:hover{border-color:#38bdf8}
