@@ -48,3 +48,13 @@
 .dbx-er-card{z-index:1}
 .dbx-er-edge-label{paint-order:stroke;stroke:#fafbfe;stroke-width:4px;stroke-linejoin:round}
 @media(prefers-reduced-motion:reduce){.dbx-er-card{transition:none}}
+
+/* Relationship connector layer: align its origin with the ER grid, not the scroll viewport. */
+.dbx-er-grid{position:relative;overflow:visible;isolation:isolate}
+.dbx-er-svg{position:absolute;left:0;top:0;z-index:0;display:block;overflow:visible;pointer-events:none}
+.dbx-er-edge{fill:none;stroke:#9aa8bc;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;opacity:.58;transition:opacity .18s,stroke-width .18s,stroke .18s}
+.dbx-er-edge.muted{stroke:#aeb8c7;stroke-width:1.45;opacity:.22}
+.dbx-er-edge.active{stroke:#7569e8;stroke-width:2.8;opacity:1;filter:drop-shadow(0 1px 2px rgba(94,82,205,.22))}
+.dbx-er-edge-label{fill:#6258ca;font:700 8px Inter,system-ui,sans-serif;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.dbx-er-card{position:relative;z-index:1}
+.dbx-er-card.selected{border-color:#7569ec}
