@@ -183,7 +183,39 @@ function buildScene(){
  renderer.domElement.addEventListener("pointerdown",onCanvasPointerDown);renderer.domElement.addEventListener("pointerup",onCanvasPointerUp);
  animate();applySearch();
 }
+async function toggleFullscreen(){
+ const target=document.querySelector(".dbstudio");
+ try{
+  if(document.fullscreenElement===target){
+   await document.exitFullscreen();
+  }else if(document.fullscreenElement){
+   await document.exitFullscreen();
+   await target.requestFullscreen({navigationUI:"hide"});
+  }else if(target.requestFullscreen){
+   await target.requestFullscreen({navigationUI:"hide"});
+  }else{
+   target.classList.toggle("dbs-fullscreen-fallback");
+  }
+ }catch(error){
+  console.warn("Fullscreen API unavailable; using page fullscreen fallback.",error);
+  target.classList.toggle("dbs-fullscreen-fallback");
+ }
+ updateFullscreenButton();
+}
+function updateFullscreenButton(){
+ const target=document.querySelector(".dbstudio");
+ const active=document.fullscreenElement===target||target.classList.contains("dbs-fullscreen-fallback");
+ const button=$("dbx-fullscreen");
+ if(button){
+  button.textContent=active?"⛶ Exit full screen":"⛶ Full screen";
+  button.title=active?"Exit full screen (Esc)":"Enter full screen";
+  button.setAttribute("aria-pressed",String(active));
+ }
+ if(renderer&&camera){requestAnimationFrame(resizeScene);}
+}
 function bind(){
+ $("dbx-fullscreen").addEventListener("click",toggleFullscreen);
+ document.addEventListener("fullscreenchange",updateFullscreenButton);
  $("dbx-diagram").addEventListener("click",()=>setMode("3d"));$("dbx-catalog").addEventListener("click",()=>setMode("catalog"));$("dbx-ddl").addEventListener("click",()=>setMode("sql"));$("dbx-fit").addEventListener("click",fitView);
  $("dbx-zoom-in").addEventListener("click",()=>{const d=camera.position.distanceTo(controls.target),v=camera.position.clone().sub(controls.target).normalize();camera.position.copy(controls.target.clone().add(v.multiplyScalar(Math.max(1000,d*.88))));set("dbx-zoom-label","ZOOM");});
  $("dbx-zoom-out").addEventListener("click",()=>{const d=camera.position.distanceTo(controls.target),v=camera.position.clone().sub(controls.target).normalize();camera.position.copy(controls.target.clone().add(v.multiplyScalar(Math.min(7000,d*1.12))));set("dbx-zoom-label","ZOOM");});
