@@ -1,45 +1,51 @@
 {% extends "base.html" %}
-{% block title %}FresherFlow Database Explorer{% endblock %}
+{% block title %}Database Studio · FresherFlow{% endblock %}
 {% block body %}
 <section class="dbx-page">
-  <header class="dbx-header">
-    <div>
-      <p class="dbx-kicker">DATA SYSTEMS / 02</p>
-      <h1>Database <span>Explorer</span></h1>
-      <p>Explore the live SQLite schema, columns, keys, indexes and foreign-key relationships. No row data is exposed.</p>
-    </div>
-    <nav class="dbx-nav"><a href="{{ url_for('platform.architecture_visualizer') }}">Architecture 3D</a><a class="active" href="{{ url_for('platform.database_visualizer') }}">Database</a></nav>
+  <header class="dbx-top">
+    <div class="dbx-brandline"><span class="dbx-brandmark">F</span><span>FRESHERFLOW</span><i></i><span>DEVELOPER STUDIO</span></div>
+    <nav class="dbx-nav"><a href="{{ url_for('platform.architecture_visualizer') }}">Architecture</a><a class="active" href="{{ url_for('platform.database_visualizer') }}">Database Studio</a></nav>
   </header>
-  <div class="dbx-toolbar">
-    <label class="dbx-search"><span>⌕</span><input id="dbx-search" type="search" placeholder="Search tables or columns…" autocomplete="off"></label>
-    <div class="dbx-toolbar-actions"><button id="dbx-3d" class="active" type="button">3D graph</button><button id="dbx-list" type="button">Table list</button><button id="dbx-reset" type="button">Reset view</button></div>
-    <div class="dbx-stats"><strong id="dbx-table-count">—</strong><span>tables</span><i></i><strong id="dbx-relation-count">—</strong><span>relations</span></div>
+  <div class="dbx-title-row">
+    <div><p class="dbx-eyebrow">DATA LAYER / SQLITE</p><h1>Database <span>Studio</span></h1><p class="dbx-subtitle">Understand how your data is structured and connected.</p></div>
+    <div class="dbx-live"><span></span><div><b>LIVE SCHEMA</b><small>Connected to local database</small></div></div>
   </div>
-  <div class="dbx-layout">
-    <main class="dbx-main">
-      <div class="dbx-stage-wrap">
-        <div class="dbx-stage" id="dbx-stage">
-          <div class="dbx-loading" id="dbx-loading">Reading SQLite schema…</div>
+  <section class="dbx-metrics" aria-label="Database overview">
+    <article class="dbx-metric"><span class="dbx-metric-icon violet">▦</span><div><small>TABLES</small><strong id="dbx-table-count">—</strong><em>Database entities</em></div></article>
+    <article class="dbx-metric"><span class="dbx-metric-icon blue">⌘</span><div><small>RELATIONSHIPS</small><strong id="dbx-relation-count">—</strong><em>Foreign-key links</em></div></article>
+    <article class="dbx-metric"><span class="dbx-metric-icon amber">▤</span><div><small>COLUMNS</small><strong id="dbx-total-columns">—</strong><em>Across all tables</em></div></article>
+    <article class="dbx-metric"><span class="dbx-metric-icon green">◈</span><div><small>INDEXES</small><strong id="dbx-total-indexes">—</strong><em>Query structures</em></div></article>
+  </section>
+  <section class="dbx-workspace">
+    <div class="dbx-workspace-head">
+      <div><p class="dbx-eyebrow">SCHEMA EXPLORER</p><h2>Data model</h2><p>Choose a table to inspect its structure and connected tables.</p></div>
+      <div class="dbx-controls">
+        <label class="dbx-search"><span>⌕</span><input id="dbx-search" type="search" placeholder="Find a table or column…" autocomplete="off"></label>
+        <div class="dbx-view-switch"><button id="dbx-3d" class="active" type="button">ER diagram</button><button id="dbx-list" type="button">Table list</button></div>
+      </div>
+    </div>
+    <div class="dbx-content">
+      <main class="dbx-visual">
+        <div class="dbx-canvas-head"><div><span class="dbx-canvas-dot"></span><b id="dbx-view-title">ENTITY RELATIONSHIP DIAGRAM</b><small id="dbx-visible-count"></small></div><span class="dbx-canvas-help">Select any table to inspect</span></div>
+        <div id="dbx-stage" class="dbx-stage">
+          <div class="dbx-loading" id="dbx-loading">Loading database schema…</div>
           <div class="dbx-error" id="dbx-error" hidden></div>
           <div id="dbx-graph" class="dbx-graph"></div>
-          <div class="dbx-hint" id="dbx-hint">Drag to rotate · Scroll to zoom · Select a table to inspect</div>
         </div>
-        <div class="dbx-legend"><span><i class="dbx-dot table"></i>Table</span><span><i class="dbx-dot primary"></i>Primary key</span><span><i class="dbx-dot foreign"></i>Foreign key</span><span><i class="dbx-dot link"></i>Relationship</span></div>
-      </div>
-      <div class="dbx-table-strip"><div><b>SCHEMA TABLES</b><span>Choose a table to focus its relationships</span></div><div id="dbx-table-pills"></div></div>
-    </main>
-    <aside class="dbx-inspector" aria-live="polite">
-      <p class="dbx-kicker">TABLE INSPECTOR</p>
-      <h2 id="dbx-detail-name">Select a table</h2>
-      <p id="dbx-detail-summary">Select a node in the graph or a table below to inspect its schema.</p>
-      <div class="dbx-detail-stats"><div><strong id="dbx-column-count">—</strong><span>COLUMNS</span></div><div><strong id="dbx-fk-count">—</strong><span>FOREIGN KEYS</span></div><div><strong id="dbx-index-count">—</strong><span>INDEXES</span></div></div>
-      <div class="dbx-section"><div class="dbx-section-head">COLUMNS <span id="dbx-column-label"></span></div><div id="dbx-columns" class="dbx-columns"><p class="dbx-muted">No table selected</p></div></div>
-      <div class="dbx-section"><div class="dbx-section-head">RELATIONSHIPS</div><div id="dbx-relations" class="dbx-relations"><p class="dbx-muted">No table selected</p></div></div>
-      <div class="dbx-section"><div class="dbx-section-head">INDEXES</div><div id="dbx-indexes" class="dbx-indexes"><p class="dbx-muted">No table selected</p></div></div>
-    </aside>
-  </div>
-  <footer class="dbx-footer">Live schema introspection uses SQLite metadata (sqlite_master and PRAGMA). Table records, emails, passwords and other user data are never returned.</footer>
+        <div class="dbx-legend"><span><i class="dbx-key-dot pk"></i>Primary key</span><span><i class="dbx-key-dot fk"></i>Foreign key</span><span><i class="dbx-key-dot ix"></i>Indexed</span><span class="dbx-legend-note">Schema metadata only · no user records displayed</span></div>
+      </main>
+      <aside class="dbx-inspector" aria-live="polite">
+        <div class="dbx-inspector-head"><div><p class="dbx-eyebrow">OBJECT DETAILS</p><h2 id="dbx-detail-name">Select a table</h2></div><span class="dbx-table-type">TABLE</span></div>
+        <p id="dbx-detail-summary" class="dbx-detail-summary">Select a table in the diagram to see its columns, keys and relationships.</p>
+        <div class="dbx-detail-stats"><div><strong id="dbx-column-count">—</strong><span>COLUMNS</span></div><div><strong id="dbx-fk-count">—</strong><span>FOREIGN KEYS</span></div><div><strong id="dbx-index-count">—</strong><span>INDEXES</span></div></div>
+        <section class="dbx-section"><div class="dbx-section-head"><b>COLUMNS</b><span id="dbx-column-label"></span></div><div id="dbx-columns" class="dbx-columns"><p class="dbx-muted">No table selected</p></div></section>
+        <section class="dbx-section"><div class="dbx-section-head"><b>RELATIONSHIPS</b><span id="dbx-rel-label"></span></div><div id="dbx-relations" class="dbx-relations"><p class="dbx-muted">No table selected</p></div></section>
+        <section class="dbx-section"><div class="dbx-section-head"><b>INDEXES</b></div><div id="dbx-indexes" class="dbx-indexes"><p class="dbx-muted">No table selected</p></div></section>
+      </aside>
+    </div>
+  </section>
+  <footer class="dbx-footer"><span>FRESHERFLOW DATABASE STUDIO</span><span>Read-only schema inspection · SQLite</span></footer>
 </section>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/database.css') }}">
-<script type="module" src="{{ url_for('static', filename='js/database.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/database.js') }}"></script>
 {% endblock %}
