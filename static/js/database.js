@@ -1,173 +1,165 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
-import { CSS2DRenderer, CSS2DObject } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js/+esm";
-
 (() => {
 "use strict";
-const $=id=>document.getElementById(id);
-const root=$("dbx-three-root"),viewport=$("dbx-canvas-viewport"),loading=$("dbx-loading"),errorBox=$("dbx-error");
-const sidebar=$("dbx-sidebar-tables"),search=$("dbx-search");
-let tables=[],selected=null,mode="3d",query="",scene,camera,renderer,labelRenderer,controls,observer,raf=0,positions=new Map();
+const $=id=>document.getElementById(id),root=$("dbx-three-root"),viewport=$("dbx-canvas-viewport"),loading=$("dbx-loading"),errorBox=$("dbx-error"),sidebar=$("dbx-sidebar-tables"),search=$("dbx-search");
+const W=448,H=280,TW=1024,TH=640;
+let tables=[],selected=null,mode="3d",query="",scene,camera,renderer,controls,observer,raf=0,positions=new Map(),press=null;
 const nodes=new Map(),edges=[],raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),pickables=[];
-const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
-const set=(id,value)=>{$(id).textContent=value;};
-const groupDefs=[
- {name:"Identity & access",tables:["users","auth_attempts","user_preferences"]},
- {name:"Profiles",tables:["student_profiles","employer_profiles"]},
- {name:"Hiring workflow",tables:["vacancies","applications","saved_jobs","interviews"]},
- {name:"College & verification",tables:["colleges","college_verifiers","college_student_accounts","student_verification_requests"]},
- {name:"Engagement",tables:["notifications","messages","career_tasks"]},
- {name:"Platform",tables:["audit_log","schema_migrations"]}
+const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;},set=(id,value)=>{$(id).textContent=value;};
+const groups=[
+ ["Identity & access",["users","auth_attempts","user_preferences"]],
+ ["Profiles",["student_profiles","employer_profiles"]],
+ ["Hiring workflow",["vacancies","applications","saved_jobs","interviews"]],
+ ["College & verification",["colleges","college_verifiers","college_student_accounts","student_verification_requests"]],
+ ["Engagement",["notifications","messages","career_tasks"]],
+ ["Platform",["audit_log","schema_migrations"]]
 ];
-function groupOf(name){return groupDefs.find(g=>g.tables.includes(name))?.name||"Other";}
+function groupOf(name){return groups.find(g=>g[1].includes(name))?.[0]||"Other";}
 function isIndexed(t,c){return t.indexes.some(ix=>ix.columns.includes(c.name));}
-function getVisible(){const q=query.trim().toLowerCase();return tables.filter(t=>!q||t.name.toLowerCase().includes(q)||t.columns.some(c=>c.name.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)));}
+function sortedTables(){return [...tables].sort((a,b)=>{const ga=groups.findIndex(g=>g[0]===groupOf(a.name)),gb=groups.findIndex(g=>g[0]===groupOf(b.name));return(ga<0?99:ga)-(gb<0?99:gb)||a.name.localeCompare(b.name);});}
+function visibleTables(){const q=query.trim().toLowerCase();return sortedTables().filter(t=>!q||t.name.toLowerCase().includes(q)||t.columns.some(c=>c.name.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)));}
 function relationList(t){
- const outgoing=t.foreignKeys.map(f=>({direction:"OUTGOING",column:f.from,target:f.table,targetColumn:f.to,onDelete:f.onDelete,onUpdate:f.onUpdate}));
- const incoming=tables.flatMap(source=>source.foreignKeys.filter(f=>f.table===t.name).map(f=>({direction:"INCOMING",column:f.to,target:source.name,targetColumn:f.from,onDelete:f.onDelete,onUpdate:f.onUpdate})));
- return [...outgoing,...incoming];
+ const out=t.foreignKeys.map(f=>({direction:"OUTGOING",column:f.from,target:f.table,targetColumn:f.to,onDelete:f.onDelete}));
+ const inc=tables.flatMap(s=>s.foreignKeys.filter(f=>f.table===t.name).map(f=>({direction:"INCOMING",column:f.to,target:s.name,targetColumn:f.from,onDelete:f.onDelete})));
+ return [...out,...inc];
 }
 function renderMetrics(){
  set("dbx-table-count",tables.length);set("dbx-relation-count",tables.reduce((n,t)=>n+t.foreignKeys.length,0));
- set("dbx-total-columns",tables.reduce((n,t)=>n+t.columns.length,0));set("dbx-total-indexes",tables.reduce((n,t)=>n+t.indexes.length,0));
- set("dbx-sidebar-count",tables.length+" tables");
+ set("dbx-total-columns",tables.reduce((n,t)=>n+t.columns.length,0));set("dbx-total-indexes",tables.reduce((n,t)=>n+t.indexes.length,0));set("dbx-sidebar-count",tables.length+" tables");
 }
 function renderSidebar(){
  sidebar.replaceChildren();let last="";
- const shown=[...getVisible()].sort((a,b)=>groupDefs.findIndex(g=>g.name===groupOf(a.name))-groupDefs.findIndex(g=>g.name===groupOf(b.name))||a.name.localeCompare(b.name));
- for(const t of shown){
-  const group=groupOf(t.name);if(group!==last){sidebar.append(make("div","dbs-group-label",group));last=group;}
-  const b=make("button","dbs-table-link"+(selected?.name===t.name?" active":""));b.type="button";b.dataset.table=t.name;
+ for(const t of visibleTables()){
+  const g=groupOf(t.name);if(g!==last){sidebar.append(make("div","dbs-group-label",g));last=g;}
+  const b=make("button","dbs-table-link"+(selected?.name===t.name?" active":""));b.type="button";
   b.append(make("span","dbs-table-glyph","▦"),make("span","",t.name),make("small","",String(t.columns.length)));
   b.addEventListener("click",()=>selectTable(t,true));sidebar.append(b);
  }
- if(!shown.length)sidebar.append(make("p","dbs-empty","No matching tables."));
+ if(!visibleTables().length)sidebar.append(make("p","dbs-empty","No matching tables."));
 }
-function cardElement(t){
- const card=make("button","dbs-glass-card");card.type="button";card.dataset.table=t.name;
- const head=make("div","dbs-glass-head");head.append(make("span","dbs-glass-glyph","▦"),make("strong","dbs-glass-title",t.name),make("small","dbs-glass-count",t.columns.length+" COL"));
- const fields=make("div","dbs-glass-fields");
- t.columns.slice(0,4).forEach(c=>{
-  const row=make("div","dbs-glass-row"),mark=c.primaryKey?"PK":c.foreignKey?"FK":isIndexed(t,c)?"IX":"";
-  row.append(make("span","dbs-glass-name",c.name),make("span","dbs-glass-type",c.type||"ANY"),make("span","dbs-glass-key "+mark.toLowerCase(),mark));fields.append(row);
+function rounded(ctx,x,y,w,h,r){
+ ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+function paintCard(n){
+ const {ctx,texture,table:t,canvas}=n;ctx.clearRect(0,0,TW,TH);ctx.save();
+ rounded(ctx,8,8,TW-16,TH-16,26);
+ const bg=ctx.createLinearGradient(0,0,0,TH);bg.addColorStop(0,"rgba(39,57,77,.98)");bg.addColorStop(.48,"rgba(17,31,48,.98)");bg.addColorStop(1,"rgba(8,19,33,.98)");
+ ctx.fillStyle=bg;ctx.fill();ctx.lineWidth=n.selected?5:2.5;ctx.strokeStyle=n.selected?"rgba(246,211,132,1)":"rgba(172,194,218,.56)";ctx.stroke();
+ rounded(ctx,10,10,TW-20,132,24);ctx.fillStyle=n.selected?"rgba(222,178,91,.25)":"rgba(125,154,186,.15)";ctx.fill();
+ ctx.fillStyle="#e8c576";ctx.beginPath();ctx.arc(67,76,30,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#172438";ctx.font="bold 38px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("▦",67,77);
+ ctx.textAlign="left";ctx.fillStyle="#f1f5fa";ctx.font="bold 39px Arial";ctx.fillText(t.name,120,75);
+ ctx.textAlign="right";ctx.fillStyle="#b9c8d9";ctx.font="bold 22px Arial";ctx.fillText(t.columns.length+" COLUMNS",976,77);
+ ctx.textAlign="left";ctx.fillStyle="#dabb79";ctx.font="bold 18px Arial";ctx.fillText(groupOf(t.name).toUpperCase(),122,112);
+ t.columns.slice(0,5).forEach((c,i)=>{
+  const y=194+i*78;ctx.fillStyle=i%2?"rgba(255,255,255,.025)":"rgba(255,255,255,.045)";ctx.fillRect(28,y-33,968,66);
+  ctx.textBaseline="middle";ctx.textAlign="left";ctx.fillStyle=c.primaryKey?"#f2d17d":c.foreignKey?"#c6b9ff":"#d5e0ec";ctx.font="bold 29px Arial";ctx.fillText(c.name.length>28?c.name.slice(0,26)+"…":c.name,49,y);
+  ctx.textAlign="right";ctx.fillStyle="#90a7bf";ctx.font="23px monospace";ctx.fillText((c.type||"ANY").slice(0,17),902,y);
+  const mark=c.primaryKey?"PK":c.foreignKey?"FK":isIndexed(t,c)?"IX":"";if(mark){ctx.fillStyle=c.primaryKey?"#f0ce7b":c.foreignKey?"#c3b5ff":"#74d6aa";ctx.font="bold 22px Arial";ctx.fillText(mark,970,y);}
+  ctx.strokeStyle="rgba(190,207,225,.12)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(34,y+34);ctx.lineTo(990,y+34);ctx.stroke();
  });
- card.append(head,fields);if(t.columns.length>4)card.append(make("div","dbs-glass-more","+"+(t.columns.length-4)+" MORE COLUMNS"));
- card.addEventListener("click",()=>selectTable(t,true));return card;
+ if(t.columns.length>5){ctx.textAlign="left";ctx.fillStyle="#95a9bf";ctx.font="bold 21px Arial";ctx.fillText("+"+(t.columns.length-5)+" MORE COLUMNS",48,590);}
+ ctx.restore();texture.needsUpdate=true;
 }
-function positionsForSchema(){
- const result=new Map(),small=viewport.clientWidth<760,byName=new Map(tables.map(t=>[t.name,t]));
- if(small){
-  const cols=2,stepX=285,stepY=205;
-  tables.forEach((t,i)=>{const row=Math.floor(i/cols),col=i%cols;result.set(t.name,new THREE.Vector3((col-(cols-1)/2)*stepX,(Math.ceil(tables.length/cols)-1)*stepY/2-row*stepY,(i%3-1)*28));});
-  return result;
- }
- if(byName.has("users"))result.set("users",new THREE.Vector3(0,0,0));
- const inner=["student_profiles","employer_profiles","vacancies","applications","colleges","notifications","messages","student_verification_requests"].filter(n=>byName.has(n));
- const outer=tables.map(t=>t.name).filter(n=>n!=="users"&&!inner.includes(n));
- const placeRing=(names,radius,offset,zShift)=>names.forEach((name,i)=>{
-  const angle=offset+(i/names.length)*Math.PI*2,lift=(i%3-1)*32;
-  result.set(name,new THREE.Vector3(Math.cos(angle)*radius,Math.sin(angle)*radius+lift,zShift+(i%2?36:-36)));
+function layoutPositions(){
+ const list=sortedTables(),cols=4,rows=Math.ceil(list.length/cols),map=new Map();
+ list.forEach((t,i)=>{
+  const row=Math.floor(i/cols),count=Math.min(cols,list.length-row*cols),col=i%cols;
+  map.set(t.name,new THREE.Vector3((col-(count-1)/2)*520,((rows-1)/2-row)*330,((i%3)-1)*42+(row%2?20:-20)));
  });
- placeRing(inner,560,-Math.PI/2,-40);placeRing(outer,800,-Math.PI/2+Math.PI/outer.length,30);
- tables.forEach((t,i)=>{if(!result.has(t.name)){const a=i/tables.length*Math.PI*2;result.set(t.name,new THREE.Vector3(Math.cos(a)*850,Math.sin(a)*850,0));}});
- return result;
+ return map;
 }
-function addBackground(){
- const stars=[],count=620;
- for(let i=0;i<count;i++){const angle=Math.random()*Math.PI*2,r=350+Math.random()*1450;stars.push(Math.cos(angle)*r,(Math.random()-.5)*1700,-150-Math.random()*900);}
- const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(stars,3));
- scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0x9db5d2,size:2.2,transparent:true,opacity:.42,sizeAttenuation:false})));
- const ring1=new THREE.Mesh(new THREE.TorusGeometry(265,1.2,8,160),new THREE.MeshBasicMaterial({color:0xd6ad5d,transparent:true,opacity:.33}));ring1.position.z=-80;scene.add(ring1);
- const ring2=new THREE.Mesh(new THREE.TorusGeometry(285,.55,6,160),new THREE.MeshBasicMaterial({color:0x6f8ca9,transparent:true,opacity:.2}));ring2.position.z=-92;scene.add(ring2);
- const core=new THREE.Mesh(new THREE.IcosahedronGeometry(12,2),new THREE.MeshStandardMaterial({color:0xe9c46f,emissive:0xb27b28,emissiveIntensity:.7,metalness:.7,roughness:.2}));core.position.set(0,0,-25);scene.add(core);
- const light=new THREE.PointLight(0xe8bd68,170,1350);light.position.set(0,0,120);scene.add(light);
- const fill=new THREE.PointLight(0x4d83b4,100,1400);fill.position.set(-500,300,180);scene.add(fill);
+function addStars(){
+ const data=[];for(let i=0;i<650;i++){const a=Math.random()*Math.PI*2,r=850+Math.random()*1500;data.push(Math.cos(a)*r,(Math.random()-.5)*1850,-300-Math.random()*600);}
+ const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(data,3));
+ scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xa9bfd8,size:2,transparent:true,opacity:.42,sizeAttenuation:false})));
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(245,1,8,150),new THREE.MeshBasicMaterial({color:0xd6ad5d,transparent:true,opacity:.18}));ring.position.z=-190;scene.add(ring);
+ const core=new THREE.Mesh(new THREE.IcosahedronGeometry(18,1),new THREE.MeshStandardMaterial({color:0xe3c477,emissive:0x926b32,emissiveIntensity:.55,metalness:.65,roughness:.25}));core.position.z=-180;scene.add(core);
+ const light=new THREE.PointLight(0xe6bd67,140,1700);light.position.set(0,180,300);scene.add(light);
+ const fill=new THREE.PointLight(0x4d83b4,90,1800);fill.position.set(-600,300,160);scene.add(fill);
 }
-function makeNode(t,position){
- const group=new THREE.Group();group.position.copy(position);group.userData.table=t;
- const glass=new THREE.Mesh(new THREE.BoxGeometry(260,174,18),new THREE.MeshPhysicalMaterial({color:0x8aa9c7,transparent:true,opacity:.13,metalness:.65,roughness:.16,clearcoat:.8,clearcoatRoughness:.12,depthWrite:false}));group.add(glass);
- const outline=new THREE.LineSegments(new THREE.EdgesGeometry(glass.geometry),new THREE.LineBasicMaterial({color:0xd9bd7e,transparent:true,opacity:.5}));group.add(outline);
- const halo=new THREE.Mesh(new THREE.TorusGeometry(150,1.15,6,80),new THREE.MeshBasicMaterial({color:0xd9b568,transparent:true,opacity:.35}));halo.position.z=-35;group.add(halo);
- const card=cardElement(t),label=new CSS2DObject(card);label.position.set(0,0,13);group.add(label);
- scene.add(group);nodes.set(t.name,{group,glass,outline,halo,label,card,position:position.clone(),table:t});
- const pick=new THREE.Mesh(new THREE.SphereGeometry(115,12,10),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));pick.position.copy(position);pick.userData.table=t;scene.add(pick);pickables.push(pick);
+function makeNode(t,pos){
+ const group=new THREE.Group();group.position.copy(pos);group.userData.table=t;
+ const backing=new THREE.Mesh(new THREE.BoxGeometry(W+12,H+12,15),new THREE.MeshPhysicalMaterial({color:0x88a5c1,transparent:true,opacity:.17,metalness:.55,roughness:.2,clearcoat:.9,depthWrite:true}));
+ backing.position.z=-3;group.add(backing);
+ const frame=new THREE.LineSegments(new THREE.EdgesGeometry(backing.geometry),new THREE.LineBasicMaterial({color:0xd9bd7e,transparent:true,opacity:.5}));frame.position.copy(backing.position);group.add(frame);
+ const canvas=document.createElement("canvas");canvas.width=TW;canvas.height=TH;const ctx=canvas.getContext("2d");
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+ const panel=new THREE.Mesh(new THREE.PlaneGeometry(W,H),new THREE.MeshBasicMaterial({map:texture,transparent:true,alphaTest:.04,depthTest:true,depthWrite:true,side:THREE.DoubleSide,toneMapped:false}));
+ panel.position.z=8;panel.userData.table=t;group.add(panel);
+ const halo=new THREE.Mesh(new THREE.TorusGeometry(245,1.5,7,88),new THREE.MeshBasicMaterial({color:0xdcb96d,transparent:true,opacity:.18,depthWrite:false}));halo.position.z=-13;group.add(halo);
+ const node={group,backing,frame,panel,halo,canvas,ctx,texture,table:t,position:pos.clone(),selected:false};
+ paintCard(node);scene.add(group);nodes.set(t.name,node);pickables.push(panel);
 }
-function addRelationship(from,to,field,index){
+function paintCard(n){paintCardTexture(n);}
+function paintCardTexture(n){paintCardCanvas(n);}
+function paintCardCanvas(n){
+ const {ctx,texture,table:t}=n;ctx.clearRect(0,0,TW,TH);ctx.save();rounded(ctx,8,8,TW-16,TH-16,26);
+ const bg=ctx.createLinearGradient(0,0,0,TH);bg.addColorStop(0,"rgba(39,57,77,.98)");bg.addColorStop(.48,"rgba(17,31,48,.98)");bg.addColorStop(1,"rgba(8,19,33,.98)");
+ ctx.fillStyle=bg;ctx.fill();ctx.lineWidth=n.selected?5:2.5;ctx.strokeStyle=n.selected?"rgba(246,211,132,1)":"rgba(172,194,218,.56)";ctx.stroke();
+ rounded(ctx,10,10,TW-20,132,24);ctx.fillStyle=n.selected?"rgba(222,178,91,.25)":"rgba(125,154,186,.15)";ctx.fill();
+ ctx.fillStyle="#e8c576";ctx.beginPath();ctx.arc(67,76,30,0,Math.PI*2);ctx.fill();ctx.fillStyle="#172438";ctx.font="bold 38px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("▦",67,77);
+ ctx.textAlign="left";ctx.fillStyle="#f1f5fa";ctx.font="bold 39px Arial";ctx.fillText(t.name,120,75);ctx.textAlign="right";ctx.fillStyle="#b9c8d9";ctx.font="bold 22px Arial";ctx.fillText(t.columns.length+" COLUMNS",976,77);
+ ctx.textAlign="left";ctx.fillStyle="#dabb79";ctx.font="bold 18px Arial";ctx.fillText(groupOf(t.name).toUpperCase(),122,112);
+ t.columns.slice(0,5).forEach((c,i)=>{const y=194+i*78;ctx.fillStyle=i%2?"rgba(255,255,255,.025)":"rgba(255,255,255,.045)";ctx.fillRect(28,y-33,968,66);ctx.textBaseline="middle";ctx.textAlign="left";ctx.fillStyle=c.primaryKey?"#f2d17d":c.foreignKey?"#c6b9ff":"#d5e0ec";ctx.font="bold 29px Arial";ctx.fillText(c.name.length>28?c.name.slice(0,26)+"…":c.name,49,y);ctx.textAlign="right";ctx.fillStyle="#90a7bf";ctx.font="23px monospace";ctx.fillText((c.type||"ANY").slice(0,17),902,y);const mark=c.primaryKey?"PK":c.foreignKey?"FK":isIndexed(t,c)?"IX":"";if(mark){ctx.fillStyle=c.primaryKey?"#f0ce7b":c.foreignKey?"#c3b5ff":"#74d6aa";ctx.font="bold 22px Arial";ctx.fillText(mark,970,y);}ctx.strokeStyle="rgba(190,207,225,.12)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(34,y+34);ctx.lineTo(990,y+34);ctx.stroke();});
+ if(t.columns.length>5){ctx.textAlign="left";ctx.fillStyle="#95a9bf";ctx.font="bold 21px Arial";ctx.fillText("+"+(t.columns.length-5)+" MORE COLUMNS",48,590);}ctx.restore();texture.needsUpdate=true;
+}
+function edgePoint(a,b){const dx=b.x-a.x,dy=b.y-a.y,s=1/Math.max(Math.abs(dx)/(W/2),Math.abs(dy)/(H/2),.0001);return new THREE.Vector3(a.x+dx*s,a.y+dy*s,a.z-34);}
+function addLink(from,to,field,index){
  const a=nodes.get(from)?.position,b=nodes.get(to)?.position;if(!a||!b)return;
- const mid=a.clone().lerp(b,.5);mid.x+=(index%2?1:-1)*85;mid.y+=60+(index%4)*22;mid.z+=100+(index%3)*22;
- const curve=new THREE.CatmullRomCurve3([a.clone(),mid,b.clone()]);
- const glow=new THREE.Mesh(new THREE.TubeGeometry(curve,42,5,7,false),new THREE.MeshBasicMaterial({color:0xd8ac54,transparent:true,opacity:.22,depthWrite:false}));
- const line=new THREE.Mesh(new THREE.TubeGeometry(curve,42,1.55,6,false),new THREE.MeshBasicMaterial({color:0xf0ce7c,transparent:true,opacity:.62,depthWrite:false}));
- const spark=new THREE.Mesh(new THREE.SphereGeometry(4.2,10,8),new THREE.MeshBasicMaterial({color:0xffe6a0,transparent:true,opacity:.9}));
- scene.add(glow,line,spark);edges.push({from,to,field,curve,glow,line,spark,phase:Math.random()*Math.PI*2});
+ const start=edgePoint(a,b),end=edgePoint(b,a),dx=end.x-start.x,dy=end.y-start.y,len=Math.hypot(dx,dy)||1,side=(index%2?1:-1)*(55+(index%3)*18);
+ const mid=new THREE.Vector3((start.x+end.x)/2-dy/len*side,(start.y+end.y)/2+dx/len*side,-115-(index%4)*12);
+ const curve=new THREE.QuadraticBezierCurve3(start,mid,end);
+ const glow=new THREE.Mesh(new THREE.TubeGeometry(curve,42,7,7,false),new THREE.MeshBasicMaterial({color:0xd7a94f,transparent:true,opacity:.18,depthWrite:false}));
+ const line=new THREE.Mesh(new THREE.TubeGeometry(curve,42,2,7,false),new THREE.MeshBasicMaterial({color:0xf0cf7e,transparent:true,opacity:.52,depthWrite:false}));
+ const spark=new THREE.Mesh(new THREE.SphereGeometry(5,10,8),new THREE.MeshBasicMaterial({color:0xffe6a3}));
+ scene.add(glow,line,spark);edges.push({from,to,field,curve,glow,line,spark,phase:Math.random()});
 }
-function resizeScene(){
- if(!renderer||!labelRenderer)return;
- const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight);
- camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false);labelRenderer.setSize(width,height);
-}
-function onCanvasPick(event){
- if(!renderer||!camera||!pickables.length)return;
- const rect=renderer.domElement.getBoundingClientRect();
- if(!rect.width||!rect.height)return;
- pointer.x=((event.clientX-rect.left)/rect.width)*2-1;
- pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
- raycaster.setFromCamera(pointer,camera);
- const hit=raycaster.intersectObjects(pickables,false)[0];
- if(hit&&hit.object.userData.table){
-  selectTable(hit.object.userData.table,true);
- }
-}
+function resizeScene(){if(!renderer)return;const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}
 function fitView(){
- if(!camera||!controls)return;
- const xs=[...positions.values()].map(p=>Math.abs(p.x)),ys=[...positions.values()].map(p=>Math.abs(p.y));
- const maxX=Math.max(250,...xs)+130,maxY=Math.max(250,...ys)+100,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
- const distance=Math.max(maxY/tan,maxX/(tan*camera.aspect))*1.12;
- camera.position.set(0,0,Math.max(1200,distance));controls.target.set(0,0,0);controls.update();set("dbx-zoom-label","FIT");
+ if(!camera||!controls||!positions.size)return;
+ const x=Math.max(...[...positions.values()].map(p=>Math.abs(p.x)))+W/2+28,y=Math.max(...[...positions.values()].map(p=>Math.abs(p.y)))+H/2+28;
+ const tan=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),aspect=viewport.clientWidth/Math.max(1,viewport.clientHeight);
+ const dist=Math.max(y/tan,x/(tan*Math.max(.5,aspect)))*1.14;
+ camera.position.set(0,0,Math.max(1450,dist));controls.target.set(0,0,0);controls.update();set("dbx-zoom-label","FIT");
 }
-function focusNode(name){const n=nodes.get(name);if(!n||!controls)return;const offset=camera.position.clone().sub(controls.target);controls.target.copy(n.position);camera.position.copy(n.position.clone().add(offset));controls.update();}
+function focusNode(name){const n=nodes.get(name);if(!n||!controls)return;const d=camera.position.distanceTo(controls.target),dir=camera.position.clone().sub(controls.target).normalize();controls.target.copy(n.position);camera.position.copy(n.position.clone().add(dir.multiplyScalar(d)));controls.update();}
 function updateSelection(){
  for(const [name,n] of nodes){
-  const active=selected?.name===name;
-  const connected=!!selected&&edges.some(e=>(e.from===selected.name&&e.to===name)||(e.to===selected.name&&e.from===name));
-  n.card.classList.toggle("selected",active);n.card.classList.toggle("dimmed",!!selected&&!active&&!connected);
-  n.glass.material.emissive.set(active?0x725421:connected?0x334052:0x000000);
-  n.glass.material.emissiveIntensity=active?0.45:connected?0.18:0;
-  n.outline.material.opacity=active?0.98:connected?0.72:0.34;n.halo.material.opacity=active?0.9:connected?0.5:0.19;
+  const active=selected?.name===name,linked=!!selected&&edges.some(e=>(e.from===selected.name&&e.to===name)||(e.to===selected.name&&e.from===name));
+  n.selected=active;paintCard(n);n.frame.material.opacity=active?.98:linked?.75:.28;n.halo.material.opacity=active?.82:linked?.4:.13;
+  n.backing.material.emissive.set(active?0x6a4b1d:linked?0x1e3042:0);n.backing.material.emissiveIntensity=active?.35:linked?.12:0;
  }
- for(const e of edges){
-  const active=!!selected&&(e.from===selected.name||e.to===selected.name);
-  e.glow.material.opacity=active?0.42:selected?0.08:0.19;e.line.material.opacity=active?1:selected?0.1:0.58;e.spark.visible=active||!selected;
- }
+ for(const e of edges){const active=!!selected&&(e.from===selected.name||e.to===selected.name);e.glow.material.opacity=active?.4:selected?.035:.13;e.line.material.opacity=active?.98:selected?.08:.43;e.spark.visible=active||!selected;}
 }
-function applySearch(){
- const visible=new Set(getVisible().map(t=>t.name));
- for(const [name,n] of nodes){const show=visible.has(name);n.group.visible=show;n.card.style.visibility=show?"visible":"hidden";}
- for(const e of edges){const show=visible.has(e.from)&&visible.has(e.to);e.glow.visible=show;e.line.visible=show;e.spark.visible=show;}
- set("dbx-visible-count",visible.size+" / "+tables.length+" TABLES");renderSidebar();updateSelection();
+function renderSidebar(){
+ sidebar.replaceChildren();let last="";
+ for(const t of visibleTables()){const g=groupOf(t.name);if(g!==last){sidebar.append(make("div","dbs-group-label",g));last=g;}const b=make("button","dbs-table-link"+(selected?.name===t.name?" active":""));b.type="button";b.append(make("span","dbs-table-glyph","▦"),make("span","",t.name),make("small","",String(t.columns.length)));b.addEventListener("click",()=>selectTable(t,true));sidebar.append(b);}
+ if(!visibleTables().length)sidebar.append(make("p","dbs-empty","No matching tables."));
 }
+function applySearch(){const names=new Set(visibleTables().map(t=>t.name));for(const [name,n] of nodes)n.group.visible=names.has(name);for(const e of edges){const show=names.has(e.from)&&names.has(e.to);e.glow.visible=show;e.line.visible=show;e.spark.visible=show;}set("dbx-visible-count",names.size+" / "+tables.length+" TABLES");renderSidebar();updateSelection();}
 function renderInspector(t){
  set("dbx-detail-name",t.name);set("dbx-object-badge","TABLE");set("dbx-detail-summary",groupOf(t.name)+" · "+t.columns.length+" columns");
  set("dbx-column-count",t.columns.length);set("dbx-fk-count",t.foreignKeys.length);set("dbx-index-count",t.indexes.length);set("dbx-column-label",t.columns.length+" fields");
- const columnBox=$("dbx-columns");columnBox.replaceChildren();
- t.columns.forEach(c=>{
-  const row=make("div","dbs-column"),left=make("div"),marker=c.primaryKey?"PRIMARY KEY":c.foreignKey?"FOREIGN KEY":isIndexed(t,c)?"INDEXED":"";
-  left.append(make("strong",c.primaryKey?"dbs-key":c.foreignKey?"dbs-fk":"",c.name),make("small","",[(c.notNull?"NOT NULL":""),c.default!==null?"DEFAULT "+c.default:"",marker].filter(Boolean).join(" · ")||"Nullable"));
-  row.append(left,make("code","",c.type||"ANY"));columnBox.append(row);
- });
- const rels=relationList(t);set("dbx-rel-label",rels.length+" links");const relBox=$("dbx-relations");relBox.replaceChildren();
- if(!rels.length)relBox.append(make("p","dbs-empty","No foreign-key relationships."));
- rels.forEach(r=>{const row=make("div","dbs-relation");row.append(make("strong","",r.direction+": "+r.column+" → "+r.target+"."+r.targetColumn),make("span","", "ON DELETE "+r.onDelete));relBox.append(row);});
- const indexBox=$("dbx-indexes");indexBox.replaceChildren();
- if(!t.indexes.length)indexBox.append(make("p","dbs-empty","No indexes defined."));
- t.indexes.forEach(ix=>{const row=make("div","dbs-index");row.append(make("strong","",ix.name),make("span","",(ix.unique?"UNIQUE · ":"")+ix.columns.join(", ")));indexBox.append(row);});
+ const box=$("dbx-columns");box.replaceChildren();
+ t.columns.forEach(c=>{const row=make("div","dbs-column"),left=make("div"),mark=c.primaryKey?"PRIMARY KEY":c.foreignKey?"FOREIGN KEY":isIndexed(t,c)?"INDEXED":"";left.append(make("strong",c.primaryKey?"dbs-key":c.foreignKey?"dbs-fk":"",c.name),make("small","",[(c.notNull?"NOT NULL":""),c.default!==null?"DEFAULT "+c.default:"",mark].filter(Boolean).join(" · ")||"Nullable"));row.append(left,make("code","",c.type||"ANY"));box.append(row);});
+ const rels=relationList(t);set("dbx-rel-label",rels.length+" links");const rb=$("dbx-relations");rb.replaceChildren();if(!rels.length)rb.append(make("p","dbs-empty","No foreign-key relationships."));
+ rels.forEach(r=>{const row=make("div","dbs-relation");row.append(make("strong","",r.direction+": "+r.column+" → "+r.target+"."+r.targetColumn),make("span","","ON DELETE "+r.onDelete));rb.append(row);});
+ const ib=$("dbx-indexes");ib.replaceChildren();if(!t.indexes.length)ib.append(make("p","dbs-empty","No indexes defined."));t.indexes.forEach(ix=>{const row=make("div","dbs-index");row.append(make("strong","",ix.name),make("span","",(ix.unique?"UNIQUE · ":"")+ix.columns.join(", ")));ib.append(row);});
  renderSidebar();updateSelection();
 }
 function selectTable(t,focus){selected=t;renderInspector(t);if(focus)focusNode(t.name);}
+function onCanvasPointerDown(e){press={x:e.clientX,y:e.clientY};}
+function onCanvasPointerUp(e){
+ if(!press)return;const moved=Math.hypot(e.clientX-press.x,e.clientY-press.y);press=null;if(moved>6||!renderer)return;
+ const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;
+ raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(pickables,false)[0];if(hit?.object?.userData?.table)selectTable(hit.object.userData.table,true);
+}
 function renderCatalog(){
  const host=$("dbx-catalog-view");host.replaceChildren();const grid=make("div","dbs-catalog-grid");
- getVisible().forEach(t=>{const b=make("button","dbs-catalog-card"+(selected?.name===t.name?" active":""));b.type="button";b.append(make("b","",t.name),make("span","",groupOf(t.name)),make("span","",t.columns.length+" columns · "+t.foreignKeys.length+" relations"));b.addEventListener("click",()=>{selectTable(t,false);setMode("3d");});grid.append(b);});
- if(!getVisible().length)grid.append(make("p","dbs-empty","No matching tables."));host.append(grid);
+ visibleTables().forEach(t=>{const b=make("button","dbs-catalog-card"+(selected?.name===t.name?" active":""));b.type="button";b.append(make("b","",t.name),make("span","",groupOf(t.name)),make("span","",t.columns.length+" columns · "+t.foreignKeys.length+" relations"));b.addEventListener("click",()=>{selectTable(t,false);setMode("3d");});grid.append(b);});
+ if(!visibleTables().length)grid.append(make("p","dbs-empty","No matching tables."));host.append(grid);
 }
 function renderSQL(){const host=$("dbx-sql-view");host.replaceChildren();if(!selected){host.append(make("div","dbs-sql-empty","Select a table first."));return;}host.append(make("pre","",selected.sql||"-- No CREATE TABLE statement available."));}
 function setMode(next){
@@ -176,16 +168,25 @@ function setMode(next){
  set("dbx-view-title",next==="3d"?"3D RELATIONSHIP MAP":next==="catalog"?"TABLE CATALOG":"SQL DEFINITION");$("dbx-canvas-hint").hidden=next!=="3d";
  if(next==="catalog")renderCatalog();if(next==="sql")renderSQL();if(next==="3d"){resizeScene();updateSelection();}
 }
-function animate(){
- raf=requestAnimationFrame(animate);const time=performance.now()*.00035;
- for(const [name,n] of nodes){n.group.rotation.z=.012*Math.sin(time*1.3+name.length);n.halo.rotation.z=time*.22;}
- for(const e of edges){const t=(time*.55+e.phase)%1;e.spark.position.copy(e.curve.getPoint(t));}
- controls.update();renderer.render(scene,camera);labelRenderer.render(scene,camera);
+function animate(){raf=requestAnimationFrame(animate);const time=performance.now()*.0003;for(const e of edges){const p=(time*.34+e.phase)%1;e.spark.position.copy(e.curve.getPoint(p));}controls.update();renderer.render(scene,camera);}
+function buildScene(){
+ if(renderer){cancelAnimationFrame(raf);controls?.dispose();observer?.disconnect();renderer.dispose();renderer.domElement.remove();}
+ nodes.clear();edges.length=0;pickables.length=0;scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x08111e,.00008);
+ camera=new THREE.PerspectiveCamera(42,1,1,9000);camera.position.set(0,0,2500);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.domElement.className="dbs-webgl";root.replaceChildren(renderer.domElement);
+ controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=1000;controls.maxDistance=7000;controls.target.set(0,0,0);
+ scene.add(new THREE.AmbientLight(0xb5c8dc,1.6));const key=new THREE.DirectionalLight(0xffffff,2);key.position.set(-450,650,1000);scene.add(key);
+ const gold=new THREE.PointLight(0xe6bd67,125,1800);gold.position.set(0,250,360);scene.add(gold);addStars();
+ positions=layoutPositions();tables.forEach(t=>makeNode(t,positions.get(t.name)));
+ let index=0;tables.forEach(t=>t.foreignKeys.forEach(f=>addLink(t.name,f.table,f.from,index++)));
+ resizeScene();fitView();observer=new ResizeObserver(resizeScene);observer.observe(viewport);
+ renderer.domElement.addEventListener("pointerdown",onCanvasPointerDown);renderer.domElement.addEventListener("pointerup",onCanvasPointerUp);
+ animate();applySearch();
 }
-function bindButtons(){
+function bind(){
  $("dbx-diagram").addEventListener("click",()=>setMode("3d"));$("dbx-catalog").addEventListener("click",()=>setMode("catalog"));$("dbx-ddl").addEventListener("click",()=>setMode("sql"));$("dbx-fit").addEventListener("click",fitView);
- $("dbx-zoom-in").addEventListener("click",()=>{camera.position.z=Math.max(850,camera.position.z*.88);controls.update();set("dbx-zoom-label",Math.round(1780/camera.position.z*100)+"%");});
- $("dbx-zoom-out").addEventListener("click",()=>{camera.position.z=Math.min(4000,camera.position.z*1.12);controls.update();set("dbx-zoom-label",Math.round(1780/camera.position.z*100)+"%");});
+ $("dbx-zoom-in").addEventListener("click",()=>{const d=camera.position.distanceTo(controls.target),v=camera.position.clone().sub(controls.target).normalize();camera.position.copy(controls.target.clone().add(v.multiplyScalar(Math.max(1000,d*.88))));set("dbx-zoom-label","ZOOM");});
+ $("dbx-zoom-out").addEventListener("click",()=>{const d=camera.position.distanceTo(controls.target),v=camera.position.clone().sub(controls.target).normalize();camera.position.copy(controls.target.clone().add(v.multiplyScalar(Math.min(7000,d*1.12))));set("dbx-zoom-label","ZOOM");});
  search.addEventListener("input",()=>{query=search.value;if(mode==="3d")applySearch();else if(mode==="catalog")renderCatalog();else renderSQL();});
 }
 async function load(){
@@ -193,26 +194,8 @@ async function load(){
   const response=await fetch("/api/database/schema",{headers:{Accept:"application/json"},cache:"no-store"});if(!response.ok)throw new Error("Schema API returned HTTP "+response.status);
   const payload=await response.json();tables=(payload.tables||[]).map(t=>({...t,columns:(t.columns||[]).map(c=>({...c,foreignKey:(t.foreignKeys||[]).some(f=>f.from===c.name)})),foreignKeys:t.foreignKeys||[],indexes:t.indexes||[]}));
   if(!tables.length)throw new Error("No tables found in the configured SQLite database.");
-  renderMetrics();renderSidebar();positions=positionsForSchema();buildScene();loading.hidden=true;selected=tables.find(t=>t.name==="users")||tables[0];renderInspector(selected);setMode("3d");fitView();
+  renderMetrics();renderSidebar();buildScene();loading.hidden=true;selected=tables.find(t=>t.name==="users")||tables[0];renderInspector(selected);setMode("3d");fitView();
  }catch(error){loading.hidden=true;errorBox.hidden=false;errorBox.textContent="Unable to build schema visualization: "+error.message;console.error("Database Universe:",error);}
 }
-function buildScene(){
- if(renderer){cancelAnimationFrame(raf);controls?.dispose();observer?.disconnect();renderer.dispose();labelRenderer?.domElement.remove();renderer.domElement.remove();}
- nodes.clear();edges.length=0;pickables.length=0;
- scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x08111e,.00012);
- camera=new THREE.PerspectiveCamera(42,1,1,5000);camera.position.set(0,0,2200);camera.lookAt(0,0,0);
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.16;renderer.domElement.className="dbs-webgl";
- root.replaceChildren(renderer.domElement);
- labelRenderer=new CSS2DRenderer();labelRenderer.domElement.className="dbs-label-layer";root.append(labelRenderer.domElement);
- controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.055;controls.enablePan=true;controls.minDistance=850;controls.maxDistance=4000;controls.target.set(0,0,0);
- scene.add(new THREE.AmbientLight(0xaec5df,1.45));
- const key=new THREE.DirectionalLight(0xffffff,2.1);key.position.set(-360,620,900);scene.add(key);
- const gold=new THREE.PointLight(0xe6bd67,120,1400);gold.position.set(0,320,400);scene.add(gold);
- addBackground();
- tables.forEach(t=>makeNode(t,positions.get(t.name)));
- let edgeIndex=0;tables.forEach(t=>t.foreignKeys.forEach(f=>addRelationship(t.name,f.table,f.from,edgeIndex++)));
- resizeScene();observer=new ResizeObserver(resizeScene);observer.observe(viewport);
- renderer.domElement.addEventListener("pointerdown",onCanvasPick);animate();applySearch();
-}
-bindButtons();load();
+bind();load();
 })();
