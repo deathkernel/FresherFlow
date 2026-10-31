@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}FresherFlow Database Explorer{% endblock %}
+{% block body %}
+<section class="dbx-page">
+  <header class="dbx-header">
+    <div>
+      <p class="dbx-kicker">DATA SYSTEMS / 02</p>
+      <h1>Database <span>Explorer</span></h1>
+      <p>Explore the live SQLite schema, columns, keys, indexes and foreign-key relationships. No row data is exposed.</p>
+    </div>
+    <nav class="dbx-nav"><a href="{{ url_for('platform.architecture_visualizer') }}">Architecture 3D</a><a class="active" href="{{ url_for('platform.database_visualizer') }}">Database</a></nav>
+  </header>
+  <div class="dbx-toolbar">
+    <label class="dbx-search"><span>⌕</span><input id="dbx-search" type="search" placeholder="Search tables or columns…" autocomplete="off"></label>
+    <div class="dbx-toolbar-actions"><button id="dbx-3d" class="active" type="button">3D graph</button><button id="dbx-list" type="button">Table list</button><button id="dbx-reset" type="button">Reset view</button></div>
+    <div class="dbx-stats"><strong id="dbx-table-count">—</strong><span>tables</span><i></i><strong id="dbx-relation-count">—</strong><span>relations</span></div>
+  </div>
+  <div class="dbx-layout">
+    <main class="dbx-main">
+      <div class="dbx-stage-wrap">
+        <div class="dbx-stage" id="dbx-stage">
+          <div class="dbx-loading" id="dbx-loading">Reading SQLite schema…</div>
+          <div class="dbx-error" id="dbx-error" hidden></div>
+          <div id="dbx-graph" class="dbx-graph"></div>
+          <div class="dbx-hint" id="dbx-hint">Drag to rotate · Scroll to zoom · Select a table to inspect</div>
+        </div>
+        <div class="dbx-legend"><span><i class="dbx-dot table"></i>Table</span><span><i class="dbx-dot primary"></i>Primary key</span><span><i class="dbx-dot foreign"></i>Foreign key</span><span><i class="dbx-dot link"></i>Relationship</span></div>
+      </div>
+      <div class="dbx-table-strip"><div><b>SCHEMA TABLES</b><span>Choose a table to focus its relationships</span></div><div id="dbx-table-pills"></div></div>
+    </main>
+    <aside class="dbx-inspector" aria-live="polite">
+      <p class="dbx-kicker">TABLE INSPECTOR</p>
+      <h2 id="dbx-detail-name">Select a table</h2>
+      <p id="dbx-detail-summary">Select a node in the graph or a table below to inspect its schema.</p>
+      <div class="dbx-detail-stats"><div><strong id="dbx-column-count">—</strong><span>COLUMNS</span></div><div><strong id="dbx-fk-count">—</strong><span>FOREIGN KEYS</span></div><div><strong id="dbx-index-count">—</strong><span>INDEXES</span></div></div>
+      <div class="dbx-section"><div class="dbx-section-head">COLUMNS <span id="dbx-column-label"></span></div><div id="dbx-columns" class="dbx-columns"><p class="dbx-muted">No table selected</p></div></div>
+      <div class="dbx-section"><div class="dbx-section-head">RELATIONSHIPS</div><div id="dbx-relations" class="dbx-relations"><p class="dbx-muted">No table selected</p></div></div>
+      <div class="dbx-section"><div class="dbx-section-head">INDEXES</div><div id="dbx-indexes" class="dbx-indexes"><p class="dbx-muted">No table selected</p></div></div>
+    </aside>
+  </div>
+  <footer class="dbx-footer">Live schema introspection uses SQLite metadata (sqlite_master and PRAGMA). Table records, emails, passwords and other user data are never returned.</footer>
+</section>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/database.css') }}">
+<script type="module" src="{{ url_for('static', filename='js/database.js') }}"></script>
+{% endblock %}
