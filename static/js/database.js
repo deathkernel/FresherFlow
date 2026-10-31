@@ -1,76 +1,102 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
-import { CSS2DRenderer, CSS2DObject } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js/+esm";
-
-const stage=document.getElementById("dbx-stage");
-const graph=document.getElementById("dbx-graph");
-const loading=document.getElementById("dbx-loading");
-const errorBox=document.getElementById("dbx-error");
-const search=document.getElementById("dbx-search");
-const tableCount=document.getElementById("dbx-table-count");
-const relationCount=document.getElementById("dbx-relation-count");
-const pills=document.getElementById("dbx-table-pills");
-const nodesByName=new Map();
-let tables=[],selected=null,view="3d",query="";
-let renderer,labels,scene,camera,controls,raf=0;
-const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),pickables=[];
-const palette={table:0x38bdf8,selected:0xfbbf24,linked:0xa78bfa};
-const esc=s=>String(s??"");
-function setText(id,value){document.getElementById(id).textContent=value;}
-function el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;}
-function matching(t){const q=query.trim().toLowerCase();return !q||t.name.toLowerCase().includes(q)||t.columns.some(c=>c.name.toLowerCase().includes(q)||c.type.toLowerCase().includes(q));}
-function relationships(t){return t.foreignKeys.map(f=>({from:t.name,column:f.from,to:f.table,targetColumn:f.to,onDelete:f.onDelete}));}
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+const graph=$("dbx-graph"),stage=$("dbx-stage"),loading=$("dbx-loading"),errorBox=$("dbx-error"),search=$("dbx-search");
+let tables=[],selected=null,mode="er",query="",resizeObserver;
+const esc=v=>String(v??"");
+const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
+const set=(id,value)=>{$(id).textContent=value;};
+const relCount=()=>tables.reduce((n,t)=>n+t.foreignKeys.length,0);
+function filtered(){const q=query.trim().toLowerCase();return tables.filter(t=>!q||t.name.toLowerCase().includes(q)||t.columns.some(c=>c.name.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)));}
+function isIndexed(t,c){return t.indexes.some(i=>i.columns.includes(c.name));}
+function renderMetrics(){
+ set("dbx-table-count",tables.length);set("dbx-relation-count",relCount());
+ set("dbx-total-columns",tables.reduce((n,t)=>n+t.columns.length,0));
+ set("dbx-total-indexes",tables.reduce((n,t)=>n+t.indexes.length,0));
+}
+function fieldRow(t,c){
+ const row=make("div","dbx-er-field"),name=make("span","dbx-er-field-name",c.name),type=make("span","dbx-er-field-type",c.type||"ANY"),badge=make("span","dbx-field-badge");
+ if(c.primaryKey){badge.className+=" pk";badge.textContent="PK";}
+ else if(c.foreignKey){badge.className+=" fk";badge.textContent="FK";}
+ else if(isIndexed(t,c)){badge.className+=" ix";badge.textContent="IX";}
+ row.append(name,type,badge);return row;
+}
+function card(t){
+ const article=make("article","dbx-er-card"+(selected?.name===t.name?" selected":""));
+ article.dataset.table=t.name;article.tabIndex=0;article.setAttribute("role","button");article.setAttribute("aria-label","Inspect table "+t.name);
+ const head=make("div","dbx-er-card-head");head.append(make("span","dbx-er-table-icon","▦"),make("strong","",t.name),make("small","",t.columns.length+" COL"));
+ const fields=make("div","dbx-er-fields"),shown=t.columns.slice(0,8);
+ shown.forEach(c=>fields.append(fieldRow(t,c)));
+ article.append(head,fields);
+ if(t.columns.length>shown.length)article.append(make("div","dbx-er-more","+"+(t.columns.length-shown.length)+" more columns"));
+ article.addEventListener("click",()=>inspect(t));article.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();inspect(t);}});
+ return article;
+}
+function drawEdges(grid,visible){
+ grid.querySelector(".dbx-er-svg")?.remove();
+ const width=grid.scrollWidth,height=grid.scrollHeight;
+ const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+ svg.setAttribute("class","dbx-er-svg");svg.setAttribute("width",width);svg.setAttribute("height",height);svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
+ const defs=document.createElementNS(svg.namespaceURI,"defs"),marker=document.createElementNS(svg.namespaceURI,"marker");
+ marker.setAttribute("id","dbx-arrow");marker.setAttribute("viewBox","0 0 10 10");marker.setAttribute("refX","9");marker.setAttribute("refY","5");marker.setAttribute("markerWidth","5");marker.setAttribute("markerHeight","5");marker.setAttribute("orient","auto-start-reverse");
+ const arrow=document.createElementNS(svg.namespaceURI,"path");arrow.setAttribute("d","M 0 0 L 10 5 L 0 10 z");arrow.setAttribute("fill","#9ba8bc");marker.append(arrow);defs.append(marker);svg.append(defs);
+ const rect=grid.getBoundingClientRect(),byName=new Map([...grid.querySelectorAll(".dbx-er-card")].map(el=>[el.dataset.table,el]));
+ for(const t of visible){const from=byName.get(t.name);if(!from)continue;
+  for(const fk of t.foreignKeys){const to=byName.get(fk.table);if(!to)continue;
+   const a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
+   const x1=a.left-rect.left+a.width/2,y1=a.top-rect.top+a.height/2;
+   const x2=b.left-rect.left+b.width/2,y2=b.top-rect.top+b.height/2;
+   const dx=x2-x1,dy=y2-y1;const bend=Math.max(26,Math.min(90,Math.abs(dx)*.18));
+   const path=document.createElementNS(svg.namespaceURI,"path");
+   path.setAttribute("class","dbx-er-edge");
+   path.setAttribute("d",`M ${x1} ${y1} C ${x1+Math.sign(dx||1)*bend} ${y1}, ${x2-Math.sign(dx||1)*bend} ${y2}, ${x2} ${y2}`);
+   path.setAttribute("marker-end","url(#dbx-arrow)");
+   if(selected&&(selected.name===t.name||selected.name===fk.table))path.setAttribute("style","stroke:#7669e8;stroke-width:2.5");
+   svg.append(path);
+  }
+ }
+ grid.prepend(svg);
+}
+function renderER(){
+ graph.replaceChildren();const visible=filtered();set("dbx-visible-count",visible.length+" of "+tables.length+" tables");
+ if(!visible.length){graph.append(make("div","dbx-empty","No tables or columns match your search."));return;}
+ const grid=make("div","dbx-er-grid");visible.forEach(t=>grid.append(card(t)));graph.append(grid);
+ requestAnimationFrame(()=>drawEdges(grid,visible));
+}
+function renderList(){
+ graph.replaceChildren();const visible=filtered();set("dbx-visible-count",visible.length+" of "+tables.length+" tables");
+ if(!visible.length){graph.append(make("div","dbx-empty","No tables or columns match your search."));return;}
+ const list=make("div","dbx-list-view");
+ visible.forEach(t=>{const b=make("button","dbx-list-card"+(selected?.name===t.name?" active":""));b.type="button";b.append(make("strong","",t.name),make("span","",t.columns.length+" columns · "+t.foreignKeys.length+" foreign keys · "+t.indexes.length+" indexes"));b.addEventListener("click",()=>inspect(t));list.append(b);});
+ graph.append(list);
+}
+function render(){if(mode==="er")renderER();else renderList();}
 function inspect(t){
- selected=t;setText("dbx-detail-name",t.name);setText("dbx-detail-summary",t.columns.length+" columns · "+t.foreignKeys.length+" foreign keys · "+t.indexes.length+" indexes");
- setText("dbx-column-count",t.columns.length);setText("dbx-fk-count",t.foreignKeys.length);setText("dbx-index-count",t.indexes.length);setText("dbx-column-label",t.columns.length+" fields");
- const colBox=document.getElementById("dbx-columns");colBox.replaceChildren();
- for(const c of t.columns){const row=el("div","dbx-column");const left=el("div");const name=el("strong",c.primaryKey?"dbx-key":c.foreignKey?"dbx-fk":"",c.name+(c.primaryKey?"  ◆":"")+(c.foreignKey?"  ↗":""));const meta=el("small","",[(c.notNull?"NOT NULL":""),c.default!==null?"DEFAULT "+c.default:""].filter(Boolean).join(" · ")||"nullable");left.append(name,meta);row.append(left,el("code","",c.type));colBox.append(row);}
- const relBox=document.getElementById("dbx-relations");relBox.replaceChildren();
- const rels=relationships(t);if(!rels.length)relBox.append(el("p","dbx-muted","No foreign-key relationships declared."));
- for(const f of rels){const row=el("div","dbx-relation");row.append(el("strong","",f.column+" → "+f.to+"."+f.targetColumn),el("div","", "ON DELETE "+f.onDelete));relBox.append(row);}
- const indexBox=document.getElementById("dbx-indexes");indexBox.replaceChildren();
- if(!t.indexes.length)indexBox.append(el("p","dbx-muted","No indexes found."));
- for(const ix of t.indexes){const row=el("div","dbx-index");row.append(el("strong","",ix.name),el("div","",(ix.unique?"UNIQUE · ":"")+ix.columns.join(", ")));indexBox.append(row);}
- pills.querySelectorAll(".dbx-pill").forEach(p=>p.classList.toggle("active",p.dataset.table===t.name));
- refreshNodeStyles();
+ selected=t;set("dbx-detail-name",t.name);set("dbx-detail-summary",t.columns.length+" columns · "+t.foreignKeys.length+" outgoing relationships · "+t.indexes.length+" indexes");
+ set("dbx-column-count",t.columns.length);set("dbx-fk-count",t.foreignKeys.length);set("dbx-index-count",t.indexes.length);set("dbx-column-label",t.columns.length+" fields");
+ const columns=$("dbx-columns");columns.replaceChildren();
+ t.columns.forEach(c=>{const row=make("div","dbx-column"),left=make("div"),title=make("strong",c.primaryKey?"dbx-key":c.foreignKey?"dbx-fk":"",c.name),meta=make("small","",[(c.notNull?"NOT NULL":""),c.default!==null?"DEFAULT "+c.default:"",isIndexed(t,c)?"INDEXED":""].filter(Boolean).join(" · ")||"Nullable");left.append(title,meta);row.append(left,make("code","",c.type||"ANY"));columns.append(row);});
+ const rel=$("dbx-relations");rel.replaceChildren();set("dbx-rel-label",t.foreignKeys.length+" links");
+ if(!t.foreignKeys.length)rel.append(make("p","dbx-muted","No outgoing foreign keys."));
+ t.foreignKeys.forEach(f=>{const row=make("div","dbx-relation");const strong=make("strong","",f.from+"  →  "+f.table+"."+f.to);const detail=make("span","", "ON DELETE "+f.onDelete+" · ON UPDATE "+f.onUpdate);row.append(strong,detail);rel.append(row);});
+ const indexes=$("dbx-indexes");indexes.replaceChildren();
+ if(!t.indexes.length)indexes.append(make("p","dbx-muted","No indexes defined."));
+ t.indexes.forEach(ix=>{const row=make("div","dbx-index");row.append(make("strong","",ix.name),make("span","",(ix.unique?"UNIQUE · ":"")+ix.columns.join(", ")));indexes.append(row);});
+ render();
 }
-function makeLabel(name){const d=el("div","dbx-node-label",name);return new CSS2DObject(d);}
-function buildScene(){
- if(renderer){cancelAnimationFrame(raf);controls?.dispose();renderer.dispose();labels?.domElement.remove();renderer.domElement.remove();}
- graph.replaceChildren();scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x081525,.009);
- camera=new THREE.PerspectiveCamera(48,1,.1,500);camera.position.set(0,22,37);
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;graph.append(renderer.domElement);
- labels=new CSS2DRenderer();labels.domElement.className="dbx-label-layer";graph.append(labels.domElement);
- controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.minDistance=9;controls.maxDistance=90;
- scene.add(new THREE.AmbientLight(0xa8c9ed,1.7));const light=new THREE.DirectionalLight(0xffffff,2.1);light.position.set(12,22,15);scene.add(light);
- const rim=new THREE.PointLight(0x38bdf8,38,90);rim.position.set(-18,6,-15);scene.add(rim);
- const count=tables.length, radius=Math.max(11,Math.min(25,count*1.05));nodesByName.clear();pickables.length=0;
- const positions=new Map();
- tables.forEach((t,i)=>{const angle=(i/count)*Math.PI*2-Math.PI/2;const ring= i%3;const r=radius+(ring-1)*3;positions.set(t.name,new THREE.Vector3(Math.cos(angle)*r,((i%4)-1.5)*1.6,Math.sin(angle)*r));});
- const sphere=new THREE.SphereGeometry(1,28,22);
- tables.forEach(t=>{const pos=positions.get(t.name),group=new THREE.Group();group.position.copy(pos);group.userData.table=t;
-  const hasPk=t.columns.some(c=>c.primaryKey),color=hasPk?palette.table:0x818cf8;
-  const glow=new THREE.Mesh(new THREE.SphereGeometry(1.45,20,16),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.10,depthWrite:false}));group.add(glow);
-  const mesh=new THREE.Mesh(sphere,new THREE.MeshStandardMaterial({color,roughness:.27,metalness:.18,emissive:color,emissiveIntensity:.23}));mesh.scale.setScalar(Math.min(1.5,.82+t.columns.length*.035));mesh.userData.table=t;mesh.castShadow=true;group.add(mesh);pickables.push(mesh);
-  const ringMesh=new THREE.Mesh(new THREE.TorusGeometry(1.22,.025,8,48),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.55}));ringMesh.rotation.x=Math.PI/2.2;group.add(ringMesh);group.add(makeLabel(t.name));scene.add(group);nodesByName.set(t.name,group);
- });
- const edgeMat=new THREE.LineBasicMaterial({color:0x7893b4,transparent:true,opacity:.55});
- tables.forEach(t=>t.foreignKeys.forEach(f=>{const a=positions.get(t.name),b=positions.get(f.table);if(!b)return;const mid=a.clone().lerp(b,.5);mid.y+=2.5;const curve=new THREE.QuadraticBezierCurve3(a,mid,b);scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),edgeMat));}));
- const grid=new THREE.GridHelper(radius*3,Math.max(12,count),0x27415e,0x142a42);grid.position.y=-8;grid.material.transparent=true;grid.material.opacity=.3;scene.add(grid);
- renderer.domElement.addEventListener("pointerdown",onPick);resize();animate();refreshNodeStyles();
+function setMode(next){mode=next;$("dbx-3d").classList.toggle("active",next==="er");$("dbx-list").classList.toggle("active",next==="list");set("dbx-view-title",next==="er"?"ENTITY RELATIONSHIP DIAGRAM":"DATABASE TABLE CATALOG");render();}
+async function load(){
+ try{
+  const response=await fetch("/api/database/schema",{headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("Schema API returned HTTP "+response.status);
+  const payload=await response.json();tables=(payload.tables||[]).map(t=>({...t,columns:(t.columns||[]).map(c=>({...c,foreignKey:(t.foreignKeys||[]).some(f=>f.from===c.name)}))}));
+  renderMetrics();loading.hidden=true;
+  if(!tables.length)throw new Error("No tables found in the configured SQLite database.");
+  setMode("er");inspect(tables[0]);
+ }catch(error){loading.hidden=true;errorBox.hidden=false;errorBox.textContent="Unable to read database schema: "+error.message;console.error("Database Studio:",error);}
 }
-function onPick(e){const r=renderer.domElement.getBoundingClientRect();pointer.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(pickables,false)[0];if(hit)inspect(hit.object.userData.table);}
-function refreshNodeStyles(){for(const [name,g] of nodesByName){const mesh=g.children[1],active=selected?.name===name,linked=selected&&selected.foreignKeys.some(f=>f.table===name)||selected?.name===name&&selected.foreignKeys.length>0;mesh.material.emissiveIntensity=active ? 0.8 : linked ? 0.45 : 0.18;mesh.scale.setScalar(active?1.18:1);g.visible=matching(g.userData.table);g.children[g.children.length-1].visible=g.visible;}}
-function resize(){if(!renderer||!stage.clientWidth)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);labels.setSize(w,h);}
-function animate(){raf=requestAnimationFrame(animate);const t=performance.now()*.00035;for(const [name,g] of nodesByName)g.rotation.y=.1*Math.sin(t+name.length);controls.update();renderer.render(scene,camera);labels.render(scene,camera);}
-function renderPills(){pills.replaceChildren();for(const t of tables.filter(matching)){const b=el("button","dbx-pill",t.name);b.type="button";b.dataset.table=t.name;b.addEventListener("click",()=>{inspect(t);const g=nodesByName.get(t.name);if(g){controls.target.copy(g.position);}});pills.append(b);}}
-function renderList(){graph.replaceChildren();const list=el("div","dbx-list-view");for(const t of tables.filter(matching)){const b=el("button","dbx-list-card");b.type="button";b.append(el("strong","",t.name),el("span","",t.columns.length+" columns · "+t.foreignKeys.length+" relations"));b.addEventListener("click",()=>inspect(t));list.append(b);}graph.append(list);}
-function applySearch(){renderPills();if(view==="list")renderList();else refreshNodeStyles();}
-function setView(next){view=next;document.getElementById("dbx-3d").classList.toggle("active",next==="3d");document.getElementById("dbx-list").classList.toggle("active",next==="list");document.getElementById("dbx-hint").hidden=next==="list";if(next==="3d"){graph.replaceChildren();buildScene();}else{if(renderer){cancelAnimationFrame(raf);controls?.dispose();renderer.dispose();renderer=null;}graph.replaceChildren();renderList();}}
-async function load(){try{const response=await fetch("/api/database/schema",{headers:{Accept:"application/json"}});if(!response.ok)throw new Error("Schema endpoint returned HTTP "+response.status);const payload=await response.json();tables=payload.tables.map(t=>({...t,columns:t.columns.map(c=>({...c,foreignKey:t.foreignKeys.some(f=>f.from===c.name)}))}));tableCount.textContent=payload.tableCount;relationCount.textContent=tables.reduce((sum,t)=>sum+t.foreignKeys.length,0);loading.hidden=true;if(!tables.length)throw new Error("No SQLite tables were found in the configured database.");renderPills();buildScene();inspect(tables[0]);}catch(err){loading.hidden=true;errorBox.hidden=false;errorBox.textContent="Could not load database schema: "+err.message;console.error("Database Explorer:",err);}}
-search.addEventListener("input",()=>{query=search.value;applySearch();});
-document.getElementById("dbx-3d").addEventListener("click",()=>setView("3d"));
-document.getElementById("dbx-list").addEventListener("click",()=>setView("list"));
-document.getElementById("dbx-reset").addEventListener("click",()=>{if(view!=="3d"){setView("3d");return;}camera.position.set(0,22,37);controls.target.set(0,0,0);controls.update();});
-new ResizeObserver(resize).observe(stage);
+search.addEventListener("input",()=>{query=search.value;render();});
+$("dbx-3d").addEventListener("click",()=>setMode("er"));$("dbx-list").addEventListener("click",()=>setMode("list"));
+if(window.ResizeObserver){resizeObserver=new ResizeObserver(()=>{if(mode==="er")renderER();});resizeObserver.observe(stage);}
 load();
+})();
