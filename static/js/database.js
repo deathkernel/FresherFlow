@@ -106,6 +106,18 @@ function resizeScene(){
  const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight);
  camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false);labelRenderer.setSize(width,height);
 }
+function onCanvasPick(event){
+ if(!renderer||!camera||!pickables.length)return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!rect.width||!rect.height)return;
+ pointer.x=((event.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
+ raycaster.setFromCamera(pointer,camera);
+ const hit=raycaster.intersectObjects(pickables,false)[0];
+ if(hit&&hit.object.userData.table){
+  selectTable(hit.object.userData.table,true);
+ }
+}
 function fitView(){
  if(!camera||!controls)return;
  const xs=[...positions.values()].map(p=>Math.abs(p.x)),ys=[...positions.values()].map(p=>Math.abs(p.y));
